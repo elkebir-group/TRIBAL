@@ -1,8 +1,8 @@
 import networkx as nx
 import numpy as np
 
-class S:
-    def __init__(self, T, cost, alphabet, root, attribute):
+class SmallParsimony:
+    def __init__(self, T, alphabet, root,  attribute, cost=None):
         
         self.T = T
         self.root = root
@@ -14,7 +14,8 @@ class S:
 
       
 
-        self.seq= nx.get_node_attributes(self.T, attribute)
+        self.att= nx.get_node_attributes(self.T, attribute)
+        
     
 
     def postorder_traversal(self):
@@ -31,7 +32,7 @@ class S:
             if self.is_leaf(n):
                 for a in self.alphabet:
 
-                    if self.seq[n][pos] == a:
+                    if self.att[n][pos] == a:
                         dp_matrix[n][a] = 0
                     else:
                         dp_matrix[n][a] = np.Inf
@@ -92,12 +93,12 @@ class S:
     def concat_labels(all_labs, nodes):
         seq_assign = {k : '' for k in nodes}
         for k in nodes:
-            seq_assign[k] += "".join([all_labs[i][k] for i in all_labs])
+            seq_assign[k] += "".join([all_labs[i][k] for i in all_labs if k in all_labs[i]])
         return seq_assign
 
 
-    def run(self):
-        seq_length = len(self.seq[self.root])
+    def sankoff(self):
+        seq_length = len(str(self.att[self.root]))
         all_labels = {}
  
         min_scores =np.zeros(seq_length, dtype=int)
@@ -120,6 +121,41 @@ class S:
         scores = np.array([self.cost[to_state,a] + dp_matrix[child][a]for a in self.alphabet])
         
         return scores.min()
+    
+
+    def fitch_dp(self):
+        opt_states = {}
+        for n in self.postorder:
+            if len(list(self.T.successors(n))) ==0:
+                opt_states[n] = int(self.att[n])
+            
+            else:
+                cand_states = []
+                for s in self.T.successors(n):
+                    cand_states.append( opt_states[s])
+                
+                opt_states[n]= np.min(np.unique(cand_states))
+        return opt_states
+                
+    
+    def fitch_score(self, dp_mat):
+        score = 0
+        for n in self.postorder:
+            for u in self.T.predecessors(n):
+                score += (dp_mat[n] != dp_mat[u])
+        
+        return score
+
+
+    def fitch(self):
+        opt_states = self.fitch_dp()
+        score = self.fitch_score(opt_states)
+
+        return score, opt_states
+        
+
+
+
 
 
 if __name__ == "__main__":
@@ -142,8 +178,38 @@ if __name__ == "__main__":
                 cost_mat[a,b] =3
     nx.set_node_attributes(tree, seq, "sequence")
 
-    sk = Sankoff(tree, cost_mat, alphabet, 0)
-    opt_score, labels = sk.run()
+    sk = SmallParsimony(tree,  alphabet, 0, "sequence", cost_mat)
+    opt_score, labels = sk.sankoff()
+    print(f"Parisomony score: {opt_score}")
+
+    tree2 = nx.DiGraph()
+    tree2.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
+
+    cost_mat = {}
+    for i in range(7):
+        for j in range(7):
+            if i < j:
+                cost_mat[str(i),str(j)] = 1
+            elif i ==j:
+                cost_mat[str(i),str(j)] = 0
+            else:
+                cost_mat[str(i),str(j)] = np.Inf
+    alphabet = [str(i) for i in range(7)]
+    seq = {2: "2", 3: "1", 4: "5", 0:"0"}
+
+
+    nx.set_node_attributes(tree2, seq, "state")
+    sk2 = SmallParsimony(tree2, alphabet, 0, "state", cost_mat)
+    score, labels = sk2.fitch()
+    print(labels)
+    sk_score, sk_labels = sk2.sankoff()
+    print(sk_labels)
+
+    print(f"Fitch parisomony score: {score}\nSankoff parsimony score: {sk_score}")
+
+   
+
+
 
     
 
