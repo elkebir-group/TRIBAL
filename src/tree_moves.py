@@ -8,7 +8,7 @@ class TreeMoves:
         self.rng = np.random.default_rng(5)
         self.iso_att_name = iso_att_name
         self.seq_att_name = seq_att_name
-        self.isotypes = nx.get_node_attributes(self.T, "isotype")
+        self.isotypes = nx.get_node_attributes(self.T, iso_att_name)
     
 
 
