@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 
 class SmallParsimony:
-    def __init__(self, T, alphabet, root,  attribute, cost=None):
+    def __init__(self, T,  root,  attribute, alphabet= None, cost=None):
         
         self.T = T
         self.root = root
@@ -13,8 +13,9 @@ class SmallParsimony:
         self.nodes = list(self.T.nodes())
 
       
-
+        self.att_name = attribute
         self.att= nx.get_node_attributes(self.T, attribute)
+        
         
     
 
@@ -37,11 +38,23 @@ class SmallParsimony:
                     else:
                         dp_matrix[n][a] = np.Inf
             
+  
+
+            elif n == self.root:
+                base = self.att[n][pos]
+                for a in self.alphabet:
+                    if a == base:
+                        dp_matrix[n][a] = np.sum([[self.min_cost(c,a, dp_matrix) for c in self.T.successors(n)]])
+                    else:
+                        dp_matrix[n][a] = np.Inf
+            
             else:
                 
           
                 for a in self.alphabet:
                     score_array = np.array([self.min_cost(c,a, dp_matrix) for c in self.T.successors(n)])
+                    
+                   
                     dp_matrix[n][a] = score_array.sum()
 
         opt_score = np.array([dp_matrix[0][a] for a in self.alphabet]).min()
@@ -91,14 +104,16 @@ class SmallParsimony:
 
     @staticmethod 
     def concat_labels(all_labs, nodes):
-        seq_assign = {k : '' for k in nodes}
+        seq_assign = {}
         for k in nodes:
-            seq_assign[k] += "".join([all_labs[i][k] for i in all_labs if k in all_labs[i]])
+            seq_assign[k] = [all_labs[i][k] for i in all_labs if k in all_labs[i]]
+          
+            
         return seq_assign
 
 
     def sankoff(self):
-        seq_length = len(str(self.att[self.root]))
+        seq_length = len(self.att[self.root])
         all_labels = {}
  
         min_scores =np.zeros(seq_length, dtype=int)
@@ -110,8 +125,9 @@ class SmallParsimony:
         
         
         node_labels= self.concat_labels(all_labels, self.nodes)
+        nx.set_node_attributes(self.T, node_labels, self.att_name)
 
-        return min_scores.sum(),node_labels
+        return min_scores.sum(),self.T
 
             
 
@@ -150,62 +166,65 @@ class SmallParsimony:
     def fitch(self):
         opt_states = self.fitch_dp()
         score = self.fitch_score(opt_states)
+        nx.set_node_attributes(self.T, opt_states, self.att_name)
 
-        return score, opt_states
+
+
+        return score, self.T
         
 
 
 
 
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    tree = nx.DiGraph()
-    tree.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
+#     tree = nx.DiGraph()
+#     tree.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
 
-    cost_mat = {}
-    alphabet = ("a", "g", "c", "t")
-    seq = {2: "cc", 3: "gg", 4: "tt", 0:"cc"}
-    for a in alphabet:
-        for b in alphabet:
-            if a == b:
-                cost_mat[a,b] =0
-            elif a in ["a", "g"] and b in ["a", "g"]:
-                cost_mat[a,  b] = 1
-            elif a in ["c", "t"] and b in ["c", "t"]:
-                cost_mat[a,b] =1
-            else:
-                cost_mat[a,b] =3
-    nx.set_node_attributes(tree, seq, "sequence")
+#     cost_mat = {}
+#     alphabet = ("a", "g", "c", "t")
+#     seq = {2: "cc", 3: "gg", 4: "tt", 0:"cc"}
+#     for a in alphabet:
+#         for b in alphabet:
+#             if a == b:
+#                 cost_mat[a,b] =0
+#             elif a in ["a", "g"] and b in ["a", "g"]:
+#                 cost_mat[a,  b] = 1
+#             elif a in ["c", "t"] and b in ["c", "t"]:
+#                 cost_mat[a,b] =1
+#             else:
+#                 cost_mat[a,b] =3
+#     nx.set_node_attributes(tree, seq, "sequence")
 
-    sk = SmallParsimony(tree,  alphabet, 0, "sequence", cost_mat)
-    opt_score, labels = sk.sankoff()
-    print(f"Parisomony score: {opt_score}")
+#     sk = SmallParsimony(tree,  alphabet, 0, "sequence", cost_mat)
+#     opt_score, labels = sk.sankoff()
+#     print(f"Parisomony score: {opt_score}")
 
-    tree2 = nx.DiGraph()
-    tree2.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
+#     tree2 = nx.DiGraph()
+#     tree2.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
 
-    cost_mat = {}
-    for i in range(7):
-        for j in range(7):
-            if i < j:
-                cost_mat[str(i),str(j)] = 1
-            elif i ==j:
-                cost_mat[str(i),str(j)] = 0
-            else:
-                cost_mat[str(i),str(j)] = np.Inf
-    alphabet = [str(i) for i in range(7)]
-    seq = {2: "2", 3: "1", 4: "5", 0:"0"}
+#     cost_mat = {}
+#     for i in range(7):
+#         for j in range(7):
+#             if i < j:
+#                 cost_mat[str(i),str(j)] = 1
+#             elif i ==j:
+#                 cost_mat[str(i),str(j)] = 0
+#             else:
+#                 cost_mat[str(i),str(j)] = np.Inf
+#     alphabet = [str(i) for i in range(7)]
+#     seq = {2: "2", 3: "1", 4: "5", 0:"0"}
 
 
-    nx.set_node_attributes(tree2, seq, "state")
-    sk2 = SmallParsimony(tree2, alphabet, 0, "state", cost_mat)
-    score, labels = sk2.fitch()
-    print(labels)
-    sk_score, sk_labels = sk2.sankoff()
-    print(sk_labels)
+    # nx.set_node_attributes(tree2, seq, "state")
+    # sk2 = SmallParsimony(tree2, alphabet, 0, "state", cost_mat)
+    # score, labels = sk2.fitch()
+    # print(labels)
+    # sk_score, sk_labels = sk2.sankoff()
+    # print(sk_labels)
 
-    print(f"Fitch parisomony score: {score}\nSankoff parsimony score: {sk_score}")
+    # print(f"Fitch parisomony score: {score}\nSankoff parsimony score: {sk_score}")
 
    
 
