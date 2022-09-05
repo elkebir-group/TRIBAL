@@ -9,11 +9,13 @@ import numpy as np
 import neighbor_joining as nj
 
 class Tribal:
-    def __init__(self, alignment, isotype_labels, seed=1026):
+    def __init__(self, alignment, isotype_labels, seed=1026, root=0):
         
         self.rng = np.random.default_rng(seed)
         self.alignment = alignment
-        self.root = 0
+        self.n = len(self.alignment)
+        self.root = root
+        self.compute_character_sets()
         self.isotype_labels = isotype_labels
     # def __init__(self, sequences, root, switch_graph=None, cost_bases=None, costs_isotypes=None, seed=1234) -> None:
     #     self.sequences = {key : [lower(i) for i in sequences] for key in sequences}
@@ -54,6 +56,58 @@ class Tribal:
         for n in tree.nodes():
             seq  ="".join([i for i in alignment[n]])
             print(f"Node {n}: Seq: {seq}, isotype: {isotype_labels[n]}")
+
+    @staticmethod
+    def jaccard_distance(a,b):
+        """
+        computes the jaccard distance between to numpy arrays a and b
+
+        """
+        return (np.intersect1d(a,b).shape[0])/np.union1d(a,b).shape[0]
+
+    def compute_character_sets(self):
+        self.char_sets = {self.root : np.empty(shape=0, dtype=int)}
+        root = np.array(self.alignment[self.root])
+        for i in self.alignment:
+            if i != self.root:
+                self.char_sets[i] = (np.array(self.alignment[i]) != root).nonzero()
+        
+        self.dmat= np.zeros((self.n, self.n))
+        for i in self.alignment:
+            for j in self.alignment:
+                self.dmat[i,j] = self.jaccard_distance(self.char_sets[i], self.char_sets[j])
+        
+        
+
+        
+
+
+    def assign_sequences(self, seqs, parents):
+        tribals = []
+        #subset distance matrix
+        dmat_cluster = np._ix((seqs, parents))
+        assign_index = dmat_cluster.argmin(axis=1)
+        seq_assign = parents[assign_index]
+        for p in parents:
+            alignment = {p : self.alignment[p]}
+            for i,s in seqs:
+                if seq_assign[i] == p:
+                
+                    alignment[s] = self.alignment[s]
+            
+            tribals.append(Tribal(alignment, root=p))
+        return tribals 
+    
+
+    
+
+        
+
+
+
+
+
+
 
 
 
