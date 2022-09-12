@@ -1,35 +1,87 @@
 
 import numpy as np
 import networkx as nx
+from scipy.linalg import expm
+import argparse
+import pickle 
+
+
 class BCellSim:
-    def __init__(self,n, m_light, m_heavy, n_isotypes=7, beta=1/3, prop=1/3, seed=1026) -> None:
+    def __init__(self,n, m_light=320, m_heavy=355, root_lc=None, root_hc =None, 
+                 pos_lc=None, pos_hc=None, prop_hot = 0.3,
+                 n_isotypes=7, cold_rate=0.002, isotype_rate_matrix = None, 
+                 hot_rate=1, expected_branch_length =5, seed=1026) -> None:
+        
+
+        #branch lengths are the expected number of subsitutions per site
+
         
         self.rng = np.random.default_rng(seed)
-        self.n = n+1
+        self.n = n
+
         self.root = 0
         self.alphabet = ["A", "C", "G", "T"]
+        
         self.alpha_to_index = {a : i for i,a in enumerate(self.alphabet)}
-        self.ml = m_light
-        self.mh = m_heavy
-        self.m = self.ml+self.mh
-        self.hotspots = self.sample_sites(self.m, prop)
-
-        #construct rate matrices
-        self.R_cold = beta*np.ones((4,4),dtype=float)
-        for i in range(self.R_cold.shape[0]):
-            self.R_cold[i,i] = -3
-        self.R_hot = self.R_cold 
         
         #initialize the root
         self.labels = {}
-        self.labels[0] =self.generate_seq(m_light) + self.generate_seq(m_heavy)
+        self.light_chain = {}
+        self.heavy_chain = {}
+        self.isotype_labels = {}
 
         self.isotypes = np.arange(n_isotypes)
-        self.isotype_labels = {}
-        self.isotype_labels[0] = 0
+        if isotype_rate_matrix is None:
+            self.Q_isotype =np.zeros(n_isotypes, n_isotypes)
+            
+            for i in range(n_isotypes):
+                self.Q_isotype[i,:] = (self.isotypes >= i)/ np.sum((self.isotypes >= i))
+          
+        else:
+            self.Q_isotype = isotype_rate_matrix
+
+ 
+        self.char = ['L', 'H', 'I']
+        self.chains = ['L', 'H']
+        self.labels = {i : {} for i in self.char}
+        self.m = {'L' : m_light, 'H': m_heavy}
+        self.labels['I'][0]=0
+        self.position_type = {}
+        self.tree = None
+        self.branch_lengths = None
+        
+        for root, chain in zip([root_lc, root_hc],self.chains):
+            if root is None:
+        
+                self.labels[chain][0] =self.generate_seq(self.m[chain])
+           
+            else:
+                self.labels[chain][0] =  root.split("")
+        
+               
+        for pos_type, chain in zip([pos_lc, pos_hc],self.chains):
+            
+            if pos_type is None:
+                self.position_type[chain]= self.rng.choice(['c', 'h'], size=self.m[chain],probs=[1-prop_hot, prop_hot])
+           
+            else:
+                self.position_type[chain] =  pos_type.tolower().split("")
+        
+
+        self.Q_cold = self.construct_rate_matrix(cold_rate)
+        self.Q_hot = self.construct_rate_matrix(hot_rate)
+    
+        self.exp_br_len =expected_branch_length
+        
 
 
 
+    def construct_rate_matrix(rate):
+        Q =np.fill((4,4), fill_value=rate)
+        for i in range(Q.shape[0]):
+            Q[i,i] = 1-3*rate
+        return Q
+    
 
     def generate_seq(self, n):
         return self.rng.choice(self.alphabet, n).tolist()
@@ -37,12 +89,10 @@ class BCellSim:
     def generate(self):
         self.tree = self.random_tree()
 
-        self.draw_branch_lengths(5)
+        self.draw_branch_lengths =self.draw_branch_lengths(self.exp_br_len)
 
         self.evolve()
-        # nx.set_node_attributes(self.tree, self.seq_labels)
 
-        return self.tree, self.labels, self.isotype_labels
 
     @staticmethod
     def root_tree(tree, root):
@@ -57,7 +107,6 @@ class BCellSim:
         tree.remove_node(c)
 
         return tree
-    
     
 
 
@@ -87,32 +136,21 @@ class BCellSim:
 
         return tree
 
-   
-
+    def simulate_isotype(self, parent_iso):
+        trans_prob = self.Q_isotype[parent_iso,:]
+        new_iso = np.rng.choice(self.isotypes, 1, trans_prob)[0]
+        return new_iso
     
-    def sample_sites(self, m, prop):
-        npos = int(prop*m)
-        return self.rng.choice(m,npos, replace=False)
-
-
-    def class_switch(self, iso):
-        
-        return  self.rng.choice(self.isotypes[self.isotypes >= iso],1)[0]
-
-
-    
-
     def draw_branch_lengths(self, scale=1):
-        self.branch_lengths = {}
+        branch_lengths = {}
         for e in self.tree.edges:
-            self.branch_lengths[e] = self.rng.exponential(scale)
+            branch_lengths[e] = self.rng.exponential(scale)
+        return branch_lengths
 
-
-    
     def simulate_base(self, Q,br_length, anc_base):
-        trans_matrix = np.exp(Q*br_length)   
+        trans_matrix = expm(Q*br_length)   
         probs = trans_matrix[self.alpha_to_index[anc_base],]
-        probs = probs/probs.sum()
+        
         new_base = self.rng.choice(self.alphabet, size=1, p=probs )  
         return new_base[0]
 
@@ -121,25 +159,119 @@ class BCellSim:
         nodes = [n for n in nodes if n != self.root]
         
         for n in nodes:
+            iso = self.labels['I'][parent] 
+            self.labels['I'][n] = self.simulate_isotype(iso)
+            br_length =  self.branch_lengths[(parent,n)]
             parent = list(self.tree.predecessors(n))[0] 
-            seq = self.labels[parent].copy()  
-            iso = self.isotype_labels[parent]    
-            #TODO: vectorize this for hot and cold spots
-            for i in range(self.m):
-     
-                br_length =  self.branch_lengths[(parent,n)]
-                if i in self.hotspots:
-                    seq[i] = self.simulate_base(self.R_hot, br_length, seq[i])  
-                else:
-                    seq[i] = self.simulate_base(self.R_cold, br_length, seq[i])
+            for chain in self.chains:
+              
+                seq = self.labels[chain][parent].copy()  
+                  
+                for i in range(len(seq)):
+    
+                    if self.position_type[chain][i]=='h':
+                        seq[i] = self.simulate_base(self.Q_hot, br_length, seq[i])  
+                    else:
+                        seq[i] = self.simulate_base(self.Q_cold, br_length, seq[i])
             
-            self.isotype_labels[n] = self.class_switch(iso)
-            self.labels[n] = seq
+            
+                self.labels[chain] = seq
 
 
-sm = BCellSim(7, 300, 250 )
-tree, seqs, isos = sm.generate() 
-print("done")              
+    def save_labels(self, fname):
+        with open(fname, 'w+') as file:
+            file.write("node,isotype,light_chain,heavy_chain")
+            for n in self.tree.nodes:
+                lc = "".join(self.labels['L'][n])
+                hc = "".join(self.labels['H'][n])
+                file.write(f"\n{n},{self.labels['I'][n]},{lc},{hc}")
+
+    
+    def save_tree(self, path):
+
+        leafs = [n for n in self.tree.nodes if len(list(self.tree.successors(n))) ==0]
+                          
+        with open(path, "w+") as file:
+            file.write(f"{len(list(self.tree.edges))} #edges\n")
+            for u,v in list(self.tree.edges):
+                file.write(f"{u} {v}\n")
+            file.write(f"{len(leafs)} #leaves\n")
+            for l in leafs:
+                file.write(f"{l}\n")
+            
+    
+            
+    def pickle_save(self, fname):
+        with open(fname, 'wb') as handle:
+            pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+if __name__=="__main__":
+
+    parser= argparse.ArgumentParser()
+
+    parser.add_argument("-n", "--taxa", type=int, default=7,
+                        help="number of taxa to simulate")
+    parser.add_argument("-l", "--light", type=int, default=350,
+                        help="number of sites in light chain to simulate")
+    parser.add_argument("-h", "--heavy", type=int, default=320,
+                        help="number of sites in light chain to simulate")
+    # parser.add_argument("-lr", "--root_light", type=str, 
+    #                     help="the sequence of the light chain")
+    # parser.add_argument('-hr',"--root_heavy", type=str, 
+    #                     help="the sequence of the heavy chain")
+    parser.add_argument("-r", "--root", type=str, 
+                        help="filename containing the root sequence for the light and heavy chain")
+    parser.add_argument( "--config", type=str,
+                        help="name of yaml config file")
+    parser.add_argument("-p", "--prop_hot", type=float, default=0.3,
+                        help="proportion of sites that should be hot sites")
+    parser.add_argument("-i", "--nisotypes", type=int,
+                        help="the number of isotypes to include")
+    parser.add_argument("-c", "--cold_rate", type=float,
+                        help="mutation rate for coldspots ")
+    parser.add_argument("-r", "--hot_rate", type=float,
+                        help="mutation rate for hotspots")
+    parser.add_argument("--iso_trans", type=str,
+                        help="file containing the desired isotype transition rate")
+    parser.add_argument("-s", "--seed", type=int, default=1026,
+                        help="random number seed")
+    parser.add_argument("-b", "--br_length", type=float, default=0.01,
+                        help="expected number of substitions per site")   
+
+    parser.add_argument("-o", "--output", type=str,
+                        help="name of output file to pickle the simulator")  
+    parser.add_argument( "--labels", type=str, 
+                        help="name of output file to write the labels of the nodes")
+    parser.add_argument( "--tree", type=str, 
+                        help="name of output file for tree")
+    args= parser.parse_args()
+
+    sm = BCellSim(n = args.taxa,
+        m_light = args.light,
+        m_heavy =  args.heavy,   
+        prop_hot = args.prop_hot,
+        cold_rate = args.cold_rate,
+        hot_rate = args.hot_rate,
+        seed = args.seed
+    )
+
+    sm.generate()
+    if args.tree is not None:
+        sm.save_tree(args.tree)
+    if args.labels is not None:
+        sm.save_labels(args.labels)
+    if args.pickle is not None:
+        sm.pickle_save(args.pickle)
+
+
+
+
+
+
+        
+ 
+              
     # def evolve(self, prop):
     #     lc_root = self.labels[0]["L"]
     #     hc_root = self.labels[0]['H']
