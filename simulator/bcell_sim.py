@@ -5,7 +5,7 @@ from scipy.linalg import expm
 import argparse
 import pickle 
 import copy 
-
+import itertools
 
 class BCellSim:
     def __init__(self,n, m_light=320, m_heavy=355, root_lc=None, root_hc =None, 
@@ -15,7 +15,7 @@ class BCellSim:
         
 
         #branch lengths are the expected number of subsitutions per site
-
+        expected_branch_length = 2.5/(m_light+m_heavy)
         self.changes = 0
         self.rng = np.random.default_rng(seed)
         self.n = n
@@ -92,7 +92,10 @@ class BCellSim:
         self.branch_lengths =self.draw_branch_lengths(self.exp_br_len)
 
         self.evolve()
-        print(self.changes)
+       
+        self.pairwise_distance()
+        print(self.pw_dist)
+
 
 
     @staticmethod
@@ -190,6 +193,25 @@ class BCellSim:
                 hc = "".join(self.labels['H'][n])
                 file.write(f"\n{n},{self.labels['I'][n]},{lc},{hc}")
 
+    def pairwise_distance(self):
+        leaf_nodes = [n for n in self.tree.nodes if self.tree.out_degree(n)==0]
+        self.pw_dist = 0
+        self.dist= {}
+        for n1, n2 in itertools.combinations(leaf_nodes, 2):
+            chain_total = 0
+            for c in self.chains:
+                seq1 = np.array(self.labels[c][n1])
+                seq2 = np.array(self.labels[c][n2])
+                val =(seq1 != seq2).sum()
+
+                chain_total += val
+            self.dist[n1,n2] = chain_total 
+            self.pw_dist += chain_total
+        print(self.pw_dist)
+
+
+
+
     
     def save_tree(self, path):
 
@@ -263,6 +285,8 @@ if __name__=="__main__":
     
     pth = "simulator"
     args= parser.parse_args([
+        "-l", "328",
+        "--heavy", "376",
         "--tree", f"{pth}/tree.txt",
         "--labels", f"{pth}/labels.csv",
         "--output", f"{pth}/sim.pickle",
