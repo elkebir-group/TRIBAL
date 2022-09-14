@@ -4,18 +4,19 @@ import networkx as nx
 from scipy.linalg import expm
 import argparse
 import pickle 
+import copy 
 
 
 class BCellSim:
     def __init__(self,n, m_light=320, m_heavy=355, root_lc=None, root_hc =None, 
                  pos_lc=None, pos_hc=None, prop_hot = 0.3,
                  n_isotypes=7, cold_rate=0.002, isotype_rate_matrix = None, 
-                 hot_rate=1, expected_branch_length =5, seed=1026) -> None:
+                 hot_rate=1, expected_branch_length =5/(320+355), seed=1026) -> None:
         
 
         #branch lengths are the expected number of subsitutions per site
 
-        
+        self.changes = 0
         self.rng = np.random.default_rng(seed)
         self.n = n
 
@@ -24,15 +25,11 @@ class BCellSim:
         
         self.alpha_to_index = {a : i for i,a in enumerate(self.alphabet)}
         
-        #initialize the root
-        self.labels = {}
-        self.light_chain = {}
-        self.heavy_chain = {}
-        self.isotype_labels = {}
 
+        self.labels = {}
         self.isotypes = np.arange(n_isotypes)
         if isotype_rate_matrix is None:
-            self.Q_isotype =np.zeros(n_isotypes, n_isotypes)
+            self.Q_isotype =np.zeros((n_isotypes, n_isotypes))
             
             for i in range(n_isotypes):
                 self.Q_isotype[i,:] = (self.isotypes >= i)/ np.sum((self.isotypes >= i))
@@ -62,7 +59,7 @@ class BCellSim:
         for pos_type, chain in zip([pos_lc, pos_hc],self.chains):
             
             if pos_type is None:
-                self.position_type[chain]= self.rng.choice(['c', 'h'], size=self.m[chain],probs=[1-prop_hot, prop_hot])
+                self.position_type[chain]= self.rng.choice(['c', 'h'], size=self.m[chain],p=[1-prop_hot, prop_hot])
            
             else:
                 self.position_type[chain] =  pos_type.tolower().split("")
@@ -76,10 +73,13 @@ class BCellSim:
 
 
 
+    @staticmethod
     def construct_rate_matrix(rate):
-        Q =np.fill((4,4), fill_value=rate)
+        Q = rate * np.ones((4, 4))
+     
+   
         for i in range(Q.shape[0]):
-            Q[i,i] = 1-3*rate
+            Q[i,i] = -3*rate
         return Q
     
 
@@ -89,9 +89,10 @@ class BCellSim:
     def generate(self):
         self.tree = self.random_tree()
 
-        self.draw_branch_lengths =self.draw_branch_lengths(self.exp_br_len)
+        self.branch_lengths =self.draw_branch_lengths(self.exp_br_len)
 
         self.evolve()
+        print(self.changes)
 
 
     @staticmethod
@@ -113,7 +114,7 @@ class BCellSim:
     def random_tree(self):
         tree = nx.Graph()
         ids = [i for i in range(self.n+1)]
-        n = len(ids)
+        n = self.n + 1
         center = 2*n -3 
         for i in range(n):
             tree.add_edge(i, center)
@@ -138,10 +139,10 @@ class BCellSim:
 
     def simulate_isotype(self, parent_iso):
         trans_prob = self.Q_isotype[parent_iso,:]
-        new_iso = np.rng.choice(self.isotypes, 1, trans_prob)[0]
-        return new_iso
+        new_iso = self.rng.choice(self.isotypes, 1, p=trans_prob)
+        return new_iso[0]
     
-    def draw_branch_lengths(self, scale=1):
+    def draw_branch_lengths(self, scale=0.001):
         branch_lengths = {}
         for e in self.tree.edges:
             branch_lengths[e] = self.rng.exponential(scale)
@@ -152,6 +153,8 @@ class BCellSim:
         probs = trans_matrix[self.alpha_to_index[anc_base],]
         
         new_base = self.rng.choice(self.alphabet, size=1, p=probs )  
+        if anc_base != new_base:
+            self.changes += 1
         return new_base[0]
 
     def evolve(self):
@@ -159,13 +162,14 @@ class BCellSim:
         nodes = [n for n in nodes if n != self.root]
         
         for n in nodes:
+            parent = list(self.tree.predecessors(n))[0] 
             iso = self.labels['I'][parent] 
             self.labels['I'][n] = self.simulate_isotype(iso)
             br_length =  self.branch_lengths[(parent,n)]
-            parent = list(self.tree.predecessors(n))[0] 
+         
             for chain in self.chains:
               
-                seq = self.labels[chain][parent].copy()  
+                seq = copy.copy(self.labels[chain][parent])
                   
                 for i in range(len(seq)):
     
@@ -175,7 +179,7 @@ class BCellSim:
                         seq[i] = self.simulate_base(self.Q_cold, br_length, seq[i])
             
             
-                self.labels[chain] = seq
+                self.labels[chain][n] = seq
 
 
     def save_labels(self, fname):
@@ -200,7 +204,19 @@ class BCellSim:
                 file.write(f"{l}\n")
             
     
-            
+    def alignment_save(self, fname):
+        with open(fname, "w+") as file:
+            file.write("id,sequence,isotype")
+            for n in self.tree.nodes:
+                if len(list(self.tree.successors(n))) ==0 or n ==self.root:
+                    lc = self.labels["L"][n]
+                    lc = "".join(lc)
+                    hc = self.labels["H"][n]
+                    hc = "".join(hc)
+                    iso = self.labels["I"][n]
+                    file.write(f"\n{n},{lc+hc},{iso}")
+
+
     def pickle_save(self, fname):
         with open(fname, 'wb') as handle:
             pickle.dump(self, handle, protocol=pickle.HIGHEST_PROTOCOL)
@@ -214,12 +230,8 @@ if __name__=="__main__":
                         help="number of taxa to simulate")
     parser.add_argument("-l", "--light", type=int, default=350,
                         help="number of sites in light chain to simulate")
-    parser.add_argument("-h", "--heavy", type=int, default=320,
+    parser.add_argument( "--heavy", type=int, default=320,
                         help="number of sites in light chain to simulate")
-    # parser.add_argument("-lr", "--root_light", type=str, 
-    #                     help="the sequence of the light chain")
-    # parser.add_argument('-hr',"--root_heavy", type=str, 
-    #                     help="the sequence of the heavy chain")
     parser.add_argument("-r", "--root", type=str, 
                         help="filename containing the root sequence for the light and heavy chain")
     parser.add_argument( "--config", type=str,
@@ -228,9 +240,9 @@ if __name__=="__main__":
                         help="proportion of sites that should be hot sites")
     parser.add_argument("-i", "--nisotypes", type=int,
                         help="the number of isotypes to include")
-    parser.add_argument("-c", "--cold_rate", type=float,
+    parser.add_argument("-c", "--cold_rate", type=float, default=0.03,
                         help="mutation rate for coldspots ")
-    parser.add_argument("-r", "--hot_rate", type=float,
+    parser.add_argument( "--hot_rate", type=float, default=1.0,
                         help="mutation rate for hotspots")
     parser.add_argument("--iso_trans", type=str,
                         help="file containing the desired isotype transition rate")
@@ -245,7 +257,18 @@ if __name__=="__main__":
                         help="name of output file to write the labels of the nodes")
     parser.add_argument( "--tree", type=str, 
                         help="name of output file for tree")
-    args= parser.parse_args()
+    parser.add_argument( "--alignment", type=str, 
+                        help="input alignment for methods")
+    
+    
+    pth = "simulator"
+    args= parser.parse_args([
+        "--tree", f"{pth}/tree.txt",
+        "--labels", f"{pth}/labels.csv",
+        "--output", f"{pth}/sim.pickle",
+        "--alignment",f"{pth}/alignment.csv"
+    
+    ])
 
     sm = BCellSim(n = args.taxa,
         m_light = args.light,
@@ -253,7 +276,7 @@ if __name__=="__main__":
         prop_hot = args.prop_hot,
         cold_rate = args.cold_rate,
         hot_rate = args.hot_rate,
-        seed = args.seed
+        seed = args.seed,
     )
 
     sm.generate()
@@ -261,17 +284,14 @@ if __name__=="__main__":
         sm.save_tree(args.tree)
     if args.labels is not None:
         sm.save_labels(args.labels)
-    if args.pickle is not None:
-        sm.pickle_save(args.pickle)
+    if args.output is not None:
+        sm.pickle_save(args.output)
+    if args.alignment is not None:
+        sm.alignment_save(args.alignment)
 
 
 
 
-
-
-        
- 
-              
     # def evolve(self, prop):
     #     lc_root = self.labels[0]["L"]
     #     hc_root = self.labels[0]['H']
