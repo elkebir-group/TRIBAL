@@ -12,10 +12,9 @@ class BCellSim:
     def __init__(self,n, m_light=320, m_heavy=355, root_lc=None, root_hc =None, 
                  pos_lc=None, pos_hc=None, prop_hot = 0.2,
                  n_isotypes=6, cold_rate=0.002, isotype_rate_matrix = None, 
-                 hot_rate=1, expected_branch_length =3, seed=1026) -> None:
+                 hot_rate=1, expected_branch_length =3, seed=1026, jump_prob=0.15) -> None:
         
 
-        #branch lengths are the expected number of subsitutions per site
         
         self.changes = 0
         self.rng = np.random.default_rng(seed)
@@ -29,20 +28,25 @@ class BCellSim:
 
         self.labels = {}
         self.isotypes = np.arange(n_isotypes)
-        base_prob = 1/n_isotypes
+     
+
         if isotype_rate_matrix is None:
             self.Q_isotype =np.zeros((n_isotypes, n_isotypes))
             
             for i in range(n_isotypes):
-                self.Q_isotype[i,i] = (i+1)*base_prob
+                if i < self.Q_isotype.shape[1]-1:
+                    self.Q_isotype[i,i] = 1 - jump_prob
+                else:
+                    self.Q_isotype[i,i] =1
 
+                number_of_paths = self.Q_isotype.shape[1]- i -1
                 for j in range(i+1, n_isotypes):
-                    self.Q_isotype[i,j] =base_prob
+                    self.Q_isotype[i,j:] =jump_prob/number_of_paths
           
         else:
             self.Q_isotype = isotype_rate_matrix
 
-       
+    
         self.char = ['L', 'H', 'I']
         self.chains = ['L', 'H']
         self.labels = {i : {} for i in self.char}
@@ -62,7 +66,7 @@ class BCellSim:
                 self.labels[chain][0] =  list(root)
                 self.m[chain] = len(self.labels[chain][0])
         
-
+        #convert branch lengths to the expected number of subsitutions per site
         self.exp_br_len = expected_branch_length/(self.m["L"] + self.m["H"])
                
         for pos_type, chain in zip([pos_lc, pos_hc],self.chains):
@@ -254,7 +258,7 @@ if __name__=="__main__":
 
     parser.add_argument("-n", "--taxa", type=int, default=7,
                         help="number of taxa to simulate")
-    parser.add_argument("-l", "--light", type=int, default=350,
+    parser.add_argument( "--light", type=int, default=350,
                         help="number of sites in light chain to simulate")
     parser.add_argument( "--heavy", type=int, default=320,
                         help="number of sites in light chain to simulate")
@@ -284,9 +288,10 @@ if __name__=="__main__":
                         help="name of output file for tree")
     parser.add_argument( "--alignment", type=str, 
                         help="input alignment for methods")
+    parser.add_argument("--jump", type=float, default=0.15,
+        help = "probability of class switching")
     parser.add_argument("--clonotype", type=str,
-                help="clonotype id of sequence to use as root"
-     )
+                help="clonotype id of sequence to use as root")
     
     args = parser.parse_args()
     # clono = "B_130_9_9_3_1_43"
@@ -313,22 +318,18 @@ if __name__=="__main__":
         root_hc = root_hc.replace("N", "A")
  
 
-    
     sm = BCellSim(
         n = args.taxa,
-        light = args.light,
-        heavy = args.heavy,
+        m_light = args.light,
+        m_heavy = args.heavy,
         root_lc = root_lc,
         root_hc = root_hc,
-        nisotypes = args.nisotypes,
-        m_light = args.light,
-        m_heavy =  args.heavy,   
+        n_isotypes = args.nisotypes,  
         prop_hot = args.prop_hot,
         cold_rate = args.cold_rate,
         hot_rate = args.hot_rate,
         seed = args.seed,
-        br_length = args.br_length,
-        clonotype= args.clonotype
+        expected_branch_length = args.br_length
     )
 
     sm.generate()
@@ -340,96 +341,3 @@ if __name__=="__main__":
         sm.pickle_save(args.output)
     if args.alignment is not None:
         args.alignment_save(args.alignment)
-
-    
-    # sm.save_tree(f"simulator/{args.clonotype}/tree{i}.txt")
-            # sm.save_labels(f"simulator/{args.clonotype}/labels{i}.csv")
-    # if args.output is not None:
-    #     sm.pickle_save(f"simulator/{args.clonotype}_{args.output}")
-    # if args.alignment is not None:
-    #     sm.alignment_save(f"simulator/{args.clonotype}_{args.alignment}")
-
-
-
-
-    # def evolve(self, prop):
-    #     lc_root = self.labels[0]["L"]
-    #     hc_root = self.labels[0]['H']
-    #     light_pos  = self.sample_sites(len(lc_root)), prop)
-    #     heavy_pos = self.sample_sites(len(hc_root), prop)
-    #     events = ['class_switch', 'shm', 'both']
-   
-    #     node_list = [0]
-    #     while len(node_list) > 0:
-    #         curr_node = node_list.pop()
-    #         cur_iso = self.labels[curr_node]["I"]
-
-    #         children = self.tree.successors(curr_node)
-
-    #         for c in children:
-    #             #events occurring on incoming edges to the node
-    #             parent_lc = self.labels[curr_node]["L"].copy()
-    #             parent_hc = self.labels[curr_node]['H'].copy()
-    #             parent_iso = self.labels[0]["I"]
-
-    #             event = self.rng.random_choice(events, 1)
-             
-    #             if event == "class_switch":
-    #                 new_iso = self.class_switch(cur_iso)
-    #                 self.labels[c] = {"L" : parent_lc, "H" : parent_hc, "I":new_iso}
-                 
-                  
-    #             elif event == "shm":
-    #                 ncycles = self.rng.random_choice(4, 1)
-    #                 self.self.shm(child_lc, child_hc, light_pos, heavy_pos, ncycles)
-    #                 self.labels["I"]
-    #             else:
-    #                 ncycles = self.rng.random_choice(4, 1)
-    #                 new_iso, new_seq = self.both(self.isotype[curr_node], parent_seq, light_pos, heavy_pos, ncycles)
-    #                 self.isotype[c]  = new_iso
-    #                 self.seq_labels[c] = new_seq
-    #             node_list.append(c)
-
-
-
-
-
-
-    # def shm(self, seq, light_pos, heavy_pos, cycles=1):
-    #     #mutate either heavy, light chain
-
-    #     new_seq = parent_seq.copy()
-
-    #     for i in range(cycles):
-
-    #         if self.rng.random() < 0.5:
-    #             positions = light_pos
-    #             chain = "L"
-    #         else:
-    #             poisitions = heavy_pos
-    #             chain = "H"
-    #             parent_base = seq[i]
-            
-    #         mod_pos = self.rng.random_choice(positions, 1)
-
-    #         choice_base = [a for a in self.alphabet if a != parent_base]
-    #         base = self.rng.random_choice(choice_base)
-       
-    #         new_seq[pos][chain] = choice_base
-    #     return new_seq
-
-    
-    # def both(self,iso, seq, light_pos, heav_pos, cycle):
-    #     new_iso, = self.class_switch(iso)
-    #     new_seq = self.shm(seq, light_pos, heav_pos, cycle)
-
-    #     return new_iso, new_seq
-
-    
-    # def generate_tree(self):
-    #    sequence = rng.random_choice(self.n, self.n-2)
-    #    self.tree = nx.from_prufer_sequence(sequence)
-    #    self.
-    
-
-
