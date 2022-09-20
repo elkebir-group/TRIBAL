@@ -1,4 +1,6 @@
 
+#!/usr/bin/env python3
+
 import numpy as np
 import networkx as nx
 from scipy.linalg import expm
@@ -217,9 +219,6 @@ class BCellSim:
             self.pw_dist += chain_total
        
 
-
-
-
     
     def save_tree(self, path):
 
@@ -332,6 +331,8 @@ if __name__=="__main__":
         expected_branch_length = args.br_length
     )
 
+
+
     sm.generate()
     if args.tree is not None:
         sm.save_tree(args.tree)
@@ -340,4 +341,4 @@ if __name__=="__main__":
     if args.output is not None:
         sm.pickle_save(args.output)
     if args.alignment is not None:
-        args.alignment_save(args.alignment)
+        sm.alignment_save(args.alignment)

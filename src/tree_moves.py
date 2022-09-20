@@ -50,6 +50,8 @@ class TreeMoves:
         for m in move_cand:
                  
             spr_tree = tree.copy()
+            if m ==3:
+                print(cut_node)
             self.regrafting(spr_tree, cut_node, parent,m)
             # print(spr_tree.edges)
             one_spr_trees.append(spr_tree)

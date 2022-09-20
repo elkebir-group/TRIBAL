@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 
 class SmallParsimony:
-    def __init__(self, T,  root,  attribute, alphabet= None, cost=None):
+    def __init__(self, T,  root, attribute="SEQ", sequences=None, isotypes=None, alphabet= None, cost=None):
         
         self.T = T
         self.root = root
@@ -14,7 +14,11 @@ class SmallParsimony:
 
       
         self.att_name = attribute
-        self.att= nx.get_node_attributes(self.T, attribute)
+        if attribute == "SEQ":
+            self.att=sequences
+        else:
+            self.att = isotypes
+         #nx.get_node_attributes(self.T, attribute)
         
         
     

@@ -78,9 +78,11 @@ def hamming_distance(s1, s2):
     return (np.array(s1) != np.array(s2)).sum()
 
 
-def create_distance_matrix(alignment):
+def create_distance_matrix(alignment, ids):
+
     
-    dist_mat = np.array([[hamming_distance(s1, s2) for k2, s2 in alignment.items()] for k1, s1 in alignment.items()])
+    dist_mat = np.array([[hamming_distance(alignment[k1], alignment[k2]) for k2 in ids] for k1 in ids])
+    print(dist_mat)
     return dist_mat.astype(float)
 
 
