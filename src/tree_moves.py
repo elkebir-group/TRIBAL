@@ -28,8 +28,11 @@ class TreeMoves:
           return spr_tree
 
     def case1_spr(self, cut_node):
+        #TODO: fix case1 to consider multifurcating trees
         #case 1 is that the parent of of cut node is not the root 
         # and it will be grafted to a preexisting edge
+        if cut_node ==4:
+            print(cut_node)
         tree = self.T.copy()
         one_spr_trees = []
         parent = list(tree.predecessors(cut_node))[0]
