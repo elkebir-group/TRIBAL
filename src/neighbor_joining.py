@@ -2,7 +2,9 @@
 
 import numpy as np
 import networkx as nx
-
+import argparse 
+import utils as ut
+from tree_utils import BaseTree
 
 def compute_q_matrix(dist_mat):
     q_matrix = np.zeros_like(dist_mat)
@@ -43,10 +45,10 @@ def update_distance_matrix(dmat, a,b, ids, next_node):
 def neighbor_joining(dist_mat, ids):
 
     n = dist_mat.shape[0]
-    next_node = n
+    next_node = str(n)
     tree = nx.Graph()
     center = 2*n -3 
-    for i in range(n):
+    for i in ids:
         tree.add_edge(i, center)
 
 
@@ -67,23 +69,106 @@ def neighbor_joining(dist_mat, ids):
 
         ids.append(next_node)
         # print(ids)
-
-        next_node += 1
+        nn = int(next_node) + 1
+        next_node = str(nn)
 
 
     return tree
+
+def root_tree(tree, root):
+        tree = nx.dfs_tree(tree,root)
+        # if len(list(tree.neighbors(root)))==1:
+        #         tree.remove_node(root)
+       
+     
+        # root_children = list(tree.successors(root))
+        # for c in root_children:
+        #     grandchildren = tree.successors(c)
+        #     for g in grandchildren:
+        #         tree.add_edge(root, g)
+
+        # tree.remove_node(c)
+
+        return tree
 
 def hamming_distance(s1, s2):
 
     return (np.array(s1) != np.array(s2)).sum()
 
+def isotype_distance(i1, i2, metric="euclidean"):
+    if metric == "euclidean":
+        return np.sqrt( (i1-i2)**2)
+    else:
+        return np.abs(i1-i2)
 
 def create_distance_matrix(alignment, ids):
 
     
     dist_mat = np.array([[hamming_distance(alignment[k1], alignment[k2]) for k2 in ids] for k1 in ids])
-    print(dist_mat)
+    # print(dist_mat)
     return dist_mat.astype(float)
+
+def weighted_distance_matrix(alignment, isotypes, ids,alpha):
+
+    
+    dist_mat = np.array([[alpha*hamming_distance(alignment[k1], alignment[k2]) + 
+                    (1-alpha)*(isotype_distance(isotypes[k1], isotypes[k2])) for k2 in ids] for k1 in ids])
+    # print(dist_mat)
+    return dist_mat.astype(float)
+
+
+if __name__ =="__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-a", "--alignment", required=True, type=str,
+        help="filename of input alignment fasta file")
+    parser.add_argument("-r", "--root", required=True, type=str,
+        help="the id of the root sequence in the alignment")
+    parser.add_argument("-o", "--output", required=True, type=str,
+        help="the output file of the tree")
+    parser.add_argument("-s", "--seed", type=int, default=1026)
+    parser.add_argument( "--fasta", type=str, help="filename where reconstructed ancestral sequences should be saved as fasta file")
+    parser.add_argument( "--sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
+    parser.add_argument("-n", "--newick", type=str, help="filename where newick string should be saved")
+    args= parser.parse_args()
+    # path = "/scratch/projects/tribal/benchmark_pipeline/sim_data/shm_sim/2.0/0.365/1"
+    # args =parser.parse_args([
+    #     "-a", f"{path}/GCsim_dedup.fasta",
+    #     "-r", "naive",
+    #     "-o", "/scratch/projects/tribal/src/test/nj.tree",
+    #     "--sequences", "/scratch/projects/tribal/src/test/nj.fasta",
+    #     "-n", "/scratch/projects/tribal/src/test/nj.newick"
+    # ])
+
+    alignment = ut.read_fasta(args.alignment)
+    alignment = {key: list(value.strip()) for key,value in alignment.items()}
+    ids = list(alignment.keys())
+    rng = np.random.default_rng(args.seed)
+    rng.shuffle(ids)
+ 
+    dmat = create_distance_matrix(alignment, ids)
+    tree = neighbor_joining(dmat, ids.copy())
+    bt= BaseTree(tree, args.root, is_rooted=False)
+    rooted_tree = bt.get_rooted_tree()
+    score, labels = bt.label_nodes(alignment)
+    if args.fasta is not None:
+        ut.write_fasta(args.fasta, labels)
+    if args.sequences is not None:
+        ut.save_dict(labels, args.sequences)
+
+    if args.output is not None:
+        parents = bt.get_parents()
+        ut.save_dict(parents, args.output)
+    if args.newick is not None:
+        newick = bt.tree_to_newick(rooted=False)
+        with open(args.newick, "w+") as file:
+            file.write(newick)
+    # bt.save_tree_to_text(args.output)
+
+
+
+
+
 
 
 # s1 = ["a", "b", "c"]
