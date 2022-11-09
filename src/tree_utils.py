@@ -111,3 +111,73 @@ class BaseTree:
             if parent is not None:
                 parents[n] = parent
         return parents
+
+
+class TribalTree(BaseTree):
+    def __init__(self, tree, root, is_rooted=False, sequences=None, isotypes=None) -> None:
+        super().__init__(tree, root, is_rooted)
+
+        self.sequences = None
+        self.isotypes = None
+        self.seq_score = np.Inf 
+        self.iso_score = np.Inf
+  
+        self.nodes = list(self.rooted_T.nodes)
+    
+        self.leaves = [n for n in self.rooted_T.nodes if self.rooted_T.out_degree(n)==0]
+        self.ntaxa = len(self.leaves)
+        self.iso_leaves =  {a: self.isotypes[a][0] for a in self.leaves}
+
+    
+
+    def __str__(self):
+            mystr = str(self.ntaxa) + " taxa\n"
+            mystr+=str(list(self.tree.edges()))
+            return mystr
+
+    
+    def sequence_parismony(self, alphabet=None, cost_function=None):
+
+        alignment_nodes = self.leaves + [self.root]
+        alignment ={a: self.sequences[a] for a in alignment_nodes}
+
+        sp = SmallParsimony(self.rooted_T, 
+                            self.root,
+                            alphabet= alphabet,
+                            cost = cost_function)
+        self.seq_score, self.labels = sp.sankoff(alignment)
+    
+    
+    def parsimony(self, transMat, alphabet=None, cost=None):
+        self.sequence_parismony(alphabet, cost)
+
+        self.isotype_ml(transMat)
+        # print(self.isotypes)
+        return self.seq_score, self.iso_score
+
+    def isotype_parsimony(self, transMat):
+      
+            sp = SmallParsimony(self.rooted_T, self.root)
+            self.iso_score, self.isotypes = sp.fitch(self.iso_leaves, transMat)
+    
+    def isotype_ml(self, transMat):
+   
+        sp = SmallParsimony(self.rooted_T, self.root)
+        self.iso_score, self.isotypes = sp.fastml(self.iso_leaves, transMat)
+        
+
+    def tree_score(self, alpha):
+        return alpha*self.get_score() + (1-alpha)*self.get_iso_score()
+        
+    def get_score(self):
+        return self.seq_score
+
+    def get_iso_score(self):
+        return self.iso_score
+    
+    def ntaxa(self):
+        return self.ntaxa
+
+    def set_tree(self, tree):
+        self.rooted_T = tree
+    
