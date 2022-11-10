@@ -1,23 +1,43 @@
 import networkx as nx
 import numpy as np
+from scipy.special import logsumexp
+from trans_matrix import TransMat
+
+np.seterr(all="ignore")
 
 class SmallParsimony:
-    def __init__(self, T,  root, attribute="SEQ", sequences=None, isotypes=None, alphabet= None, cost=None):
+    def __init__(self, T,  root,  alphabet=["A", "C", "G", "T"], cost=None):
         
         self.T = T
         self.root = root
         self.cost = cost
         self.alphabet = alphabet
 
+        if self.cost is None:
+            self.cost= {}
+
+            for i in self.alphabet:
+                for j in self.alphabet:
+                    if (i,j) not in self.cost:
+                        if i == "-" and j == "-":
+                            self.cost[i,j] =np.Inf
+                        if i == "-" or j == "-":
+                            self.cost[i,j] = 1
+                        elif  i ==j:
+                            self.cost[i,j] = 0
+                        
+                        else:
+                            self.cost[i,j] = 1
+
         self.postorder = self.postorder_traversal()
         self.nodes = list(self.T.nodes())
 
       
-        self.att_name = attribute
-        if attribute == "SEQ":
-            self.att=sequences
-        else:
-            self.att = isotypes
+        # self.att_name = attribute
+        # if attribute == "SEQ":
+        #     self.att=sequences
+        # else:
+        #     self.att = isotypes
          #nx.get_node_attributes(self.T, attribute)
         
         
@@ -25,6 +45,10 @@ class SmallParsimony:
 
     def postorder_traversal(self):
         return list(nx.dfs_postorder_nodes(self.T, source=self.root))
+    
+
+    def preorder_traversal(self):
+        return list(nx.dfs_preorder_nodes(self.T, source=self.root))
     
     def is_leaf(self, node):
         return self.T.out_degree(node) ==0
@@ -58,10 +82,10 @@ class SmallParsimony:
                 for a in self.alphabet:
                     score_array = np.array([self.min_cost(c,a, dp_matrix) for c in self.T.successors(n)])
                     
-                   
+                
                     dp_matrix[n][a] = score_array.sum()
 
-        opt_score = np.array([dp_matrix[0][a] for a in self.alphabet]).min()
+        opt_score = np.array([dp_matrix[self.root][a] for a in self.alphabet]).min()
         
         return opt_score, dp_matrix
 
@@ -79,9 +103,9 @@ class SmallParsimony:
 
     def traceback(self, dp_matrix):
         labels = {}
-        labels[0] = self.argmin(dp_matrix[self.root])
+        labels[self.root] = self.argmin(dp_matrix[self.root])
         for c in self.T.successors(self.root):
-            self.traceback_helper(labels[0], c, dp_matrix, labels)
+            self.traceback_helper(labels[self.root], c, dp_matrix, labels)
         
         return labels
         
@@ -116,7 +140,8 @@ class SmallParsimony:
         return seq_assign
 
 
-    def sankoff(self):
+    def sankoff(self, sequences):
+        self.att = sequences
         seq_length = len(self.att[self.root])
         all_labels = {}
  
@@ -129,9 +154,9 @@ class SmallParsimony:
         
         
         node_labels= self.concat_labels(all_labels, self.nodes)
-        nx.set_node_attributes(self.T, node_labels, self.att_name)
+        # nx.set_node_attributes(self.T, node_labels, self.att_name)
 
-        return min_scores.sum(),self.T
+        return min_scores.sum(),node_labels
 
             
 
@@ -144,6 +169,7 @@ class SmallParsimony:
     
 
     def fitch_dp(self):
+   
         opt_states = {}
         for n in self.postorder:
             if len(list(self.T.successors(n))) ==0:
@@ -165,16 +191,118 @@ class SmallParsimony:
                 score += (dp_mat[n] != dp_mat[u])
         
         return score
+    
+    def likelihood_score(self, isotypes, transMat):
+        likelihood = {}
+        #likelihood n, s is the likelihood of the subtree rooted at node n when taking character state s
+  
+        isotype_states = np.arange(6)
+  
+   
 
 
-    def fitch(self):
+        for n in self.postorder:
+
+            for s in isotype_states:
+
+                #initialize the base case
+                if len(list(self.T.neighbors(n))) ==0:
+                        likelihood[n,s] = np.log(1*(s==isotypes[n]))
+                       
+                else:
+                    partial_total = 0
+                    for u in self.T.neighbors(n):
+                        state_val = []
+                        for t in isotype_states:
+                            state_val.append( np.log(transMat[s,t])  + likelihood[u,t])
+                        partial_total += logsumexp(state_val)
+                    likelihood[n,s] = partial_total
+        
+        return likelihood[0,0], likelihood
+                
+
+
+    
+    def fastml_dp(self, transMat):
+        Ldict = {n : {} for n in self.postorder}
+        Cdict = {n : {} for n in self.postorder}
+        isotypes = np.arange(6)
+      
+        for n in self.postorder:
+            if len(list(self.T.neighbors(n))) ==0:
+                for u in isotypes:
+                    Cdict[n][u] = [self.att[n]]
+                
+                for v in isotypes:
+                        Ldict[n][v] = np.log(transMat[v,Cdict[n][v][0]])
+            else:
+                for i in isotypes:
+                    best_like = np.NINF
+                
+                    for j in isotypes:
+                        val_array = [np.log(transMat[i,j])]
+                        for child in self.T.successors(n):
+                            val_array.append(Ldict[child][j])
+                        
+                        like_j = np.sum((val_array))
+                        if like_j >  best_like:
+                            Cdict[n][i] = [j]
+                            best_like = like_j 
+                        elif like_j == best_like and like_j > np.NINF:
+                            Cdict[n][i].append(j)
+                        elif like_j == best_like:
+                            Cdict[n][i] =[]
+                    
+                    Ldict[n][i]  = best_like 
+        return Ldict, Cdict
+
+                        
+
+    def fastml_traceback(self, Ldict, Cdict):
+        score = Ldict[self.root][0]
+
+        for n in self.preorder_traversal():
+            if n == self.root:
+                opt_state = {self.root: [0]}
+            else:
+                parent = list(self.T.predecessors(n))[0]
+                opt_state_parent = opt_state[parent]
+                opt_state[n] = []
+                for o in opt_state_parent:
+                    for c in Cdict[n][o]:
+                        opt_state[n].append(c)
+        
+        return score, opt_state
+
+   
+
+
+
+    def fastml(self, isotypes, transMat):
+        self.att = isotypes 
+        Ldict, Cdict = self.fastml_dp(transMat)
+        score, opt_states = self.fastml_traceback(Ldict, Cdict)
+
+        return score, opt_states
+    
+
+    def fitch(self, isotypes, transMat=None):
+        self.att = isotypes 
         opt_states = self.fitch_dp()
-        score = self.fitch_score(opt_states)
-        nx.set_node_attributes(self.T, opt_states, self.att_name)
+        # score = self.fitch_score(opt_states)
+        score, likelihood = self.likelihood_score(isotypes, transMat)
+        isotype_states = np.arange(6)
+        poss_states = {}
+        for n in self.postorder:
+          
+
+            poss_states[n] = [s for s in isotype_states if likelihood[n,s] > np.NINF ]
+  
+        
 
 
 
-        return score, self.T
+        return score, poss_states
         
 
 

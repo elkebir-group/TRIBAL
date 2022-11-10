@@ -91,30 +91,41 @@ def root_tree(tree, root):
 
         return tree
 
-def hamming_distance(s1, s2):
+# def hamming_distance(s1, s2):
 
-    return (np.array(s1) != np.array(s2)).sum()
+#     return (np.array(s1) != np.array(s2)).sum()
 
-def isotype_distance(i1, i2, metric="euclidean"):
-    if metric == "euclidean":
-        return np.sqrt( (i1-i2)**2)
-    else:
-        return np.abs(i1-i2)
+# def isotype_distance(i1, i2, metric="euclidean"):
+#     if metric == "euclidean":
+#         return np.sqrt( (i1-i2)**2)
+#     else:
+#         return np.abs(i1-i2)
 
-def create_distance_matrix(alignment, ids):
+# def create_distance_matrix(alignment, ids):
 
     
-    dist_mat = np.array([[hamming_distance(alignment[k1], alignment[k2]) for k2 in ids] for k1 in ids])
-    # print(dist_mat)
-    return dist_mat.astype(float)
+#     dist_mat = np.array([[hamming_distance(alignment[k1], alignment[k2]) for k2 in ids] for k1 in ids])
+#     # print(dist_mat)
+#     return dist_mat.astype(float)
 
 def weighted_distance_matrix(alignment, isotypes, ids,alpha):
 
     
-    dist_mat = np.array([[alpha*hamming_distance(alignment[k1], alignment[k2]) + 
-                    (1-alpha)*(isotype_distance(isotypes[k1], isotypes[k2])) for k2 in ids] for k1 in ids])
+    dist_mat = np.array([[alpha*ut.hamming_distance(alignment[k1], alignment[k2]) + 
+                    (1-alpha)*(ut.isotype_distance(isotypes[k1], isotypes[k2])) for k2 in ids] for k1 in ids])
     # print(dist_mat)
     return dist_mat.astype(float)
+
+
+def fit(alignment, ids, seed=1026):
+    rng = np.random.default_rng(seed)
+    rng.shuffle(ids)
+    dmat = ut.create_distance_matrix(alignment, ids)
+    tree = neighbor_joining(dmat, ids.copy())
+    bt= BaseTree(tree, args.root, is_rooted=False)
+    rooted_tree = bt.get_rooted_tree()
+    score, labels = bt.label_nodes(alignment)
+    return bt, rooted_tree, labels, score
 
 
 if __name__ =="__main__":
@@ -143,14 +154,9 @@ if __name__ =="__main__":
     alignment = ut.read_fasta(args.alignment)
     alignment = {key: list(value.strip()) for key,value in alignment.items()}
     ids = list(alignment.keys())
-    rng = np.random.default_rng(args.seed)
-    rng.shuffle(ids)
+
  
-    dmat = create_distance_matrix(alignment, ids)
-    tree = neighbor_joining(dmat, ids.copy())
-    bt= BaseTree(tree, args.root, is_rooted=False)
-    rooted_tree = bt.get_rooted_tree()
-    score, labels = bt.label_nodes(alignment)
+    bt, rooted_tree, labels, score = fit(alignment, ids, args.seed)
     if args.fasta is not None:
         ut.write_fasta(args.fasta, labels)
     if args.sequences is not None:
@@ -163,7 +169,7 @@ if __name__ =="__main__":
         newick = bt.tree_to_newick(rooted=False)
         with open(args.newick, "w+") as file:
             file.write(newick)
-    # bt.save_tree_to_text(args.output)
+
 
 
 

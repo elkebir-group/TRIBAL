@@ -9,6 +9,9 @@ import pickle
 import copy 
 import itertools
 import pandas as pd
+from trans_matrix import TransMat
+
+from trans_matrix import TransMat
 
 class BCellSim:
     def __init__(self,n, m_light=320, m_heavy=355, root_lc=None, root_hc =None, 
@@ -21,6 +24,14 @@ class BCellSim:
         self.changes = 0
         self.rng = np.random.default_rng(seed)
         self.n = n
+        self.isotypes = np.arange(n_isotypes)
+     
+
+        if isotype_rate_matrix is None:
+            self.Q_isotype = TransMat(self.rng, n_isotypes).fit_dirichlet()
+          
+        else:
+            self.Q_isotype = isotype_rate_matrix
 
         self.root = 0
         self.alphabet = ["A", "C", "G", "T"]
@@ -29,24 +40,7 @@ class BCellSim:
         
 
         self.labels = {}
-        self.isotypes = np.arange(n_isotypes)
-     
 
-        if isotype_rate_matrix is None:
-            self.Q_isotype =np.zeros((n_isotypes, n_isotypes))
-            
-            for i in range(n_isotypes):
-                if i < self.Q_isotype.shape[1]-1:
-                    self.Q_isotype[i,i] = 1 - jump_prob
-                else:
-                    self.Q_isotype[i,i] =1
-
-                number_of_paths = self.Q_isotype.shape[1]- i -1
-                for j in range(i+1, n_isotypes):
-                    self.Q_isotype[i,j:] =jump_prob/number_of_paths
-          
-        else:
-            self.Q_isotype = isotype_rate_matrix
 
     
         self.char = ['L', 'H', 'I']
@@ -293,18 +287,18 @@ if __name__=="__main__":
                 help="clonotype id of sequence to use as root")
     
     args = parser.parse_args()
-    clono = "B_130_9_9_3_1_43"
-    pth = "simulator"
-    args= parser.parse_args([
-        "-n", "7",
-        "--tree", f"{pth}/test/tree.txt",
-        "--labels", f"{pth}/test/labels.csv",
-        "--output", f"{pth}/test/sim.pickle",
-        "--alignment",f"{pth}/test/alignment.csv",
-        "--clonotype", clono,
-        "--jump", "0.5"
+    # clono = "B_130_9_9_3_1_43"
+    # pth = "simulator"
+    # args= parser.parse_args([
+    #     "-n", "7",
+    #     "--tree", f"{pth}/test/tree.txt",
+    #     "--labels", f"{pth}/test/labels.csv",
+    #     "--output", f"{pth}/test/sim.pickle",
+    #     "--alignment",f"{pth}/test/alignment.csv",
+    #     "--clonotype", clono,
+    #     "--jump", "0.5"
     
-    ])
+    # ])
 
 
     if args.clonotype is not None:

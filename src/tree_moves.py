@@ -1,14 +1,14 @@
 import networkx as nx
 import numpy as np
 class TreeMoves:
-    def __init__(self, T, root, seq_att_name= "sequence", iso_att_name= "isotype"):
+    def __init__(self, T, root, seq_att_name= "sequence", isotypes):
         self.T = T
         self.root = root
         self.nodes = list(self.T.nodes())
         self.rng = np.random.default_rng(5)
         self.iso_att_name = iso_att_name
         self.seq_att_name = seq_att_name
-        self.isotypes = nx.get_node_attributes(self.T, iso_att_name)
+        self.isotypes = isotypes
     
 
 

@@ -87,6 +87,7 @@ class BaseTree:
 
         return score, labels
     
+ 
     def networkx_to_ete3(self):
         pass 
 
@@ -117,8 +118,8 @@ class TribalTree(BaseTree):
     def __init__(self, tree, root, is_rooted=False, sequences=None, isotypes=None) -> None:
         super().__init__(tree, root, is_rooted)
 
-        self.sequences = None
-        self.isotypes = None
+        self.sequences = sequences
+        self.isotypes = isotypes
         self.seq_score = np.Inf 
         self.iso_score = np.Inf
   
@@ -178,6 +179,32 @@ class TribalTree(BaseTree):
     def ntaxa(self):
         return self.ntaxa
 
-    def set_tree(self, tree):
-        self.rooted_T = tree
+    def set_rooted_tree(self, rooted_tree):
+        self.rooted_T = rooted_tree
+        self.unroot_tree()
     
+    def set_unrooted_tree(self, tree):
+        self.tree =tree 
+        self.root_tree()
+    
+    def unroot_tree(self):
+        '''change tree from digraph to undirected graph
+            and add the root as an outgroup
+        '''
+        self.tree = nx.to_undirected(self.rooted_T)
+        n = len(self.tree.nodes) + 1
+        while True:
+            if n in self.tree:
+                n+= 1
+            else:
+                break
+        mapping = {self.root : n}
+        self.tree= nx.relabel_nodes(self.tree, mapping)
+        self.tree.add_edge(self.root, n)
+
+
+        
+    def get_output(self):
+        labels = {key: "".join(vals) for key,vals in self.labels.items()}
+        isotypes = {key: self.isotypes[key][0] for key in self.isotypes}
+        return labels, isotypes, self.get_score(), self.get_iso_score() 
