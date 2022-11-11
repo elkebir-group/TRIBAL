@@ -2,42 +2,57 @@ import networkx as nx
 import numpy as np
 from itertools import combinations
 class USPR:
-    def __init__(self, tree):
+    def __init__(self, tree, rng=None, min_radius=2, max_radius=2):
 
         self.T = tree
   
         self.nodes = list(self.T.nodes())
-
+        if rng is None:
+            self.rng = np.random.default_rng(1016)
+        else:
+            self.rng = rng
+        self.min_radius = min_radius
+        self.max_radius = max_radius
         #compute the number of spr moves as a sanity check
         self.taxa = [n for n in self.nodes if self.T.degree[n]==1]
         self.ntaxa = len(self.taxa)
 
         self.num_spr = 2*(self.ntaxa -3)*(2*self.ntaxa -7)
-        print(f"Expected number of spr moves: {self.num_spr}")
+        # print(f"Expected number of spr moves: {self.num_spr}")
 
         # self.generate_valid_cand()
         self.generate_cand()
-        print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
+        # print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
         self.generate_cand_nni()
+        self.shuffle(self.nni_cand)
+        self.shuffle(self.spr_cand)
+
+  
+   
         num_nni_moves = len(self.nni_cand)
         num_2edge_spr = len(self.spr_cand)
+        assert self.num_spr >= (num_nni_moves + num_2edge_spr)
 
-        print(f"Total number of NNI moves: {len(self.nni_cand)}")
-        print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
+        # print(f"Total number of NNI moves: {len(self.nni_cand)}")
+        # print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
 
+
+    def shuffle(self, mylist):
+        self.rng.shuffle(mylist)
     @staticmethod  
     def is_adjacent(e1, e2):
         common_vertices = set(e1).intersection(set(e2))
         return len(common_vertices) > 0
     
-    def is_one_edge(self, e1,e2):
+    def edge_radius(self, e1,e2):
         shortest_path = np.Inf
         for u in e1:
             for v in e2:
                 path = nx.shortest_path(self.T, u,v)
                 if len(path) -1 < shortest_path:
                     shortest_path = len(path)-1
-        return shortest_path == 1
+    
+        return shortest_path
 
                 
                 
@@ -56,7 +71,9 @@ class USPR:
                 #check if the pruned edge is adjacent to the regraft edge
                 if not self.is_adjacent(pruned,regraft):
                     #this excludes 6(n-2) edge pairs with SPR identity moves
-                    if not self.is_one_edge(pruned, regraft):
+                    e_rad = self.edge_radius(pruned, regraft)
+                    if e_rad > 1 and e_rad <= self.max_radius and e_rad >= self.min_radius:
+
                         self.spr_cand.append((pruned, regraft))
                
 
@@ -163,32 +180,52 @@ class USPRIterator:
 
     def __next__(self):
 
+        if len(self.uspr.spr_cand) > 0 and len(self.uspr.nni_cand) > 0:
+            if self.uspr.rng.random() > 0:
+                return self.spr_next()
+            else:
+                return self.nni_next()
 
-        if len(self.uspr.spr_cand) > 0:
-            pruned, regraft = self.uspr.spr_cand.pop()
-            spr_tree = self.uspr.spr(pruned,regraft)
-            return spr_tree  
 
-        elif len(self.uspr.nni_cand) > 0:
-            left, left_swap, right, right_swap = self.uspr.nni_cand.pop()
-            nni_tree = self.uspr.nni(left, left_swap, right, right_swap)
-            return nni_tree   
+        elif len(self.uspr.spr_cand) > 0:
+            return self.spr_next()
+      
+
+        # elif len(self.uspr.nni_cand) > 0:
+        #     return self.nni_next()  
 
 
         else:
             raise StopIteration
         
     
+    def spr_next(self):
+        pruned, regraft = self.uspr.spr_cand.pop()
+        spr_tree = self.uspr.spr(pruned,regraft)
+        return spr_tree 
 
+    def nni_next(self): 
+        left, left_swap, right, right_swap = self.uspr.nni_cand.pop()
+        nni_tree = self.uspr.nni(left, left_swap, right, right_swap)
+        return nni_tree
 
 
 # tree = nx.Graph()
 # tree.add_edges_from([('a','c'), ('b','c'), ('c', 'd'), ('d', 'e'), 
 #                     ('d', 'f'), ('f', 'g'), ('f','j'), ('g', 'h'), ('g', 'i') ])
 
-# us = USPR(tree)  
-# for tree in us:
-#     print(list(tree.edges))
+# us = iter(USPR(tree) )
+# count = 0
+# while True:
+   
+#     try:
+#         foo = next(us)
+#     except:
+#         print(count)
+#         break
+#     count += 1
+
+
 
 
     # def spr(self):
