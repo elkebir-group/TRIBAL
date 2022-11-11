@@ -5,16 +5,28 @@ from ete3 import Tree
 from small_parsimony import SmallParsimony
 import utils as ut
 class BaseTree:
-    def __init__(self, tree, root, is_rooted=False) -> None:
-        
+    def __init__(self, tree=None, root="naive", 
+                is_rooted=False, ids=None, n=7,
+                rng = None) -> None:
         
         self.root = root
-        if is_rooted:
-            self.rooted_T=tree
-            self.T = tree
+        if rng is None:
+            self.rng = np.default_rng()
         else:
-            self.T = tree
+            self.rng  = rng
+        if tree is None:
+            if ids is None:
+                ids = [str(i) for i in range(n)]
+                ids.append(root)
+            self.T = self.random_tree(ids)
             self.root_tree()
+        else:
+            if is_rooted:
+                self.rooted_T=tree
+                self.unroot_tree()
+            else:
+                self.T = tree
+                self.root_tree()
 
     
 
@@ -56,7 +68,32 @@ class BaseTree:
         else:
             return self.tree_to_newick_helper(self.rooted_T, self.root) + ";"
 
+    def random_tree(self, ids):
+        tree = nx.Graph()
+     
    
+        n = len(ids)
+        center = str(2*n -3 )
+        for i in ids:
+            tree.add_edge(i, center)
+      
+        next_node = n
+       
+        for i in range(n-3):
+            pair = self.rng.choice(ids,2, replace=False)
+    
+
+            for p in pair:
+                tree.add_edge(p, str(next_node))
+                tree.remove_edge(p, center)
+                tree.add_edge(center, str(next_node))
+                ids.remove(p)
+            ids.append(str(next_node))
+            next_node += 1
+         
+  
+        return tree
+    
 
     #https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
  
@@ -113,13 +150,39 @@ class BaseTree:
                 parents[n] = parent
         return parents
 
+    def set_rooted_tree(self, rooted_tree):
+        self.rooted_T = rooted_tree
+        self.unroot_tree()
+    
+    def set_unrooted_tree(self, tree):
+        self.T =tree 
+        self.root_tree()
+    
+    def get_unrooted_tree(self):
+        return self.T.copy()
+    
+    def unroot_tree(self):
+        '''change tree from digraph to undirected graph
+            and add the root as an outgroup
+        '''
+        self.T = nx.to_undirected(self.rooted_T)
+        n = len(self.T.nodes) + 1
+        while True:
+            if n in self.T:
+                n+= 1
+            else:
+                break
+        mapping = {self.root : n}
+        self.T= nx.relabel_nodes(self.T, mapping)
+        self.T.add_edge(self.root, n)
 
 class TribalTree(BaseTree):
-    def __init__(self, tree, root, is_rooted=False, sequences=None, isotypes=None) -> None:
-        super().__init__(tree, root, is_rooted)
+    def __init__(self, tree=None, root="naive", is_rooted=False, ids=None, n=7, rng=None) -> None:
+    
+        super().__init__( tree, root, is_rooted, ids, n, rng)
+        
 
-        self.sequences = sequences
-        self.isotypes = isotypes
+
         self.seq_score = np.Inf 
         self.iso_score = np.Inf
   
@@ -127,7 +190,6 @@ class TribalTree(BaseTree):
     
         self.leaves = [n for n in self.rooted_T.nodes if self.rooted_T.out_degree(n)==0]
         self.ntaxa = len(self.leaves)
-        self.iso_leaves =  {a: self.isotypes[a][0] for a in self.leaves}
 
     
 
@@ -137,34 +199,35 @@ class TribalTree(BaseTree):
             return mystr
 
     
-    def sequence_parismony(self, alphabet=None, cost_function=None):
+    def sequence_parismony(self, alignment, alphabet=None, cost_function=None):
 
-        alignment_nodes = self.leaves + [self.root]
-        alignment ={a: self.sequences[a] for a in alignment_nodes}
+     
 
         sp = SmallParsimony(self.rooted_T, 
                             self.root,
                             alphabet= alphabet,
                             cost = cost_function)
-        self.seq_score, self.labels = sp.sankoff(alignment)
+        self.seq_score, labels = sp.sankoff(alignment)
+        return labels
     
     
-    def parsimony(self, transMat, alphabet=None, cost=None):
-        self.sequence_parismony(alphabet, cost)
+    def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None):
+        anc_labels = self.sequence_parismony(alignment, alphabet, cost)
 
-        self.isotype_ml(transMat)
+        iso_labels = self.isotype_ml(iso_leaves, transMat)
         # print(self.isotypes)
-        return self.seq_score, self.iso_score
+        return self.seq_score, self.iso_score, anc_labels, iso_labels
 
     def isotype_parsimony(self, transMat):
       
             sp = SmallParsimony(self.rooted_T, self.root)
             self.iso_score, self.isotypes = sp.fitch(self.iso_leaves, transMat)
     
-    def isotype_ml(self, transMat):
+    def isotype_ml(self, iso_leaves, transMat):
    
         sp = SmallParsimony(self.rooted_T, self.root)
-        self.iso_score, self.isotypes = sp.fastml(self.iso_leaves, transMat)
+        self.iso_score, iso_labels = sp.fastml(iso_leaves, transMat)
+        return iso_labels
         
 
     def tree_score(self, alpha):
@@ -179,32 +242,11 @@ class TribalTree(BaseTree):
     def ntaxa(self):
         return self.ntaxa
 
-    def set_rooted_tree(self, rooted_tree):
-        self.rooted_T = rooted_tree
-        self.unroot_tree()
-    
-    def set_unrooted_tree(self, tree):
-        self.tree =tree 
-        self.root_tree()
-    
-    def unroot_tree(self):
-        '''change tree from digraph to undirected graph
-            and add the root as an outgroup
-        '''
-        self.tree = nx.to_undirected(self.rooted_T)
-        n = len(self.tree.nodes) + 1
-        while True:
-            if n in self.tree:
-                n+= 1
-            else:
-                break
-        mapping = {self.root : n}
-        self.tree= nx.relabel_nodes(self.tree, mapping)
-        self.tree.add_edge(self.root, n)
+ 
 
 
         
-    def get_output(self):
-        labels = {key: "".join(vals) for key,vals in self.labels.items()}
-        isotypes = {key: self.isotypes[key][0] for key in self.isotypes}
-        return labels, isotypes, self.get_score(), self.get_iso_score() 
+    # def get_output(self, alignment, isotypes, transMat, alphabet=None, cost=None):
+    #     labels = self.parsimony(alignment, isotypes, transMat, alphabet, cost)
+
+    #     return labels, isotypes, self.get_score(), self.get_iso_score() 
