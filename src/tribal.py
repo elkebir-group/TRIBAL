@@ -12,6 +12,7 @@ from copy import deepcopy
 from trans_matrix import TransMat
 import utils as ut
 from tree_utils import TribalTree
+from ete3 import Tree, TreeNode
 
 
 class Tribal:
@@ -81,7 +82,7 @@ class Tribal:
         curr_obj= self.alpha*(curr_pars) + (1-self.alpha)*(-1*curr_iso)
         return curr_obj, curr_pars, curr_iso, labels, isotypes
 
-    def simulated_annealing(self, curr_state, restart, temp=50, k_max=50):
+    def simulated_annealing(self, curr_state, restart, temp=50, k_max=1000):
     
       
 
@@ -94,7 +95,7 @@ class Tribal:
         neighbors = iter(USPR(curr_state.get_unrooted_tree(), self.rng))
 
         for k in range(k_max):
-            if (curr_obj - best_obj)/best_obj >= 0.1:
+            if (curr_obj - best_obj)/best_obj >= 0.50:
                 curr_obj = best_obj 
                 curr_state = best_state
             cand_state = deepcopy(curr_state)
@@ -102,7 +103,8 @@ class Tribal:
             #get the next candidate spr tree 
             try:
                 t = next(neighbors)
-            except:
+            except StopIteration:
+                # print("no other trees in neighborhood")
                 # neighbors =iter(USPR(cand_state.get_unrooted_tree(), self.rng,min_radius=3, max_radius=3))
                 # try:
                 #     t = next(neighbors)
@@ -299,14 +301,20 @@ class Tribal:
         return ttrees
     
 
-    def initialize_nj(self):
+    def initialize_nj(self, n_init):
 
-
+  
         tree = nj.neighbor_joining(self.dmat, self.ids)
-        ttree =TribalTree(tree, self.root, is_rooted=False)
-               
-        #TODO: initialize with random perturbation of NJ tree
-        return [ttree]
+        start_trees =  [TribalTree(tree, self.root, is_rooted=False)]
+
+        spr = USPR(tree, self.rng)
+        for i, t in enumerate(spr):
+            if i >= n_init:
+                break
+            ttree = TribalTree(t, self.root, is_rooted=False)
+
+            start_trees.append(ttree)    
+        return start_trees
 
     # def initialize_edmonds(self, **kwargs):
     #     dmat= kwargs['dmat']
@@ -345,7 +353,75 @@ class Tribal:
         isotypes = {key: value[0] for key,value in isotypes.items()}
         return best_tree, obj, pars_obj, iso_obj, labels, isotypes
         
+    def fit(self, cand_trees, alpha=0.9):
+        best_tree = None
+        best_score =np.Inf 
+        self.alpha  = alpha
 
+      
+       
+        for i,tree in enumerate(cand_trees):
+       
+            ttree = TribalTree(tree, self.root, is_rooted=True)
+            obj, pars_obj, iso_obj, labels, isotypes = self.parsimony(ttree) 
+
+
+            if obj < best_score:
+                print(f"tree {i} is new best tree")
+                best_tree = ttree
+                best_score = obj
+            
+            if i ==0:
+                break
+        obj, pars_obj, iso_obj, labels, isotypes= self.parsimony(best_tree)
+        labels = {key : "".join(value) for key, value in labels.items()}
+        isotypes = {key: value[0] for key,value in isotypes.items()}
+        return best_tree, obj, pars_obj, iso_obj, labels, isotypes
+
+def convert_to_nx(ete_tree, root):
+    nx_tree = nx.DiGraph()
+    internal_node = 1
+    internal_node_count = 0
+    for node in ete_tree.traverse("preorder"):
+        if node.name == "":
+            node.name = internal_node
+            internal_node_count += 1
+            internal_node += 1
+        if node.is_root():
+            root_name =node.name
+        # print(node.name)
+        for c in node.children:
+            if c.name == "":
+                c.name = str(internal_node)
+                internal_node += 1
+                internal_node_count += 1
+            # else:
+            #     print(c.name)
+            # if isinstance(c.name, str):
+            #     print(c.name)
+       
+
+            nx_tree.add_edge(node.name, c.name)
+    
+    if len(list(nx_tree.neighbors(root))) == 0:
+        print("root is outgroup")
+        nx_tree.remove_edge(root_name, root)
+        nx_tree.add_edge(root, root_name)
+        # children = list(nx_tree.neighbors(root_name))
+        # for child in children:
+        #     nx_tree.remove_edge(root_name, child)
+        #     nx_tree.add_edge(root, child)
+        # nx_tree.remove_node(root_name)
+        print(list(nx_tree.edges))
+        print(len(list(nx_tree.nodes)))
+
+
+    
+
+
+
+    return nx_tree
+        
 
 
 def pickle_save(obj, fname):
@@ -376,9 +452,9 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--newick", type=str, help="filename where newick string should be saved")
     parser.add_argument("--score",  type=str, help="filename of the objective function value objective function value")
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
-
+    parser.add_argument("--candidates", type=str, help="filename containing newick strings for candidate trees")
     args= parser.parse_args()
-    # path = "/scratch/projects/tribal/benchmark_pipeline/sim_data/shm_sim/2.0/0.365/1"
+    # path = "/scratch/projects/tribal/benchmark_pipeline/sim_data/shm_sim/2.0/0.365/12"
     # args =parser.parse_args([
     #     "-a", f"{path}/GCsim_dedup.fasta",
     #     "-r", "naive",
@@ -394,10 +470,11 @@ if __name__ == "__main__":
     #     "--fasta","/scratch/projects/tribal/src/test/tribal.fasta",
     #     "-n", "/scratch/projects/tribal/src/test/ednmonds.newick",
     #     "--score","/scratch/projects/tribal/src/test/tribal.score",
-    #     "--iso_infer", "/scratch/projects/tribal/src/test/tribal.isotypes"
+    #     "--iso_infer", "/scratch/projects/tribal/src/test/tribal.isotypes",
+    #     "--candidate", f"{path}/dnapars/outtree"
     # ])
 
-    
+  
     # args= parser.parse_args([
     #     "-a", f"{inpth}/alignment.csv",
     #     # "-a", "/scratch/projects/tribal/mouse_data/input/B_25_5_3_3_1_43.csv",
@@ -411,28 +488,74 @@ if __name__ == "__main__":
 
     alignment = ut.read_fasta(args.alignment)
     alignment = {key: list(value.strip()) for key,value in alignment.items()}
-    # ids = list(alignment.keys())
+    ids = list(alignment.keys())
 
     isotypes = ut.read_dict(args.isotypes)
     isotypes[args.root] =0
     isotypes_filt = {i: int(isotypes[i]) for i in alignment}
 
     transMat = np.loadtxt(args.transmat)
+    tr = Tribal(
+            alignment=alignment,
+            root= args.root,
+            isotype_labels= isotypes_filt,
+            seed = args.seed,
+            init = args.init,
+            transmat = transMat,
+            jump_prob = args.jump_prob
+
+        )
+    if args.candidates is None:
     
 
-    tr = Tribal(
-        alignment=alignment,
-        root= args.root,
-        isotype_labels= isotypes_filt,
-        seed = args.seed,
-        init = args.init,
-        transmat = transMat,
-        jump_prob = args.jump_prob
+        best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.run(args.n_init, args.alpha, 
+                                                                    args.kmax, args.temp)
+    else:
+        cand_trees = []
+        import re
+        exp = '\[.*\]'
+       
+        with open(args.candidates, 'r') as file:
+            nw_strings = []
+            nw_string = ""
+            for nw in file:
+                    line = nw.strip()
+                    nw_string += line
+                    if ";" in line:
+                        
+                        nw_strings.append(nw_string)
+                        nw_string = ""
 
-    )
+            for nw in nw_strings:
+    
+                nw = re.sub(exp, '', nw)
+             
 
-    best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.run(args.n_init, args.alpha, 
-                                                                args.kmax, args.temp)
+                ete_tree = Tree(nw, format=0)
+                # ete_tree.name = args.root
+                print(ete_tree)
+                nx_tree= convert_to_nx(ete_tree, args.root)
+                # print(list(nx_tree.edges))
+                # ttree = TribalTree(nx_tree, root=args.root, is_rooted=True)
+                cand_trees.append(nx_tree)
+            # tree = nx.DiGraph()
+            # for line in file:
+            #     line = line.strip().split(",")
+            #     tree.add_edge(line[0],line[1])
+            # print(list(tree.edges))
+            # cand_trees.append(tree)
+        
+   
+
+        best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.fit(cand_trees, args.alpha)
+
+        # for k in alignment:
+        #     print(k)
+        #     seq = "".join(alignment[k])
+        #     if seq != labels[k]:
+        #         print(best_tree.is_leaf(k))
+
+ 
 
 
 

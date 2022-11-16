@@ -8,7 +8,7 @@ class USPR:
   
         self.nodes = list(self.T.nodes())
         if rng is None:
-            self.rng = np.random.default_rng(1016)
+            self.rng = np.random.default_rng()
         else:
             self.rng = rng
         self.min_radius = min_radius

@@ -11,7 +11,7 @@ class BaseTree:
         
         self.root = root
         if rng is None:
-            self.rng = np.default_rng()
+            self.rng = np.random.default_rng()
         else:
             self.rng  = rng
         if tree is None:
@@ -34,13 +34,13 @@ class BaseTree:
         self.rooted_T = nx.dfs_tree(self.T,self.root)
 
         #remove unifurcation of root node by removing its child and adding edges from root to grandkids
-        root_kids = self.get_children(self.root)
-        if len(root_kids) == 1:
-            child = root_kids[0]
-            grandkids = self.get_children(child)
-            self.rooted_T.remove_node(child)
-            for g in grandkids:
-                self.rooted_T.add_edge(self.root, g)
+        # root_kids = self.get_children(self.root)
+        # if len(root_kids) == 1:
+        #     child = root_kids[0]
+        #     grandkids = self.get_children(child)
+        #     self.rooted_T.remove_node(child)
+        #     for g in grandkids:
+        #         self.rooted_T.add_edge(self.root, g)
 
     
     def get_rooted_tree(self):
@@ -54,6 +54,9 @@ class BaseTree:
     
     def get_children(self,node):
         return list(self.rooted_T.neighbors(node))
+    
+    def is_leaf(self, node):
+        return len(self.get_children(node)) ==0
     
     def save_tree_to_text(self, fname):
 
