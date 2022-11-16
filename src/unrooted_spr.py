@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 from itertools import combinations
 class USPR:
-    def __init__(self, tree, rng=None, min_radius=2, max_radius=2):
+    def __init__(self, tree, rng=None, min_radius=2, max_radius=np.Inf, allow_multifurcations=True):
 
         self.T = tree
   
@@ -18,11 +18,13 @@ class USPR:
         self.ntaxa = len(self.taxa)
 
         self.num_spr = 2*(self.ntaxa -3)*(2*self.ntaxa -7)
-        # print(f"Expected number of spr moves: {self.num_spr}")
+
+        self.allow_multifurcation = allow_multifurcations
+        print(f"Expected number of spr moves: {self.num_spr}")
 
         # self.generate_valid_cand()
         self.generate_cand()
-        # print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
+        print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
         self.generate_cand_nni()
         self.shuffle(self.nni_cand)
         self.shuffle(self.spr_cand)
@@ -31,10 +33,14 @@ class USPR:
    
         num_nni_moves = len(self.nni_cand)
         num_2edge_spr = len(self.spr_cand)
-        assert self.num_spr >= (num_nni_moves + num_2edge_spr)
+        print(f"Total number of NNI moves: {len(self.nni_cand)}")
+        print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
+        assert self.num_spr == (num_nni_moves + num_2edge_spr)
+        self.generate_cand_mult()
+        print(len(self.spr_cand_multi))
+        print("Done!")
 
-        # print(f"Total number of NNI moves: {len(self.nni_cand)}")
-        # print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
+
 
 
     def shuffle(self, mylist):
@@ -77,7 +83,46 @@ class USPR:
                         self.spr_cand.append((pruned, regraft))
                
 
-       
+    def generate_cand_mult(self):
+     
+        # self.cand_edge_pairs = []
+        self.spr_cand_multi =[]
+        if self.allow_multifurcation:
+
+
+            nodes = list(self.T.nodes)
+            internal_nodes = [n for n in nodes if self.T.degree[n] >=3]
+            for u in internal_nodes:
+        
+                for v in internal_nodes:
+                    adj_nodes = [l for  l in self.T.neighbors(u) if self.T.degree[l]==1]
+                    if u == v:
+                        continue
+                  
+
+                    path = nx.shortest_path(self.T, u,v)
+                    if len(path)-1 == 1 and len(adj_nodes) ==2:
+                        self.spr_cand_multi.append(((adj_nodes[0], u), v))
+                    else:
+                        for a in adj_nodes:
+                            self.spr_cand_multi.append(((a,u), v))
+
+
+            # for u,v in combinations(nodes,2):
+  
+            #     path = nx.shortest_path(self.T,u,v)
+            #     if len(path) > 2:
+                    
+            #         if self.T.degree(v) > 1:
+            #             pruned = (path[0], path[1])
+                    
+                 
+              
+            #             self.spr_cand_multi.append((pruned, v))
+                 
+
+                        
+
 
     def generate_cand_nni(self):
         self.nni_cand = []
@@ -99,6 +144,24 @@ class USPR:
                 self.nni_cand.append((left, left_swap, right, r))
 
   
+    def spr_multi(self, pruned, attach_node):
+        #currently only moves leaves to internal nodes
+        #TODO: add movement of subtrees to internal nodes
+        T = self.T.copy()
+        for u in pruned:
+            if T.degree[u]  > 1:
+                cut_node = u 
+            else:
+                reattach_node =u
+        T.remove_edge(cut_node, reattach_node)
+        if T.degree[cut_node] == 2:
+            neighbors = list(T.neighbors(cut_node))
+            T.add_edge(neighbors[0], neighbors[1])
+            T.remove_node(cut_node)
+        
+        #reattach node as multifurcation
+        T.add_edge(attach_node, reattach_node)
+        return T
 
 
 
@@ -118,11 +181,13 @@ class USPR:
                
         T.remove_edge(cut_node, reattach_node)
 
-        #remove any newly created internal nodes with degree 2
         if T.degree[cut_node] == 2:
             neighbors = list(T.neighbors(cut_node))
             T.add_edge(neighbors[0], neighbors[1])
             T.remove_node(cut_node)
+
+        #remove any newly created internal nodes with degree 2
+       
 
         new_node = len(self.nodes) + 1
         while True:
@@ -180,12 +245,14 @@ class USPRIterator:
 
     def __next__(self):
 
-        if len(self.uspr.spr_cand) > 0 and len(self.uspr.nni_cand) > 0:
-            if self.uspr.rng.random() > 0:
-                return self.spr_next()
-            else:
-                return self.nni_next()
 
+        # if len(self.uspr.spr_cand) > 0 and len(self.uspr.nni_cand) > 0:
+        #     if self.uspr.rng.random() > 0:
+        #         return self.spr_next()
+        #     else:
+        #         return self.nni_next()
+        if len(self.uspr.spr_cand_multi) > 0:
+            return self.spr_next_mult()
 
         elif len(self.uspr.spr_cand) > 0:
             return self.spr_next()
@@ -203,6 +270,10 @@ class USPRIterator:
         pruned, regraft = self.uspr.spr_cand.pop()
         spr_tree = self.uspr.spr(pruned,regraft)
         return spr_tree 
+    
+    def spr_next_mult(self):
+        pruned, attach = self.uspr.spr_cand_multi.pop()
+        return self.uspr.spr_multi(pruned, attach)
 
     def nni_next(self): 
         left, left_swap, right, right_swap = self.uspr.nni_cand.pop()
@@ -210,20 +281,20 @@ class USPRIterator:
         return nni_tree
 
 
-# tree = nx.Graph()
-# tree.add_edges_from([('a','c'), ('b','c'), ('c', 'd'), ('d', 'e'), 
-#                     ('d', 'f'), ('f', 'g'), ('f','j'), ('g', 'h'), ('g', 'i') ])
+tree = nx.Graph()
+tree.add_edges_from([('a','c'), ('b','c'), ('c', 'd'), ('d', 'e'), 
+                    ('d', 'f'), ('f', 'g'), ('f','j'), ('g', 'h'), ('g', 'i') ])
 
-# us = iter(USPR(tree) )
-# count = 0
-# while True:
+us = iter(USPR(tree) )
+count = 0
+while True:
    
-#     try:
-#         foo = next(us)
-#     except:
-#         print(count)
-#         break
-#     count += 1
+    try:
+        foo = next(us)
+    except:
+        print(count)
+        break
+    count += 1
 
 
 
