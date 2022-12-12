@@ -2,6 +2,8 @@ import networkx as nx
 import numpy as np
 from scipy.special import logsumexp
 from trans_matrix import TransMat
+from itertools import product
+from copy import deepcopy
 
 np.seterr(all="ignore")
 
@@ -53,9 +55,193 @@ class SmallParsimony:
     def is_leaf(self, node):
         return self.T.out_degree(node) ==0
 
+    
+    def sankoff_polytomy(self, isotypes, weights, states):
+        self.att= isotypes 
+        dp_matrix = {n : {}  for n in self.nodes}
+        dp_bt = {n : {} for n in self.nodes}
+
+        #save the state of the polytomy and the proposed descendents
+        poly_bt = {n : {} for  n in self.nodes}
+
+
+        for n in self.postorder:
+        
+            if self.is_leaf(n):
+                dp_matrix[n][isotypes[n]] =0
+              
+            
+            else:
+                 #if node is binary, we perform regular Sankoff
+                if self.T.out_degree[n] == 2:
+                    
+                    for s in states:
+                        dp_bt[n][s] = {}
+                        total_score = 0
+                        
+                        for c in self.T.successors(n):
+                        
+                            best_score = np.Inf
+                            for t in states:
+                                if t in dp_matrix[c]:
+                                    score = weights[s,t] + dp_matrix[c][t]
+                                    if score < best_score:
+                                        best_score = score
+                                        best_state = t
+                            dp_bt[n][s][c] = best_state
+                            total_score += best_score
+                        if total_score < np.Inf:
+                            dp_matrix[n][s] = total_score
+                        else:
+                            dp_bt[n][s][c] = {}
+                else:
+                    #we simulatenously resolve the polytomy and complete the dp table
+                    child_order = list(self.T.successors(n))
+                    state_cand =[]
+                    for c in child_order:
+                        state_cand.append(list(dp_matrix[c].keys()))
+                    for s in states:
+                            best_score = np.Inf
+                            best_poly_dict = {}
+                        
+                            for cand in product(*state_cand):
+                                cand_poly= {}
+                                cand_score = 0
+                                state_counts = {t:0 for t in states}
+                                state_lists = {t: [] for t in states}
+                        
+                                #initialize the score with normal sankoff
+                                for c,t in zip(child_order, cand):
+                                    cand_score += weights[s,t] + dp_matrix[c][t]
+                                  
+                                    state_counts[t] += 1
+                                    state_lists[t].append(c)
+                                
+                                if cand_score < best_score:
+                                    best_score = cand_score 
+                                    best_state = cand
+                                    best_poly_dict = {}
+
+                             
+                                if any([state_counts[t] ==len(child_order) for t in state_counts]):
+                                    continue
+                             
+                                #now attempt to introduce poltyomies to see if the score can be improved
+                            
+                                cand_score  = 0
+                                poly_cand = {}
+                                for t in state_counts:
+                                    if state_counts[t] ==0:
+                                        continue
+                                
+                                    subscore = sum(dp_matrix[kid][t] for kid in state_lists[t])
+                                   
+                        
+                                    if state_counts[t] > 1:
+                                       
+                                    #try every possible state to resolve the polytomy, tracking the polytomy that is best
+                                        best_poly_score = np.Inf
+                                        for j in states:
+                                            
+                                            poly_score = weights[s,j] + weights[j,t]* state_counts[t] + subscore
+                                            if poly_score < best_poly_score:
+                                             
+                                                poly_cand[t] = j
+                                                best_poly_score =poly_score
+
+                                        cand_score += best_poly_score
+                                
+                                        for kid in state_lists[t]:
+                                            if t in poly_cand:
+                                                cand_poly[kid] = poly_cand[t]
+                                     
+                                    
+                                    elif state_counts[t] == 1:
+                                        cand_score += weights[s,t] + subscore
+
+                                        #do normal sankoff 
+                                
+                                if cand_score < best_score:
+                                    best_score = cand_score
+                                    best_state = cand 
+                                    best_poly_dict = deepcopy(cand_poly)
+                            
+                            #fill out dp table for state s
+                            dp_matrix[n][s] = best_score 
+                            dp_bt[n][s] = {}
+                            if best_score < np.Inf:
+                                for c,t in zip(child_order, best_state):
+                                    dp_bt[n][s][c] = t
+                                poly_bt[n][s] = deepcopy(best_poly_dict)
+        
+        
+        return dp_matrix, dp_bt, poly_bt 
+
+    def polytomy_backtrace(self,dp_mat, dp_bt, poly_bt, start_state=0):
+        tree = self.T.copy()
+        labels = {}
+        best_score = np.Inf
+        if start_state is None:
+            for s in dp_mat[self.root]:
+                if dp_mat[self.root][s] < best_score:
+                    best_score = dp_mat[self.root][s]
+                    labels[self.root] = s
+        else:
+            labels[self.root] = start_state
+            best_score = dp_mat[self.root][start_state]
+
+        
+        for n in self.preorder_traversal():
+                if self.is_leaf(n):
+                    labels[n] = self.att[n]
+                    continue 
+                state = labels[n]
+                poly_node = max(self.nodes) + 1
+                for kid in dp_bt[n][state]:
+
+                    labels[kid] = dp_bt[n][state][kid]
+                    if len(poly_bt[n]) > 0:
+                        if kid in poly_bt[n][state]:
+                            labels[poly_node] = poly_bt[n][state][kid]
+                            tree.remove_edge(n, kid)
+                            
+                            tree.add_edge(n, poly_node)
+                            tree.add_edge(poly_node, kid)
+
+        return best_score, labels, tree
+
+            
+
+
+   
+
+
+
+                                
+
+                            
+
+
+                    
+                    
+
+                    
+                    
+
+
+
+
+
+
+                    
+            
+
+
+
+
     def sankoff_dp(self, pos):
         dp_matrix = {n : {}  for n in self.nodes}
-        #TODO: adjust root for specified sequence
+     
         for n in self.postorder:
 
             if self.is_leaf(n):
@@ -306,6 +492,28 @@ class SmallParsimony:
         
 
 
+tree = nx.DiGraph()
+
+tree.add_edges_from([(0,1), (0,2), (0,3), (1,4), (1,5), (2,6), (2,7), (3,8), (3,9)])
+
+states = [0,1,2]
+isotypes = {4:1, 5:2, 6:1, 7:2, 8:1, 9:2}
+
+weights = {}
+for s in states:
+    for t in states:
+        if s > t:
+            weights[s,t] = np.Inf 
+        elif s==t:
+            weights[s,t] =0
+        else:
+            weights[s,t] =1
+
+sp = SmallParsimony(tree, 0, states, weights)
+dp_mat, dp_bt, dp_poly = sp.sankoff_polytomy(isotypes, weights, states)
+score,labels, tree = sp.polytomy_backtrace(dp_mat, dp_bt, dp_poly)
+print(dp_mat[0][0])
+        
 
 
 
