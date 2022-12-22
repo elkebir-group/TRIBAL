@@ -1,6 +1,7 @@
 import networkx as nx
 import pydot 
 from utils import read_dict 
+import argparse 
 
 class DrawTree:
     def __init__(self, parents, isotypes, color_encoding=None, show_legend=False, isotype_encoding=None) -> None:
@@ -70,30 +71,50 @@ class DrawTree:
     def save(self, fname):
         self.graph.write_png(fname)
 
+if __name__ == "__main__":
+     parser = argparse.ArgumentParser()
 
-clono = "B_75_1_1_148_1_40"
-encoding_fname = "/scratch/projects/tribal/real_data/mouse_isotype_encoding.txt"
-with open(encoding_fname, 'r+') as file:
-        isotype_encoding = {}
-        counter = 0
-        for line in file:
-            isotype_encoding[counter] = line.strip()
-            counter += 1
-for i in range(6):
-    parents_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.tree.txt"
-    iso_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.isotypes"
-    out_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.png"
+    parser.add_argument("-t", "--tree", required=True, type=str,
+        help="filename of tree file in parent edge list form")
+    parser.add_argument("-i", "--isotypes", required=True, type=str,
+        help="filename of input file containing inferred isotypes")
+    parser.add_argument("-e", "--encoding", required=False, type=str,
+        help="filename of input transition matrix")
+    parser.add_argument("-l", "--legend", type=bool, action="store_true")
+    parser.add_argument("-o", "--outfile", type=str, default="TRIBAL_Tree.png")
+    args= parser.parse_args()
 
 
-    iso_labels = read_dict(iso_fname)
-    parents = read_dict(parents_fname)
+    iso_labels = read_dict(args.isotypes)
+    parents = read_dict(args.tree)
+    if args.encoding is not None:
+        with open(encoding_fname, 'r+') as file:
+            isotype_encoding = {}
+            counter = 0
+            for line in file:
+                isotype_encoding[counter] = line.strip()
+                counter += 1
+    else:
+        isotype_encoding = None
+
+    dt = DrawTree(parents, iso_labels, show_legend=args.legend,isotype_encoding=isotype_encoding )
+    
+    dt.save(args.outfile)
+
+
+# clono = "B_75_1_1_148_1_40"
+# encoding_fname = "/scratch/projects/tribal/real_data/mouse_isotype_encoding.txt"
+
+# for i in range(6):
+    # parents_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.tree.txt"
+    # iso_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.isotypes"
+    # out_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.png"
+
+
 
   
 
 
-
-    dt = DrawTree(parents, iso_labels, show_legend=True,isotype_encoding=isotype_encoding )
-    dt.save(out_fname)
 
 
 
