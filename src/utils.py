@@ -49,7 +49,7 @@ def write_fasta(fname, mydict):
 
 #         return tree
 
-def save_dict(mydict, fname):
+def save_dict( fname, mydict):
         with open(fname, "w+") as file:
             for key, value in mydict.items():
                 file.write(f"{key},{value}\n")
@@ -96,6 +96,11 @@ def read_dict(fname):
             line_list =line.strip().split(",")
             mydict[line_list[0]] = line_list[1]
     return mydict
+
+def update_labels(labels):
+   labels = {key : "".join(value) for key, value in labels.items()}
+   return labels 
+   
 
 # tm = fit_dirichlet(2,6)
 # print(tm.sum(axis=1))

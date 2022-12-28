@@ -2,20 +2,18 @@
 import networkx as nx
 import numpy as np
 import neighbor_joining as nj
-from edmonds_tree import EdmondsTree
 import argparse 
 import pickle
 from spr import SPR
 from unrooted_spr import USPR
 from copy import deepcopy
-from trans_matrix import TransMat
 import utils as ut
 from tree_utils import TribalTree
 from ete3 import Tree, TreeNode
 from draw_tree import DrawTree
 from multi_spr import MultSPR
-from em_weight_matrix import EMProbs
-from lineage_tree import LineageTree, LineageForest
+
+
 
 class TribalPoly:
     def __init__(self, transmat=None, alpha=0.9, n_isotypes=7,
@@ -47,17 +45,7 @@ class TribalPoly:
    
 
 
-    
 
-    # def parsimony(self, ttree):
-    #     curr_pars, curr_iso, labels, isotypes = ttree.parsimony(
-    #                             self.alignment,
-    #                             self.isotype_labels,
-    #                             self.Q_isotype,
-    #                             self.alphabet, 
-    #                             self.cost_function )
-    #     curr_obj= self.alpha*(curr_pars) + (1-self.alpha)*(curr_iso)
-    #     return curr_obj, curr_pars, curr_iso, labels, isotypes
 
     def simulated_annealing(self, curr_state, restart, temp=50, k_max=1000):
     
@@ -121,7 +109,9 @@ class TribalPoly:
         dt.save(fname)
 
 
-
+    
+    def compute_score(self, pars, iso):
+        return self.alpha*pars + (1-self.alpha)*iso
 
     def greedy_hill_climbing(self, lin_tree, alignment, isotype_labels, search="multSPR"):
 
@@ -138,21 +128,21 @@ class TribalPoly:
                                                                                     self.cost_function)
       
 
-            best_score = self.alpha*best_pars_score - (1-self.alpha)*best_iso_score
+            best_score =  self.compute_score(best_pars_score, best_iso_score)
             # self.save_tree(best_tree, isotypes, "start_tree.png")
             # self.save_tree(best_tree, isotypes, "best_tree.png")
 
  
             count = 0
             
-         
+           
             
             while True:
                 iterations += 1
                 cand_tribal = deepcopy(best_tree)
     
                 if search == "multSPR":
-                    spr_trees = MultSPR(cand_tribal, isotype_labels, self.states)
+                    spr_trees = MultSPR(cand_tribal, best_isotypes, self.states)
                 # spr_trees = SPR(best_tree, self.Q_isotype)
                 # else:
                 #     spr_trees = USPR(cand_tribal.get_unrooted_tree(), self.rng)
@@ -172,7 +162,7 @@ class TribalPoly:
                                                                                     self.cost_function)
 
                  
-                    lin_comb_score = self.alpha*pars_score - (1-self.alpha)*iso_score                    
+                    lin_comb_score = self.compute_score(pars_score, iso_score)                   
                     if lin_comb_score < best_score:
                    
                       
@@ -198,76 +188,7 @@ class TribalPoly:
 
             return best_score, best_tree, best_labels, best_isotypes
 
-    # @staticmethod
-    # def root_tree(tree, root):
-    #     tree = nx.dfs_tree(tree,root)
-     
-    #     root_children = list(tree.successors(root))
-    #     for c in root_children:
-    #         grandchildren = tree.successors(c)
-    #         for g in grandchildren:
-    #             tree.add_edge(root, g)
-
-    #     tree.remove_node(c)
-
-    #     return tree
-
-    # def random_tree_old(self):
-    #     tree = nx.Graph()
-    #     ids = self.ids.copy()
-   
-    #     n = len(ids)
-    #     center = str(2*n -3 )
-    #     for i in ids:
-    #         tree.add_edge(i, center)
-      
-    #     next_node = n
-       
-    #     for i in range(n-3):
-    #         pair = self.rng.choice(ids,2, replace=False)
-    
-
-    #         for p in pair:
-    #             tree.add_edge(p, str(next_node))
-    #             tree.remove_edge(p, center)
-    #             tree.add_edge(center, str(next_node))
-    #             ids.remove(p)
-    #         ids.append(str(next_node))
-    #         next_node += 1
-          
-    #     return tree
-
-    # def random_tree(self):
-    #     tree = nx.Graph()
   
-    #     ids = []
-    #     for s in range(self.n_isotypes):
-    #         for i in self.ids:
-    #             if self.isotype_labels[i] ==s:
-    #                 ids.append(i)
-        
-    #     n = len(ids)
-    #     center = 2*n -3 
-    #     for i in ids:
-    #         tree.add_edge(i, center)
-      
-    #     next_node = n
-       
-    #     for i in range(n-3):
-    #         pair = [ids[0], ids[1]]
-    
-
-    #         for p in pair:
-    #             tree.add_edge(p, next_node)
-    #             tree.remove_edge(p, center)
-    #             tree.add_edge(center, next_node)
-    #             ids.remove(p)
-    #         ids.append(next_node)
-    #         next_node += 1
-        
-    
-    #     return tree
-
     def initialize_candidates(self, n_init=None, random_resolution=False):
         ttrees = []
         for tree in self.candidates:
@@ -313,21 +234,7 @@ class TribalPoly:
     #         tribal_tree_list.append(ttree)
     #     return tribal_tree_list
                     
-    
-    def update_labels(self, labels):
-        # seq = self.full_alignment[self.root]
-        
-        # for key in labels:
-        #     seq = self.full_alignment[self.root].copy()
-        #     new_seq= labels[key]
-        #     for j, index in enumerate(self.diff):
-        #         seq[index] = new_seq[j]
-        #     labels[key] = seq
 
-            
-    
-        labels = {key : "".join(value) for key, value in labels.items()}
-        return labels 
 
     def run(self, n_init=1, alpha=0.9, k_max=1000, temp=50):
         best_tree = None
