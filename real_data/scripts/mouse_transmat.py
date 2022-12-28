@@ -13,28 +13,22 @@ def gen_trans_mat(alpha,n ):
             else:
                 trans[i,j] = (1-alpha)/j_vals.shape[0]
     
-    trans[1,:] = 0
-    trans[1,1] = 1
+
     trans[n-1, n-1] = 1
     # print(trans.sum(axis=1))
     return trans
     
     
-
-
-
-
     
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-a", "--alpha", type=float, default=0.75)
-    parser.add_argument("-n", "--nisotypes", type=int, default=8)
+    parser.add_argument("-n", "--nisotypes", type=int, default=7)
     parser.add_argument("-o", "--outfile")
-    args = parser.parse_args([
-        "-o", "../mouse_transmat.txt"
-    ])
+    args = parser.parse_args()
+
 
     trans = gen_trans_mat(args.alpha, args.nisotypes)
 

@@ -16,7 +16,7 @@
 
 import gurobipy as gp
 from gurobipy import GRB
-import numpy as np 
+
 
 class PolytomyResolver:
     def __init__(self, tree_nodes, weights, scores, states, candidate_state):
@@ -49,7 +49,8 @@ class PolytomyResolver:
                 self.capacity_lower[(node_name,"sink")] = 0
                 self.costs[(node_name, "sink")] = weights[candidate_state, int(state)]
                 for s in self.states:
-                    if int(s) != candidate_state:
+                    if int(s) <= state and int(s) != candidate_state:
+                 
                         self.capacity_upper[(node_name,f"state_{s}")] = 1
                         self.capacity_lower[(node_name,f"state_{s}")] = 0
              
@@ -58,7 +59,7 @@ class PolytomyResolver:
         self.special_arcs = []
         #TODO: need to add n-1 layers of states
         for s in self.states:
-            if int(s) != candidate_state:
+            if int(s) >= candidate_state:
                 node_name = f"state_{s}"
                 self.special_arcs.append((node_name, "sink"))
        
@@ -144,10 +145,10 @@ class PolytomyResolver:
                 # print(states)
                 score = self.m.objVal
               
-                # print("normal used edges in network")
-                # # for i, j in self.all_arcs:
-                # #         if solution[ i, j] > 0:
-                # #             print('%s -> %s: %g' % (i, j, solution[ i, j]))
+                # print("used edges in network")
+                # for i, j in self.all_arcs:
+                #         if solution[ i, j] > 0:
+                #             print('%s -> %s: %g' % (i, j, solution[ i, j]))
                 
                 # print("polytomies used")
                 for i,j in self.special_arcs:
@@ -158,7 +159,7 @@ class PolytomyResolver:
                         for k in self.in_nodes[i]:
                             if solution[k,i] > 0:
                               
-                                child =int(k.split("_")[0])
+                                child =k.split("_")[0]
                                 if t in poly_map:
                                     poly_map[t].append(child)
                                 else:
@@ -186,28 +187,28 @@ class PolytomyResolver:
 
 # tree.add_edges_from([(0,1), (0,2), (0,3), (1,4), (1,5), (2,6), (2,7), (3,8), (3,9)])
 
-tree_nodes = [1,2,3]
-candidate_state = 0
-scores = {1: {0: 2, 1: 1}, 2: {0:2, 1:0}, 3: {0: 2, 1: 2, 2: 0}}
+# tree_nodes = [1,2,3]
+# candidate_state = 0
+# scores = {1: {0: 2, 1: 1}, 2: {0:2, 1:0}, 3: {0: 2, 1: 2, 2: 0}}
 
-states = [0,1,2]
-# isotypes = {4:1, 5:2, 6:1, 7:2, 8:1, 9:2}
+# states = [0,1,2]
+# # isotypes = {4:1, 5:2, 6:1, 7:2, 8:1, 9:2}
 
-weights = {}
-for s in states:
-    for t in states:
-        if s > t:
-            weights[s,t] = 1000000
-        elif s==t:
-            weights[s,t] =0
-        else:
-            weights[s,t] =1
-
-
+# weights = {}
+# for s in states:
+#     for t in states:
+#         if s > t:
+#             weights[s,t] = 1000000
+#         elif s==t:
+#             weights[s,t] =0
+#         else:
+#             weights[s,t] =1
 
 
-pr = PolytomyResolver(tree_nodes, weights, scores, states, candidate_state)
-pr.run()
+
+
+# pr = PolytomyResolver(tree_nodes, weights, scores, states, candidate_state)
+# pr.run()
 
        
         

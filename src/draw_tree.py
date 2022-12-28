@@ -72,7 +72,7 @@ class DrawTree:
         self.graph.write_png(fname)
 
 if __name__ == "__main__":
-     parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
 
     parser.add_argument("-t", "--tree", required=True, type=str,
         help="filename of tree file in parent edge list form")

@@ -4,7 +4,6 @@ import numpy as np
 import neighbor_joining as nj
 from edmonds_tree import EdmondsTree
 import argparse 
-import pandas as pd 
 import pickle
 from spr import SPR
 from unrooted_spr import USPR
@@ -14,102 +13,51 @@ import utils as ut
 from tree_utils import TribalTree
 from ete3 import Tree, TreeNode
 from draw_tree import DrawTree
+from multi_spr import MultSPR
+from em_weight_matrix import EMProbs
+from lineage_tree import LineageTree, LineageForest
 
-
-class Tribal:
-    def __init__(self, alignment, root, isotype_labels, seed,  n_init=1, 
-                init="random", transmat=None, alpha=0.9, jump_prob=0.5, n_isotypes=7,
-                cost_function=None, alphabet= ("A", "C", "G", "T","N", "-"), candidates =None,
+class TribalPoly:
+    def __init__(self, transmat=None, alpha=0.9, n_isotypes=7,
+                cost_function=None, 
+                alphabet= ("A", "C", "G", "T","N", "-"), 
                 isotype_encoding=None):
         
-        self.alignment = alignment
-        self.isotype_encoding = isotype_encoding
-        # self.subset_alignment = {}
-        # self.same_letters = {}
-        # self.diff =[]
-        # for i,v in enumerate(self.alignment[root]):
-        #     for key, value in self.alignment.items():
-        #         if key == root:
-        #             continue
-        #         if value[i] != v:
-        #             self.diff.append(i)
-        #             break
+        # self.alignment = alignment
+        # self.isotype_labels =isotype_labels
+        # self.isotype_encoding = isotype_encoding
 
-        
-        # # test = [base for i,base in enumerate(self.alignment[root]) if i in diff ]  
-        # # print(len(test)) 
-        # # 
-        # self.full_alignment = self.alignment.copy()
-        # self.alignment = {key: [base for i,base in enumerate(self.alignment[key]) if i in self.diff] for key in self.alignment}
-    
-
-     
-
-        
-        self.n = len(self.alignment)
-        self.root = root
-        self.isotype_labels = isotype_labels
-        self.seed = seed
-        self.rng = np.random.default_rng(seed)
-
-        self.n_init = n_init 
-        
-        if init=="nj":
-            self.init = self.initialize_nj
-        elif init == "edmonds":
-            self.init = self.initialize_edmonds
-        elif init == "candidates":
-            self.init = self.initialize_candidates
-            self.candidates = candidates
-        else:
-            self.init = self.initialize_random
-
-
-        if transmat is  None:
-            self.n_isotypes =n_isotypes
-            self.Q_isotype = TransMat(self.rng, n_isotypes).fit_dirichlet()
+        if transmat is None:
+            self.Q_isotype = np.ones((n_isotypes, n_isotypes))
+            for i in range(n_isotypes):
+                self.Q_isotype[i,i] = 0
+            for s in range(n_isotypes):
+                for t in range(n_isotypes):
+                    if s > t:
+                        self.Q_isotype[s,t] = 1e6
         else:
             self.Q_isotype = transmat
             self.n_isotypes = self.Q_isotype.shape[0]
   
-        self.ids = list(alignment.keys())
-        self.ids.sort()
         self.alpha=alpha
-    
-    
         self.alphabet = alphabet
         self.cost_function = cost_function
-
-        self.dmat = ut.create_distance_matrix(self.alignment, self.ids)
-        self.IGHD = 1
+        self.states = [i for i in range(self.Q_isotype.shape[0])]
 
    
 
-    @staticmethod
-    def print_tree(res):
-        tree = res[1]
-        print(f" OPT Seq: {res[0]} OPT Iso: {res[2]}")
-        alignment = nx.get_node_attributes(tree, "sequence")
-        isotype_labels =  nx.get_node_attributes(tree, "isotype")
-        print(list(tree.edges()))
-        for n in tree.nodes():
-            seq  ="".join([i for i in alignment[n]])
-            print(f"Node {n}: Seq: {seq}, isotype: {isotype_labels[n]}")
 
-    @staticmethod
-    def prob_state_change(e_new, e, T):
-        return np.exp(-1*(e_new - e)/T)
     
 
-    def parsimony(self, ttree):
-        curr_pars, curr_iso, labels, isotypes = ttree.parsimony(
-                                self.alignment,
-                                self.isotype_labels,
-                                self.Q_isotype,
-                                self.alphabet, 
-                                self.cost_function, ighd=self.IGHD )
-        curr_obj= self.alpha*(curr_pars) + (1-self.alpha)*(curr_iso)
-        return curr_obj, curr_pars, curr_iso, labels, isotypes
+    # def parsimony(self, ttree):
+    #     curr_pars, curr_iso, labels, isotypes = ttree.parsimony(
+    #                             self.alignment,
+    #                             self.isotype_labels,
+    #                             self.Q_isotype,
+    #                             self.alphabet, 
+    #                             self.cost_function )
+    #     curr_obj= self.alpha*(curr_pars) + (1-self.alpha)*(curr_iso)
+    #     return curr_obj, curr_pars, curr_iso, labels, isotypes
 
     def simulated_annealing(self, curr_state, restart, temp=50, k_max=1000):
     
@@ -165,16 +113,35 @@ class Tribal:
         #compute the initial solution
 
 
+    def save_tree(self, ttree, isotypes, fname):
+        pth = "/scratch/projects/tribal/src/test"
+        fname = f"{pth}/{fname}"
+        parents = ttree.get_parents()
+        dt = DrawTree(parents, isotypes, show_legend=True, isotype_encoding=self.isotype_encoding)
+        dt.save(fname)
 
-    def greedy_hill_climbing(self, TTree):
+
+
+
+    def greedy_hill_climbing(self, lin_tree, alignment, isotype_labels, search="multSPR"):
 
             iterations = 0
             best_trees = []
-     
-            best_score, best_pars_score, best_iso_score, _, _ = self.parsimony(TTree)
-    
-            best_tree = deepcopy(TTree)
+            best_tree = deepcopy(lin_tree)
             best_trees.append(best_tree)
+
+     
+            best_pars_score, best_iso_score, best_labels,best_isotypes = best_tree.parsimony(alignment,
+                                                                                    isotype_labels,
+                                                                                    self.Q_isotype,
+                                                                                    self.alphabet,
+                                                                                    self.cost_function)
+      
+
+            best_score = self.alpha*best_pars_score - (1-self.alpha)*best_iso_score
+            # self.save_tree(best_tree, isotypes, "start_tree.png")
+            # self.save_tree(best_tree, isotypes, "best_tree.png")
+
  
             count = 0
             
@@ -184,57 +151,52 @@ class Tribal:
                 iterations += 1
                 cand_tribal = deepcopy(best_tree)
     
-               
+                if search == "multSPR":
+                    spr_trees = MultSPR(cand_tribal, isotype_labels, self.states)
                 # spr_trees = SPR(best_tree, self.Q_isotype)
-                spr_trees = USPR(cand_tribal.get_unrooted_tree(), self.rng)
+                # else:
+                #     spr_trees = USPR(cand_tribal.get_unrooted_tree(), self.rng)
                 for t in spr_trees:
-                    cand_tribal.set_unrooted_tree(t)
+              
+      
+                    cand_tribal.set_tree(t)
                     
                     count += 1
                   
                     improvement = False
-                    # print("best tree")
-                    # print(best_tree)
-    
-                    # print(cand_tribal)
-                    lin_comb_score, cand_score, iso_score, _, _ =self.parsimony(cand_tribal)
+            
+                    pars_score, iso_score, labels,isotypes = cand_tribal.parsimony(alignment,
+                                                                                    isotype_labels,
+                                                                                    self.Q_isotype,
+                                                                                    self.alphabet,
+                                                                                    self.cost_function)
+
                  
-                    # lin_comb_score = self.alpha*(cand_score) + (1-self.alpha)*(-1*iso_score)
-                    
-                    # if cand_score < best_score or (cand_score==best_score and iso_score > best_iso_score): #or (cand_score == best_score and cand_iso_score < best_iso_score):
+                    lin_comb_score = self.alpha*pars_score - (1-self.alpha)*iso_score                    
                     if lin_comb_score < best_score:
-                        # print(list(t.edges))
+                   
                       
-                        print(f"Candidate score: {lin_comb_score} Best Score: {best_score} Cand Iso: {iso_score} Best Iso: {best_iso_score} Cand Pars {cand_score} Best Pars: {best_pars_score}")
+                        print(f"Candidate score: {lin_comb_score} Best Score: {best_score}\nCand Iso: {iso_score} Best Iso: {best_iso_score}\nCand Pars {pars_score} Best Pars: {best_pars_score}")
                         improvement = True
                         best_score = lin_comb_score
-                        best_pars_score =  cand_score
+                        best_pars_score =  pars_score
                         best_tree = deepcopy(cand_tribal)
+                        best_labels = labels
+                        best_isotypes = isotypes 
+                        # self.save_tree(best_tree, isotypes,"best_tree.png")
                         best_iso_score = iso_score
                         # best_trees = [deepcopy(cand_tribal)]
                         break
-                    # elif cand_score == best_score and (best_iso_score == iso_score):
-
-                    #     # print(cand_tribal)
-                    #     best_trees.append(deepcopy(cand_tribal))
-                    
+             
 
                 
                 if not improvement:
                     print("Total Trees Examined: " + str(count))
                     break
                 
-                # if iterations > 2:
-                #     break
-                    # if self.rng.random() < 0.99/iterations:
-                    #     best_score = cand_score
-                    #     best_tree = cand_tribal
-                    #     best_trees = [deepcopy(cand_tribal)]
-                    # else:
-                    #     break
  
 
-            return best_score, best_tree
+            return best_score, best_tree, best_labels, best_isotypes
 
     # @staticmethod
     # def root_tree(tree, root):
@@ -306,11 +268,12 @@ class Tribal:
     
     #     return tree
 
-    def initialize_candidates(self, n_init=None):
+    def initialize_candidates(self, n_init=None, random_resolution=False):
         ttrees = []
         for tree in self.candidates:
             ttree = TribalTree(tree, self.root, is_rooted=True)
-            ttree.resolve_polytomies_randomly()
+            if random_resolution:
+                tree.resolve_polytomies_randomly()
             ttrees.append(ttree)
         return ttrees
 
@@ -378,7 +341,7 @@ class Tribal:
     
             # opt.append(self.greedy_hill_climbing(start_tree))
             # score, tree = self.simulated_annealing(start_tree, i, temp=temp, k_max=k_max)
-            score, tree =self.greedy_hill_climbing(start_tree)
+            score, tree =self.greedy_hill_climbing(start_tree, search="multSPR")
 
             if score < best_score:
                 print("best tree:"+ str(i))
@@ -388,62 +351,39 @@ class Tribal:
         obj, pars_obj, iso_obj, labels, isotypes= self.parsimony(best_tree)
         labels = self.update_labels(labels)
        
-        isotypes = {key: value[0] for key,value in isotypes.items()}
+        # isotypes = {key: value[0] for key,value in isotypes.items()}
         return best_tree, obj, pars_obj, iso_obj, labels, isotypes
         
-    def fit(self, cand_trees, alpha=0.9, save_candidates=None):
+    def fit(self, lin_forest, convert=False):
         best_tree = None
         best_score =np.Inf 
-        self.alpha  = alpha
-
-
         score_dict = {}
-        for i,tree in enumerate(cand_trees):
-            score_dict[i] = {}
-    
-            ttree = TribalTree(tree, self.root, is_rooted=True)
-            obj, pars_obj, iso_obj, labels, isotypes = self.parsimony(ttree) 
-            # while True:
-            #     start_nodes = ttree.num_nodes()
-            #     
-            #     end_nodes = ttree.num_nodes()
-            #     if start_nodes == end_nodes:
-            #         break 
-            # if start_nodes != end_nodes:
-            #     obj, pars_obj, iso_obj, labels, isotypes = self.parsimony(ttree) 
-            if save_candidates is not None:
-                tree_fname  = f"{save_candidates}/candidate{i}.tree.txt"
-                iso_fname = f"{save_candidates}/candidate{i}.isotypes"
-                labels_fname =f"{save_candidates}/candidate{i}.fasta"
-                png_fname =f"{save_candidates}/candidate{i}.png"
-                labels = self.update_labels(labels)
-                ut.write_fasta(labels_fname, labels)
-                parents = ttree.get_parents()
-                dt = DrawTree(parents, isotypes, show_legend=True, isotype_encoding=self.isotype_encoding)
-                dt.save(png_fname)
-                ut.save_dict(parents, tree_fname)
-                ut.save_dict(isotypes, iso_fname)
-                score_dict[i]["obj"] = obj 
-                score_dict[i]["par_obj"] = pars_obj
-                score_dict[i]["iso_obj"] = iso_obj
+        
+        for tree in lin_forest.get_trees():
+            score_dict[tree.id] = {}
+            curr_pars, curr_iso, labels, isotypes =tree.parsimony(
+                                lin_forest.alignment,
+                                lin_forest.isotypes,
+                                self.Q_isotype,
+                                self.alphabet, 
+                                self.cost_function,
+                                convert=False )
+            curr_obj= self.alpha*(curr_pars) + (1-self.alpha)*(curr_iso)
+            score_dict[tree.id]["obj"] = curr_obj 
+            score_dict[tree.id]["par_obj"] = curr_pars
+            score_dict[tree.id]["iso_obj"] = curr_iso
+            score_dict[tree.id]["labels"] = labels
+            score_dict[tree.id]["isotypes"] = isotypes 
+       
             
+            if curr_obj < best_score:
+                    best_tree = tree
+                    best_score = curr_obj
             
-            if obj < best_score:
-                    best_tree = ttree
-                    best_score = obj
-                
+        return  best_score, best_tree, score_dict
     
-        if  save_candidates is not None:
-            scores = f"{save_candidates}/candidate_scores.csv"
-            with open(scores, 'w+') as file:
-                file.write("tree,alpha,obj,sequence,isotype\n")
-                for i, val in score_dict.items():
-                    file.write(f"{i},{alpha},{val['obj']},{val['par_obj']},{val['iso_obj']}\n")
-
-            obj, pars_obj, iso_obj, labels, isotypes= self.parsimony(best_tree)
-            labels = self.update_labels(labels)
-        # isotypes = {key: value[0 for key,value in isotypes.items()}
-        return best_tree, obj, pars_obj, iso_obj, labels, isotypes
+    def search(self, lin_tree, alignment, isotypes):
+        self.greedy_hill_climbing(lin_tree, alignment, isotypes)
 
 def convert_to_nx(ete_tree, root):
     nx_tree = nx.DiGraph()
@@ -528,7 +468,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_candidates", type=str, help="directory where to save data for candidate trees")
     parser.add_argument("--fit", action="store_true", 
                 help="if given an input set of candidate trees, fit will only compute the objective value of each tree and not search tree space")
-    args= parser.parse_args()
+    # args= parser.parse_args()
 
 
     # path = "/scratch/projects/tribal/benchmark_pipeline/sim_data/shm_sim2/2.0/0.365/2"
@@ -554,29 +494,29 @@ if __name__ == "__main__":
     #     "--fit"
     # ])
 
-    # path = "/scratch/projects/tribal/real_data"
-    # dataset = "day_14"
-    # clonotype = "B_82_2_3_148_1_41"
+    path = "/scratch/projects/tribal/real_data"
+    dataset = "day_14"
+    clonotype = "B_120_2_8_210_1_13"
 
-    # args =parser.parse_args([
-    #     "-a", f"{path}/{dataset}/input/{clonotype}/concat.aln.fasta",
-    #     "-r", "naive",
-    #     "-t", f"{path}/mouse_transmat.txt",
-    #     "-e", f"{path}/mouse_isotype_encoding.txt",
-    #     "-i", f"{path}/{dataset}/input/{clonotype}/isotype.fasta",
-    #     "-o", f"{path}/test/tree.txt",
-    #     "--init", "candidates",
-    #     "-s", "1",
-    #     "--alpha", "0.9",
-    #     "--sequences", f"{path}/test/triba.seq",
-    #     "--fasta",f"{path}/test/triba.fasta",
-    #     "--score",f"{path}/test/tribal.score",
-    #     "--iso_infer", f"{path}/test/tribal.isotypes",
-    #     "--candidate", f"{path}/{dataset}/dnapars/{clonotype}/outtree",
-    #     "--save_candidates",f"{path}/test",
-    #     "--png", f"{path}/test/best_tree.png",
-    #     "--fit"
-    # ])
+    args =parser.parse_args([
+        "-a", f"{path}/{dataset}/input/{clonotype}/concat.aln.fasta",
+        "-r", "naive",
+        "-t", f"{path}/mouse_transmat2.txt",
+        "-e", f"{path}/mouse_isotype_encoding.txt",
+        "-i", f"{path}/{dataset}/input/{clonotype}/isotype.fasta",
+        "-o", f"{path}/test/tree.txt",
+        "--init", "candidates",
+        "-s", "1",
+        "--alpha", "0.75",
+        "--sequences", f"{path}/test/triba.seq",
+        "--fasta",f"{path}/test/triba.fasta",
+        "--score",f"{path}/test/tribal.score",
+        "--iso_infer", f"{path}/test/tribal.isotypes",
+        "--candidate", f"{path}/{dataset}/dnapars/{clonotype}/outtree",
+        "--save_candidates",f"{path}/test",
+        "--png", f"{path}/test/best_tree.png",
+        # "--fit"
+    ])
 
     if args.candidates is not None:
         args.init = "candidates"
@@ -590,12 +530,25 @@ if __name__ == "__main__":
     if args.encoding is not None:
         iso_encoding = {}
         counter = 0
+    
         with open(args.encoding, "r") as file:
             for line in file:
                 isotype = line.strip()
+                if counter ==0:
+                    start_iso = isotype 
                 iso_encoding[isotype] = counter
                 counter += 1
-        isotypes_filt = {i: iso_encoding[isotypes[i]] for i in alignment}
+        
+        isotypes_filt = {}
+        for i in alignment:
+            iso = isotypes[i]
+            if iso not in iso_encoding:
+                iso = isotypes[i].lower()
+                if 'm' in iso or 'd' in iso:
+                    iso = start_iso
+            isotypes_filt[i] = iso_encoding[iso]
+            
+        # isotypes_filt = {i: iso_encoding[isotypes[i]] for i in alignment}
         isotype_encoding = {val: key for key, val in iso_encoding.items()}
     else:
         isotypes[args.root] =0
@@ -663,6 +616,17 @@ if __name__ == "__main__":
             isotype_encoding=isotype_encoding
 
         )
+
+        #test em weight matrix
+        # states = np.arange(transMat.shape[0])
+        # forest = LineageForest()
+        # for c in cand_trees:
+        #     lt = LineageTree(c, "naive")
+        #     forest.add(lt)
+   
+        # em = EMProbs(forest,  transMat )
+        # exp_log_like, state_probs, transMat = em.fit(isotypes_filt)
+   
 
         if args.fit:
             best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.fit(cand_trees, args.alpha, save_candidates=args.save_candidates)

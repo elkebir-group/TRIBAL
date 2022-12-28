@@ -1,7 +1,7 @@
 
 import numpy as np
 class TransMat:
-    def __init__(self, rng=None, n_isotypes=6):
+    def __init__(self, rng=None, n_isotypes=7):
         
         self.n_isotypes = n_isotypes
         self.isotypes = np.arange(n_isotypes)

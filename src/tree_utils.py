@@ -97,6 +97,43 @@ class BaseTree:
   
         return tree
     
+    def has_polytomies(self):
+        for n in self.rooted_T.nodes:
+            children = self.get_children(n)
+            if len(children) > 2:
+                return True 
+        return False 
+    
+    def get_next_node(self):
+        next_node = len(self.T.nodes) +1
+        while True:
+            if str(next_node) not in self.T.nodes:
+                return str(next_node)
+            else:
+                next_node += 1
+
+    
+    def resolve_polytomies_randomly(self):
+        polytomies = [n for n in self.rooted_T.nodes if len(self.get_children(n)) > 2 ]
+        for p in polytomies:
+         
+            while True:
+                children = self.get_children(p)
+                if len(children) <=2:
+                    break
+                siblings = np.random.choice(children, 2, replace=False )
+                next_node = self.get_next_node()
+                self.rooted_T.add_edge(p, next_node)
+                for s in siblings:
+                    self.rooted_T.remove_edge(p, s)
+                  
+                    self.rooted_T.add_edge(next_node, s)
+               
+     
+        self.unroot_tree()
+            
+
+
 
     #https://stackoverflow.com/questions/46444454/save-networkx-tree-in-newick-format
  
@@ -166,18 +203,20 @@ class BaseTree:
     
     def unroot_tree(self):
         '''change tree from digraph to undirected graph
-            and add the root as an outgroup
         '''
         self.T = nx.to_undirected(self.rooted_T)
-        n = len(self.T.nodes) + 1
-        while True:
-            if n in self.T:
-                n+= 1
-            else:
-                break
-        mapping = {self.root : n}
-        self.T= nx.relabel_nodes(self.T, mapping)
-        self.T.add_edge(self.root, n)
+    
+    def num_nodes(self):
+        return len(list(self.rooted_T.nodes))
+        # n = len(self.T.nodes) + 1
+        # while True:
+        #     if n in self.T:
+        #         n+= 1
+        #     else:
+        #         break
+        # mapping = {self.root : n}
+        # self.T= nx.relabel_nodes(self.T, mapping)
+        # self.T.add_edge(self.root, n)
 
 class TribalTree(BaseTree):
     def __init__(self, tree=None, root="naive", is_rooted=False, ids=None, n=7, rng=None) -> None:
@@ -189,10 +228,10 @@ class TribalTree(BaseTree):
         self.seq_score = np.Inf 
         self.iso_score = np.Inf
   
-        self.nodes = list(self.rooted_T.nodes)
+        # self.nodes = list(self.rooted_T.nodes)
     
-        self.leaves = [n for n in self.rooted_T.nodes if self.rooted_T.out_degree(n)==0]
-        self.ntaxa = len(self.leaves)
+        # self.leaves = [n for n in self.rooted_T.nodes if self.rooted_T.out_degree(n)==0]
+        # self.ntaxa = len(self.leaves)
 
     
 
@@ -214,12 +253,44 @@ class TribalTree(BaseTree):
         return labels
     
     
-    def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None):
+    def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None, ighd=None):
+      
+        states =np.arange(transMat.shape[0]).tolist()
+        # if self.has_polytomies():
+        iso_labels = self.isotype_parsimony_polytomy(iso_leaves, transMat,states, ighd=ighd)
+        # else:
+        #     #perform regular parsimony for binary trees
+        #     pass 
         anc_labels = self.sequence_parismony(alignment, alphabet, cost)
-
-        iso_labels = self.isotype_ml(iso_leaves, transMat)
+        # iso_labels = self.isotype_ml(iso_leaves, transMat)
         # print(self.isotypes)
         return self.seq_score, self.iso_score, anc_labels, iso_labels
+
+    
+    def isotype_parsimony_polytomy(self, iso_leaves, transmat, states, ighd=None):
+        log_transmat = -1*np.log(transmat)
+        weights = {}
+        for s in states:
+            for t in states:
+                weights[s,t] = log_transmat[s,t]
+       
+        best_iso = np.Inf
+        best_labels = None
+        while True:
+            tree = self.rooted_T.copy()
+            sp = SmallParsimony(tree, self.root)
+            iso_score, labels, tree = sp.polytomy_resolver(iso_leaves,weights, states, ighd=ighd)
+            # if iso_score >= best_iso:
+            #     break 
+            # else:
+            best_labels = labels 
+            self.iso_score = iso_score 
+            best_iso = iso_score 
+            self.set_rooted_tree(tree)
+            break
+        return best_labels 
+
+        
 
     def isotype_parsimony(self, transMat):
       

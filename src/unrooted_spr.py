@@ -2,7 +2,7 @@ import networkx as nx
 import numpy as np
 from itertools import combinations
 class USPR:
-    def __init__(self, tree, rng=None, min_radius=2, max_radius=np.Inf, allow_multifurcations=True):
+    def __init__(self, tree, rng=None, min_radius=2, max_radius=2, allow_multifurcations=False):
 
         self.T = tree
   
@@ -20,11 +20,11 @@ class USPR:
         self.num_spr = 2*(self.ntaxa -3)*(2*self.ntaxa -7)
 
         self.allow_multifurcation = allow_multifurcations
-        print(f"Expected number of spr moves: {self.num_spr}")
+        # print(f"Expected number of spr moves: {self.num_spr}")
 
         # self.generate_valid_cand()
         self.generate_cand()
-        print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
+        # print(f"Total number of 2 edge spr moves: {len(self.spr_cand)}")
         self.generate_cand_nni()
         self.shuffle(self.nni_cand)
         self.shuffle(self.spr_cand)
@@ -33,12 +33,12 @@ class USPR:
    
         num_nni_moves = len(self.nni_cand)
         num_2edge_spr = len(self.spr_cand)
-        print(f"Total number of NNI moves: {len(self.nni_cand)}")
-        print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
-        assert self.num_spr == (num_nni_moves + num_2edge_spr)
+        # print(f"Total number of NNI moves: {len(self.nni_cand)}")
+        # print(f"Computed number of spr moves: {num_nni_moves + num_2edge_spr}")
+        # assert self.num_spr == (num_nni_moves + num_2edge_spr)
         self.generate_cand_mult()
-        print(len(self.spr_cand_multi))
-        print("Done!")
+        # print(len(self.spr_cand_multi))
+        # print("Done!")
 
 
 
@@ -281,20 +281,20 @@ class USPRIterator:
         return nni_tree
 
 
-tree = nx.Graph()
-tree.add_edges_from([('a','c'), ('b','c'), ('c', 'd'), ('d', 'e'), 
-                    ('d', 'f'), ('f', 'g'), ('f','j'), ('g', 'h'), ('g', 'i') ])
+# tree = nx.Graph()
+# tree.add_edges_from([('a','c'), ('b','c'), ('c', 'd'), ('d', 'e'), 
+#                     ('d', 'f'), ('f', 'g'), ('f','j'), ('g', 'h'), ('g', 'i') ])
 
-us = iter(USPR(tree) )
-count = 0
-while True:
+# us = iter(USPR(tree) )
+# count = 0
+# while True:
    
-    try:
-        foo = next(us)
-    except:
-        print(count)
-        break
-    count += 1
+#     try:
+#         foo = next(us)
+#     except:
+#         print(count)
+#         break
+#     count += 1
 
 
 

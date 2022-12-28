@@ -27,7 +27,7 @@ def read_fasta(fname):
     return seq
 
 def write_fasta(fname, mydict):
-        with open(fname, 'w+') as file:
+        with open(fname, 'w') as file:
                 for key in mydict:
                         file.write(f">{key}\n")
                         file.write(f"{mydict[key]}\n")
@@ -91,7 +91,7 @@ def create_distance_matrix(alignment, ids):
 
 def read_dict(fname):
     mydict= {}
-    with open(fname, 'r+') as file:
+    with open(fname, 'r') as file:
         for line in file:
             line_list =line.strip().split(",")
             mydict[line_list[0]] = line_list[1]

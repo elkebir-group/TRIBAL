@@ -47,7 +47,9 @@ if __name__ =="__main__":
     for key, value in heavy_seqs.items():
         concat_seqs[key] = value + light_seqs[key]
     
-    write_fasta(args.outfile, concat_seqs)
+    sorted_dict = {key: value for key, value in sorted(concat_seqs.items())}
+    
+    write_fasta(args.outfile, sorted_dict)
 
 
 
