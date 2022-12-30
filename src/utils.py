@@ -2,6 +2,7 @@
 import sys, re
 import numpy as np
 import networkx as nx
+import pickle 
 
 def read_fasta(fname):
     '''read a fasta file into a dictionary 
@@ -49,7 +50,7 @@ def write_fasta(fname, mydict):
 
 #         return tree
 
-def save_dict( fname, mydict):
+def save_dict(  mydict, fname):
         with open(fname, "w+") as file:
             for key, value in mydict.items():
                 file.write(f"{key},{value}\n")
@@ -100,6 +101,17 @@ def read_dict(fname):
 def update_labels(labels):
    labels = {key : "".join(value) for key, value in labels.items()}
    return labels 
+
+
+def pickle_save(obj, fname):
+        with open(fname, 'wb') as handle:
+            pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+def pickle_load(fname):
+    with open(fname, 'rb') as handle:
+        obj= pickle.load(handle)
+    
+    return obj
    
 
 # tm = fit_dirichlet(2,6)

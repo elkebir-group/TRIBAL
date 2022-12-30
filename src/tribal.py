@@ -95,10 +95,10 @@ class Tribal:
         print("\nStarting fitting phase.....")
         fit_score, best_tree_ids, lin_forest = self.fit()
         print(f"\nFit Phase Complete!\nFit Score: {fit_score}\n")
-        search_score, best_lin_trees =self.search(lin_forest)
-        print(f"\nSearch Phase Complete!\nSearch Score: {search_score}")
+        # search_score, best_lin_trees =self.search(lin_forest)
+        # print(f"\nSearch Phase Complete!\nSearch Score: {search_score}")
 
-        return search_score, best_lin_trees, self.transmat,self.state_probs
+        return fit_score, lin_forest, self.transmat,self.state_probs
 
 
 
@@ -138,7 +138,7 @@ class Tribal:
          
             print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score}")
             
-            if i > min(4, self.niterations):
+            if i > min(15, self.niterations):
 
                 if self.check_convergence( old_score, current_score, self.threshold):
                   break
@@ -242,8 +242,8 @@ def create_isotype_encoding(fname):
     return iso_encoding, start_iso, counter
 
 
-def create_input( path, clonotype, root, seq_fasta_fname, trees_fname, iso_fasta_fname, iso_encoding=None, start_iso=None):
-    tree_path = "/scratch/projects/tribal/real_data/day_14/dnapars"
+def create_input( path,  tree_path, clonotype, root, seq_fasta_fname, trees_fname, iso_fasta_fname, iso_encoding=None, start_iso=None):
+
     tree_fname =f"{tree_path}/{clonotype}/{trees_fname}"
     align_fname = f"{path}/{clonotype}/{seq_fasta_fname}"
     iso_fname =f"{path}/{clonotype}/{iso_fasta_fname}"
@@ -349,6 +349,8 @@ if __name__ == "__main__":
         help="filename of input transition matrix")
     parser.add_argument("-r", "--root", required=False, default="naive",
         help="the common id of the root in all clonotypes")
+    parser.add_argument(  "--tree_path", type=str, required=True, help="path to directory where candidate trees are saved")
+
     parser.add_argument("--candidates", type=str, default="outtree", help="filename containing newick strings for candidate trees")
     parser.add_argument("--niter", type=int, help="max number of iterations in the fitting phase", default=10)
     parser.add_argument("--thresh", type=float, help="theshold for convergence in fitting phase" ,default=0.1)
@@ -368,34 +370,38 @@ if __name__ == "__main__":
     
     parser.add_argument( "-o", "--outpath", type=str, help="path to directory where output files should be saved")
     parser.add_argument("--score", type=str, help="filename where the score file should be saved")
+    parser.add_argument("--transmat_infer", type=str, help="filename where the inferred transition matrix should be saved")
+    parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
+    parser.add_argument("--diagram", type=str, help="filename where the png of transition matrix should be saved")
+
     # parser.add_argument( "--sequences", type=bool, action="store_true", help="if ancestral sequences should be saved")
     # parser.add_argument("-n", "--newick", type=bool, action="store_true",  help="if newick string should be saved")
     # parser.add_argument("--score",  type=bool, action="store_true")
     # parser.add_argument("--iso_infer", type=bool, action="store_true")
 
     # parser.add_argument("--save_candidates", type=bool, action="store_true")
-    # args= parser.parse_args()
+    args= parser.parse_args()
 
 
-    path = "/scratch/projects/tribal/real_data"
-    dataset = "day_14"
+    # path = "/scratch/projects/tribal/real_data"
+    # dataset = "day_14"
  
 
-    args =parser.parse_args([
-        "-c", f"{path}/{dataset}/test_clonos.txt",
-        "-p", f"{path}/{dataset}/input",
-        "-r", "naive",
-        "-t", f"{path}/mouse_transmat2.txt",
-        "-e", f"{path}/mouse_isotype_encoding.txt",
-        "-s", "3",
-        "--score", f"{path}/test/score.txt",
-        "-o", f"{path}/test",
-        "--alpha", "0.75",
-        "--max_cand", "5",
-        "--niter", "4",
-        "--thresh", "2"
+    # args =parser.parse_args([
+    #     "-c", f"{path}/{dataset}/test_clonos.txt",
+    #     "-p", f"{path}/{dataset}/input",
+    #     "-r", "naive",
+    #     "-t", f"{path}/mouse_transmat2.txt",
+    #     "-e", f"{path}/mouse_isotype_encoding.txt",
+    #     "-s", "3",
+    #     "--score", f"{path}/{dataset}/tribal/score.txt",
+    #     "-o", f"{path}/{dataset}/tribal",
+    #     "--alpha", "0.75",
+    #     "--max_cand", "3",
+    #     "--niter", "4",
+    #     "--thresh", "0.1"
 
-    ])
+    # ])
 
     if args.encoding is not None:
         iso_encoding, start_iso, n_isotypes = create_isotype_encoding(args.encoding)
@@ -428,7 +434,7 @@ if __name__ == "__main__":
     clonodict = {}
     for c in clonotypes:
 
-        clonodict[c] = create_input(args.path, c, args.root, args.fasta, 
+        clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
                         args.candidates, args.isotypes, iso_encoding, start_iso)
     
 
@@ -443,7 +449,7 @@ if __name__ == "__main__":
     
 
     
-    obj_score, lin_tree_dict,transmat, state_probs = tr.run()
+    obj_score, lin_forest, transmat, state_probs = tr.run()
 
     # print(f"Tribal Object Score: {obj_score}")
     print("\nTRIBAL Complete!, saving results...")
@@ -452,13 +458,17 @@ if __name__ == "__main__":
         with open(args.score, 'w+') as file:
             file.write(str(obj_score))
 
-
+    if args.transmat_infer is not None:
+        np.savetxt(args.transmat_infer, transmat)
+    if args.state_probs is not None:
+        np.savetxt(args.state_probs, state_probs)
+    
+    if args.diagram is not None:
+        DrawStateDiag(transmat, state_probs, rev_encoding).save(args.diagram)
 
     if args.outpath is not None:
-        np.savetxt(f"{args.outpath}/transmat.txt", transmat)
-        np.savetxt(f"{args.outpath}/state_probs.txt", state_probs)
-        DrawStateDiag(transmat, state_probs, rev_encoding).save(f"{args.outpath}/transmat.png")
-        save_results(args.outpath, lin_tree_dict, pngs=True, isotype_mapping=rev_encoding)
+        lin_forest.save_trees(args.outpath)
+        # save_results(args.outpath, lin_tree_dict, pngs=True, isotype_mapping=rev_encoding)
   
 
  

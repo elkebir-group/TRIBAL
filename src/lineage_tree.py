@@ -4,6 +4,8 @@ from small_parsimony import SmallParsimony
 import numpy as np 
 from draw_tree import DrawTree
 from utils import save_dict
+import os 
+import pickle 
 
 @dataclass
 class LineageTree:
@@ -80,7 +82,28 @@ class LineageTree:
     
         return seq_score, iso_score, anc_labels, iso_labels
 
+
     
+    @staticmethod
+    def convert_transmat_to_weights(transmat):
+
+        log_transmat = -1*np.log(transmat)
+        states = np.arange(transmat.shape[0])
+        weights = {}
+        for s in states:
+            for t in states:
+                weights[s,t] = log_transmat[s,t]
+        return weights, states
+    
+    def isotype_parsimony(self, iso_leaves, transmat):
+   
+        weights,states = self.convert_transmat_to_weights(transmat)
+        
+        
+        sp = SmallParsimony(self.T, self.root, alphabet=states, cost=weights)
+        iso_score, iso_labels = sp.sankoff(iso_leaves)
+        return iso_score, iso_labels 
+
     def isotype_parsimony_polytomy(self, iso_leaves, transmat, states, convert=True):
         if convert:
             log_transmat = -1*np.log(transmat)
@@ -108,7 +131,7 @@ class LineageTree:
     def save_tree(self,fname):
     
         parents = self.get_parents()
-        save_dict(fname, parents)
+        save_dict( parents, fname)
     
 
 
@@ -142,10 +165,23 @@ class LineageForest:
     def __getitem__(self, key):
         return self.forest[key]
     
-    
+    def ncells(self):
+        return len(list(self.alignment.keys()))
     
     def size(self):
         return len(self.forest)
     
     def get_trees(self):
         return self.forest
+
+    def save_trees(self, path):
+        for tree in self.forest:
+            if tree.name != "":
+                folder = tree.name
+            else:
+                folder = tree.id
+            clono_path = f"{path}/{folder}"
+            os.makedirs(clono_path, exist_ok=True)
+            fname = f"{clono_path}/fit_tree.pickle"
+            with open(fname, 'wb') as file:
+                pickle.dump(tree, file)

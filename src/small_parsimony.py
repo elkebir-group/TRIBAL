@@ -517,18 +517,27 @@ class SmallParsimony:
 
     def sankoff(self, sequences):
         self.att = sequences
-        seq_length = len(self.att[self.root])
+        if type(self.att[self.root]) != int:
+            seq_length = len(self.att[self.root])
+    
+        else:
+            seq_length = 1
+            self.att = {key: [val] for key,val in self.att.items()}
+
         all_labels = {}
  
-        min_scores =np.zeros(seq_length, dtype=int)
+        min_scores =np.zeros(seq_length, dtype=float)
         for i in range(seq_length):
             min_scores[i], dp_mat = self.sankoff_dp(i)
             label_dict = self.traceback(dp_mat)
             all_labels[i] = label_dict
         
-        
-        
         node_labels= self.concat_labels(all_labels, self.nodes)
+        if seq_length == 1:
+            for key in node_labels:
+                if key in self.att:
+                    node_labels[key] = self.att[key]
+            node_labels = {key: val[0] for key,val in node_labels.items()}
         # nx.set_node_attributes(self.T, node_labels, self.att_name)
 
         return min_scores.sum(),node_labels
@@ -664,8 +673,8 @@ class SmallParsimony:
     def fitch(self, isotypes, transMat=None):
         self.att = isotypes 
         opt_states = self.fitch_dp()
-        # score = self.fitch_score(opt_states)
-        score, likelihood = self.likelihood_score(isotypes, transMat)
+        score = self.fitch_score(opt_states)
+        # score, likelihood = self.likelihood_score(isotypes, transMat)
         isotype_states = np.arange(6)
         poss_states = {}
         for n in self.postorder:
