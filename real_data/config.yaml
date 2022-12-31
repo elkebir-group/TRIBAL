@@ -1,0 +1,29 @@
+seq:
+  - heavy
+  - light
+
+run_dir:
+  - day_14
+
+
+clono_file:
+  - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
+
+
+
+
+#tribal params
+alpha:
+  - 0.75
+
+max_cand:
+  - 20
+
+niter:
+  - 20
+
+seed:
+  - 3
+
+threshold:
+  - 0.1
