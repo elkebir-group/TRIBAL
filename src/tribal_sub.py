@@ -57,7 +57,7 @@ class TribalSub:
 
 
     def refine(self, lin_tree, alignment, isotype_labels):
-        iso_score, iso_labels = lin_tree.isotype_parismony_polytomy(isotype_labels, transmat= self.transmat )
+        iso_score, iso_labels = lin_tree.isotype_parsimony_polytomy(isotype_labels, transmat= self.Q_isotype )
 
         seq_score, seq_labels = lin_tree.sequence_parismony(alignment, 
                                                     alphabet=self.alphabet, 
@@ -68,9 +68,9 @@ class TribalSub:
     def search(self, lin_tree, alignment, isotype_labels, mode="multSPR"):
 
             iterations = 0
-            best_tree = lin_tree
+          
      
-            best_result = self.refine(best_tree, alignment, isotype_labels)
+            best_result, best_tree = self.refine(lin_tree, alignment, isotype_labels)
     
             count = 0
             improvement = False
@@ -79,7 +79,7 @@ class TribalSub:
                 cand_tribal = deepcopy(best_tree)
     
                 if mode == "multSPR":
-                    spr_trees = MultSPR(cand_tribal, best_result.isotype_labels, self.states)
+                    spr_trees = MultSPR(cand_tribal, best_result.isotypes, self.states)
                 # spr_trees = SPR(best_tree, self.Q_isotype)
                 # else:
                 #     spr_trees = USPR(cand_tribal.get_unrooted_tree(), self.rng)
@@ -88,7 +88,7 @@ class TribalSub:
                     cand_tribal.set_tree(t)            
                     count += 1
             
-                    current_result = self.refine(cand_tribal, alignment, isotype_labels)
+                    current_result, cand_tribal = self.refine(cand_tribal, alignment, isotype_labels)
 
                  
                     if current_result.improvement(best_result):
@@ -140,7 +140,8 @@ class TribalSub:
                 all_results[lin_tree.id] = result
 
                 if best_result is None:
-                    best_result = result 
+                    best_result = result
+                    best_tree = out_tree 
                     print(best_result)
                 else:
                     if result.improvement(best_result):
@@ -245,9 +246,6 @@ if __name__ == "__main__":
     parser.add_argument("--forest",  action="store_true")
 
 
-    
-    
-    
     parser.add_argument("-o", "--output", type=str, help="outputfile of all best trees")
 
     parser.add_argument( "--fasta", type=str, help="filename where reconstructed ancestral sequences should be saved as fasta file")
@@ -263,39 +261,40 @@ if __name__ == "__main__":
 
     parser.add_argument("--fit", action="store_true", 
                 help="if given an input set of candidate trees, fit will only compute the objective value of each tree and not search tree space")
-    args= parser.parse_args()
+    # args= parser.parse_args()
 
 
 
 
-    # path = "/scratch/projects/tribal/real_data"
-    # dataset = "day_14"
-    # folder = "tribal"
-    # clonotype = "B_120_2_8_210_1_13"
+    path = "/scratch/projects/tribal/real_data"
+    dataset = "day_14"
+    folder = "tribal"
+    clonotype = "B_21_3_13_154_2_3"
 
-    # args =parser.parse_args([
-    #     "-a", f"{path}/{dataset}/input/{clonotype}/concat.aln.fasta",
-    #     "-r", "naive",
-    #     "-t", f"{path}/{dataset}/{folder}/transmat.txt",
-    #     # "-l", f"{path}/{dataset}/{folder}/{clonotype}/fit_tree.pickle",
-    #     "-e", f"{path}/mouse_isotype_encoding.txt",
-    #     "-i", f"{path}/{dataset}/input/{clonotype}/isotype.fasta",
-    #     "-o", f"{path}/test/tree.txt",
-    #     # "--init", "candidates",
-    #     # "-s", "1",
-    #     "--alpha", "0.75",
-    #     "--sequences", f"{path}/test/triba.seq",
-    #     "--fasta",f"{path}/test/triba.fasta",
-    #     "--score",f"{path}/test/tribal.score",
-    #     "--iso_infer", f"{path}/test/tribal.isotypes",
-    #     "--candidate", f"{path}/{dataset}/dnapars/{clonotype}/outtree",
-    #     "--save_candidates",f"{path}/test",
-    #     "--save_all_scores",f"{path}/test/all_scores.csv",
-    #     "--png", f"{path}/test/best_tree.png",
-    #     "--all_pngs"
-    #     # "--start_png", f"{path}/test/start_tree.png",
-    #     # "--fit"
-    # ])
+    args =parser.parse_args([
+        "-a", f"{path}/{dataset}/input/{clonotype}/concat.aln.fasta",
+        "-r", "naive",
+        "-t", f"{path}/{dataset}/{folder}/transmat.txt",
+        # "-l", f"{path}/{dataset}/{folder}/{clonotype}/fit_tree.pickle",
+        "-e", f"{path}/mouse_isotype_encoding.txt",
+        "-i", f"{path}/{dataset}/input/{clonotype}/isotype.fasta",
+        "-o", f"{path}/test/tree.txt",
+        # "--init", "candidates",
+        # "-s", "1",
+        "--alpha", "0.75",
+        "--sequences", f"{path}/test/triba.seq",
+        "--fasta",f"{path}/test/triba.fasta",
+        "--score",f"{path}/test/tribal.score",
+        "--iso_infer", f"{path}/test/tribal.isotypes",
+        "--candidate", f"{path}/{dataset}/dnapars/{clonotype}/outtree",
+        "--save_candidates",f"{path}/test",
+        "--save_all_scores",f"{path}/test/all_scores.csv",
+        "--png", f"{path}/test/best_tree.png",
+        "--all_pngs",
+        "--mode", "search",
+        # "--start_png", f"{path}/test/start_tree.png",
+        # "--fit"
+    ])
 
     # if args.candidates is not None:
     #     args.init = "candidates"
@@ -363,14 +362,14 @@ if __name__ == "__main__":
                 lin_forest = LineageForest([lin], alignment, isotypes_filt)
 
     tr = TribalSub(transmat, args.alpha)
-    print(f"Input:\nncells: {lin_forest.ncells()}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
+    print(f"\nInput:\nncells: {lin_forest.ncells()}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
     best_result, best_tree, all_results =  tr.forest_mode(lin_forest, mode =args.mode)
       
 
     print(f"{args.mode} complete! \nBest Tree: {best_tree.id}")
     print(best_result)
-    print("saving results......")
+    print("\nsaving results......")
 
 
     if args.output is not None:
