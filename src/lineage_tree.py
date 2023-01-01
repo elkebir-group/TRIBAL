@@ -104,15 +104,9 @@ class LineageTree:
         iso_score, iso_labels = sp.sankoff(iso_leaves)
         return iso_score, iso_labels 
 
-    def isotype_parsimony_polytomy(self, iso_leaves, transmat, states, convert=True):
-        if convert:
-            log_transmat = -1*np.log(transmat)
-        else:
-            log_transmat = transmat
-        weights = {}
-        for s in states:
-            for t in states:
-                weights[s,t] = log_transmat[s,t]
+    def isotype_parsimony_polytomy(self, iso_leaves, transmat):
+        weights,states = self.convert_transmat_to_weights(transmat)
+
     
 
         sp = SmallParsimony(self.T, self.root)
@@ -165,14 +159,14 @@ class LineageForest:
     def __getitem__(self, key):
         return self.forest[key]
     
-    def ncells(self):
-        return len(list(self.alignment.keys()))
     
     def size(self):
         return len(self.forest)
     
     def get_trees(self):
         return self.forest
+    
+  
 
     def save_trees(self, path):
         for tree in self.forest:

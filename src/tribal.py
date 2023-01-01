@@ -9,11 +9,10 @@ from copy import deepcopy
 import utils as ut
 from tree_utils import TribalTree
 from ete3 import Tree
-from draw_tree import DrawTree
 from trans_matrix import TransMat
 from em_weight_matrix import EMProbs
 from lineage_tree import LineageTree, LineageForest
-# from tribal_poly import TribalPoly
+
 from tribal_sub import TribalSub
 from draw_state_diagram import DrawStateDiag
 

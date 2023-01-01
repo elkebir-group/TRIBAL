@@ -2,17 +2,18 @@
 # table_fname <- "day_14_dandelion_table.tsv"
 # root_fname <- "day_14_root_sequences.csv"
 # 
-# run_dir <- "day_14"
-# run_path <- file.path("/scratch/projects/tribal/real_data", run_dir)
-# dat_fname = sprintf("%s/%s_dandelion_table.tsv",run_path, run_dir)
-# root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
-# 
-# min_size = 5
-# out_path = sprintf("/scratch/projects/tribal/real_data/%s/input", run_dir)
-# 
-#  outfile = sprintf("%s/clonotype_summary.csv",run_path)
-# id_mapping = sprintf("%s/barcode_id_mapping.csv", run_path)
-# # min_size <- 5
+run_dir <- "D31"
+
+run_path <- file.path("/scratch/projects/tribal/processed_data_v2", run_dir)
+dat_fname = sprintf("%s/%s_dandelion_table.tsv",run_path, run_dir)
+root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
+
+min_size = 5
+out_path = sprintf("/scratch/projects/tribal/real_data/%s/input", run_dir)
+
+ outfile = sprintf("%s/clonotype_summary.csv",run_path)
+id_mapping = sprintf("%s/barcode_id_mapping.csv", run_path)
+# min_size <- 5
 library(tidyverse)
 ###########################
 dat_fname <- snakemake@input[['data_fname']]
@@ -32,7 +33,8 @@ dat <- read.table(dat_fname, header=F, skip=1, col.names=cols) %>%
 print("read data")
 
 good_clonos <- dat %>% group_by(clonotype) %>% count() %>% filter(n >= min_size) %>% pull(clonotype)
-
+dat %>% group_by(clonotype) %>% count()  %>% summary()
+dat %>% group_by(clonotype) %>% count() %>% arrange(desc(n))
 dat.filt <- filter(dat, clonotype %in% good_clonos)
 
 #dat.filt %>% group_by(clonotype) %>% count() %>% ungroup() %>% summarize(med= median(n), max=max(n))

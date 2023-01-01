@@ -4,14 +4,25 @@ seq:
 
 run_dir:
   - day_14
+  - GCB_NP_1
+  - GCB_NP_2
+  - GCB_OVA_1
 
+
+
+# clono_file:
+#   - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
 
 clono_file:
-  - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
-
-
-
-
+  day_14: 
+    - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
+  GCB_NP_1:
+    - "/scratch/projects/tribal/real_data/GCB_NP_1/clonotype_summary.csv"
+  GCB_NP_2: 
+    - "/scratch/projects/tribal/real_data/GCB_NP_2/clonotype_summary.csv"
+  GCB_OVA_1: 
+    - "/scratch/projects/tribal/real_data/GCB_OVA_1/clonotype_summary.csv"
+#tribal params
 #tribal params
 alpha:
   - 0.75
@@ -27,3 +38,5 @@ seed:
 
 threshold:
   - 0.1
+
+search_timeout: 8
