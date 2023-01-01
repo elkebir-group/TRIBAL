@@ -13,7 +13,8 @@ from draw_tree import DrawTree
 from trans_matrix import TransMat
 from em_weight_matrix import EMProbs
 from lineage_tree import LineageTree, LineageForest
-from tribal_poly import TribalPoly
+# from tribal_poly import TribalPoly
+from tribal_sub import TribalSub
 from draw_state_diagram import DrawStateDiag
 
 class Tribal:
@@ -64,19 +65,14 @@ class Tribal:
     
 
     def score_candidates(self, candidates, transmat=None):
-            if transmat is not None:
-                convert = True
-            else:
-                convert = False 
+          
             total_likelihood = 0
             best_trees = []
             best_tree_ids = {}
             for i,c in enumerate(self.clonotypes):
-            
-        
-                    best_score, best_tree, score_dict= TribalPoly( n_isotypes=self.n_isotypes,transmat=transmat,
-                                                        alpha=self.alpha).fit(candidates[c], convert=convert)
-                    total_likelihood += best_score 
+                    ts = TribalSub( transmat=transmat,alpha=self.alpha)
+                    best_score, best_tree, _ = ts.forest_mode(candidates[c], mode="refine")
+                    total_likelihood += best_score.objective 
                     best_tree_ids[c] = best_tree.id
                     best_tree.set_name(c)
                     best_trees.append(best_tree)
@@ -122,23 +118,23 @@ class Tribal:
         old_score = np.Inf
         for i in range(self.niterations):
             print(f"\nStarting Cycle {i}...")
-            if i== 0:
-                transmat = None
-            else:
-                transmat = self.transmat
+            # if i== 0:
+            #     transmat = None
+            # else:
+            #     transmat = self.transmat
 
             
             candidates = self.intialize_candidates(best_tree_ids)
-            current_score, best_tree_ids, lin_forest = self.score_candidates(candidates, transmat=transmat)
+            current_score, best_tree_ids, lin_forest = self.score_candidates(candidates, transmat=self.transmat)
 
             print("\nFitting transition matrix...")
             cur_log_like, self.state_probs, self.transmat= EMProbs(lin_forest, self.transmat, self.states).fit(self.obs_states)
             # self.transmat = new_tmat
 
          
-            print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score}")
+            print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score} Curr EM Log Like: {cur_log_like}")
             
-            if i > min(15, self.niterations):
+            if i > min(7, self.niterations):
 
                 if self.check_convergence( old_score, current_score, self.threshold):
                   break
@@ -373,6 +369,7 @@ if __name__ == "__main__":
     parser.add_argument("--transmat_infer", type=str, help="filename where the inferred transition matrix should be saved")
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
     parser.add_argument("--diagram", type=str, help="filename where the png of transition matrix should be saved")
+    parser.add_argument("--diagram_pdf", type=str, help="filename where the pdf of transition matrix should be saved")
 
     # parser.add_argument( "--sequences", type=bool, action="store_true", help="if ancestral sequences should be saved")
     # parser.add_argument("-n", "--newick", type=bool, action="store_true",  help="if newick string should be saved")
@@ -384,11 +381,11 @@ if __name__ == "__main__":
 
 
     # path = "/scratch/projects/tribal/real_data"
-    # dataset = "day_14"
+    # dataset = "GCB_NP_1"
  
 
     # args =parser.parse_args([
-    #     "-c", f"{path}/{dataset}/test_clonos.txt",
+    #     "-c", f"{path}/{dataset}/clonotypes.txt",
     #     "-p", f"{path}/{dataset}/input",
     #     "-r", "naive",
     #     "-t", f"{path}/mouse_transmat2.txt",
@@ -399,7 +396,8 @@ if __name__ == "__main__":
     #     "--alpha", "0.75",
     #     "--max_cand", "3",
     #     "--niter", "4",
-    #     "--thresh", "0.1"
+    #     "--thresh", "0.1",
+    #     "--tree_path", f"{path}/{dataset}/dnapars"
 
     # ])
 
@@ -465,6 +463,9 @@ if __name__ == "__main__":
     
     if args.diagram is not None:
         DrawStateDiag(transmat, state_probs, rev_encoding).save(args.diagram)
+    if args.diagram_pdf is not None:
+        DrawStateDiag(transmat, state_probs, rev_encoding).save_pdf(args.diagram_pdf)
+
 
     if args.outpath is not None:
         lin_forest.save_trees(args.outpath)
