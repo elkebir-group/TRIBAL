@@ -12,7 +12,7 @@ class DrawTree:
         if color_encoding is None:
             self.color_encoding =  {
                 0 : "antiquewhite",
-                1 : "dimgrey",
+                1 : "turquoise1",
                 2 : "darkcyan",
                 3 : "cornflowerblue",
                 4 : "darksalmon",
@@ -20,7 +20,7 @@ class DrawTree:
                 6 : "orangered",
                 7 : "orchid",
                 8 : "darkgoldenrod",
-                9 : "thistle2"
+                9 : "thistle1"
             }
         else:
             self.color_encoding = color_encoding
@@ -70,6 +70,14 @@ class DrawTree:
     
     def save(self, fname):
         self.graph.write_png(fname)
+    
+
+    def save_pdf(self, fname):
+
+
+        self.graph.write_pdf(fname) 
+# Or, save it as a DOT-file:
+# graph.write_raw("output_raw.dot")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -82,13 +90,27 @@ if __name__ == "__main__":
         help="filename of input transition matrix")
     parser.add_argument("-l", "--legend", type=bool, action="store_true")
     parser.add_argument("-o", "--outfile", type=str, default="TRIBAL_Tree.png")
+    parser.add_argument("--pdf", type=str, default="TRIBAL_Tree.pdf")
     args= parser.parse_args()
+
+    # clono = "B_75_1_1_148_1_40"
+    # encoding_fname = "/scratch/projects/tribal/real_data/mouse_isotype_encoding.txt"
+
+    # i = 0
+    # parents_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.tree.txt"
+    # iso_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.isotypes"
+    # out_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.png"
+    
+    # parser.add_argument([
+
+
+    # ])
 
 
     iso_labels = read_dict(args.isotypes)
     parents = read_dict(args.tree)
     if args.encoding is not None:
-        with open(encoding_fname, 'r+') as file:
+        with open(args.encoding, 'r+') as file:
             isotype_encoding = {}
             counter = 0
             for line in file:
@@ -101,14 +123,15 @@ if __name__ == "__main__":
     
     dt.save(args.outfile)
 
+    if dt.save_pdf is not None:
+        dt.save_pdf(args.pdf)
 
-# clono = "B_75_1_1_148_1_40"
-# encoding_fname = "/scratch/projects/tribal/real_data/mouse_isotype_encoding.txt"
 
-# for i in range(6):
-    # parents_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.tree.txt"
-    # iso_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.isotypes"
-    # out_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.png"
+
+
+
+
+
 
 
 
