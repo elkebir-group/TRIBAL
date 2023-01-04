@@ -4,9 +4,9 @@ seq:
 
 run_dir:
   - day_14
-  - GCB_NP_1
-  - GCB_NP_2
-  - GCB_OVA_1
+  # - GCB_NP_1
+  # - GCB_NP_2
+  # - GCB_OVA_1
 
 
 
@@ -26,12 +26,18 @@ clono_file:
 #tribal params
 alpha:
   - 0.75
+  # - 0.9
 
 max_cand:
-  - 20
+  -50
 
 niter:
   - 20
+
+nworkers: 5
+nrestarts: 5
+mu: 0.075
+sigma: 0.05
 
 seed:
   - 3
@@ -40,3 +46,9 @@ threshold:
   - 0.1
 
 search_timeout: 8
+
+jump_probs:
+  - 0.25
+  - 0.2
+  - 0.1
+  - 0.35

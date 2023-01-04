@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def get_clonotypes():
-    datadir = "GCB_OVA_1"
+    datadir = "day_14"
     fname = f"/scratch/projects/tribal/real_data/{datadir}/clonotype_summary.csv"
     df = pd.read_csv(fname)
     return df['clonotype'].to_list()
@@ -32,16 +32,19 @@ rule all:
         # expand( "{run_dir}/tribal/transmat.txt",
         #     run_dir=config["run_dir"],
         # ),
-        expand( "{run_dir}/tribal/transmat.pdf",
+        expand( "{run_dir}/tribal/{jump_prob}/transmat.pdf",
             run_dir=config["run_dir"],
+            jump_prob = config["jump_probs"]
+
+
         ),
-        # expand("{run_dir}/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
-        #     run_dir=config["run_dir"],
-        #     alpha = config['alpha'],
-        #     mode = ["search"],
-        #     clonotype = get_clonotypes(),
-        #     # clonotype = ["B_21_3_13_154_2_3"]
-        # )
+        expand("{run_dir}/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
+            run_dir=config["run_dir"],
+            alpha = config['alpha'],
+            mode = ["search"],
+            clonotype = get_clonotypes(),
+            # clonotype = ["B_21_3_13_154_2_3"]
+        )
 
 
 
@@ -113,7 +116,6 @@ rule dnapars_run:
 rule tribal_infer:
     input: 
         clonotypes = "{run_dir}/clonotypes.txt",
-        transmat = "mouse_transmat2.txt",
         encoding = "mouse_isotype_encoding.txt",
     params:
         inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
@@ -123,23 +125,29 @@ rule tribal_infer:
         thresh = config["threshold"],
         seed =  config["seed"],
         root = "naive",
-        outpath = "/scratch/projects/tribal/real_data/{run_dir}/tribal",
-        tree_path = "/scratch/projects/tribal/real_data/{run_dir}/dnapars"
+        outpath = "/scratch/projects/tribal/real_data/{run_dir}/tribal/{jump_prob}",
+        tree_path = "/scratch/projects/tribal/real_data/{run_dir}/dnapars",
+        nworkers = config['nworkers'],
+        restarts = config["nrestarts"],
+        mu = config["mu"],
+        sigma = config["sigma"]
     output:
-        transmat = "{run_dir}/tribal/transmat.txt",
-        stateprobs = "{run_dir}/tribal/state_probs.txt",
-        score = "{run_dir}/tribal/fit_score.txt",
-        diagram = "{run_dir}/tribal/transmat.png",
-        diagram_pdf = "{run_dir}/tribal/transmat.pdf",
+        transmat = "{run_dir}/tribal/{jump_prob}/transmat.txt",
+        stateprobs = "{run_dir}/tribal/{jump_prob}/state_probs.txt",
+        score = "{run_dir}/tribal/{jump_prob}/fit_score.txt",
+        diagram = "{run_dir}/tribal/{jump_prob}/transmat.png",
+        diagram_pdf = "{run_dir}/tribal/{jump_prob}/transmat.pdf",
     log:
-        std = "{run_dir}/tribal/fit.log",
-        err = "{run_dir}/tribal/fit.err.log"
+        std = "{run_dir}/tribal/{jump_prob}/fit.log",
+        err = "{run_dir}/tribal/{jump_prob}/fit.err.log"
     shell:
         "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
-        "-r {params.root} -t {input.transmat} -e {input.encoding} -s {params.seed} "
+        "-r {params.root} -e {input.encoding} -s {params.seed} "
         "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
         "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
+        "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
+        "--save_all_restarts {params.outpath} -j {wildcards.jump_prob} "
         "--diagram {output.diagram} > {log.std} 2> {log.err} "
 
 
@@ -160,8 +168,8 @@ rule tribal_search:
     input: 
         alignment= "{run_dir}/input/{clonotype}/concat.aln.fasta",
         isotypes = "{run_dir}/input/{clonotype}/isotype.fasta",
-        transmat =  "{run_dir}/tribal/transmat.txt",
-        lin_tree = "{run_dir}/tribal/{clonotype}/fit_tree.pickle",
+        transmat =  "{run_dir}/tribal/0.25/transmat.txt",
+        lin_tree = "{run_dir}/tribal/0.25/{clonotype}/fit_tree.pickle",
         encoding = "mouse_isotype_encoding.txt",
     output: 
         tree= "{run_dir}/tribal_{mode}/{clonotype}/{alpha}/tree.txt",
@@ -173,6 +181,7 @@ rule tribal_search:
     params:
         root = "naive",
         timeout = config["search_timeout"]
+
     log: 
         run= "{run_dir}/tribal_{mode}/{clonotype}/{alpha}/search.log",
         err ="{run_dir}/tribal_{mode}/{clonotype}/{alpha}/search.err.log"  
