@@ -4,7 +4,7 @@ import numpy as np
 import sys, os, re
 import argparse 
 import pickle
-
+from multiprocessing import Pool
 from copy import deepcopy
 import utils as ut
 from tree_utils import TribalTree
@@ -12,6 +12,7 @@ from ete3 import Tree
 from trans_matrix import TransMat
 from em_weight_matrix import EMProbs
 from lineage_tree import LineageTree, LineageForest
+import init_transmat as tm
 
 from tribal_sub import TribalSub
 from draw_state_diagram import DrawStateDiag
@@ -20,16 +21,31 @@ class Tribal:
     def __init__(self, clonotypes, transmat=None, alpha=0.9, 
                 alphabet= ("A", "C", "G", "T","N", "-"), 
                 isotype_encoding=None, seed= 1026, 
-                max_cand=15, niter=10,
-                threshold=0.1):
+                max_cand=50, niter=10,
+                threshold=0.1, restarts=5,
+                n_isotypes = 7, not_trans_prob=0.65, mu=0.07, sigma=0.05 ):
         
         self.clonotypes = clonotypes
         self.isotype_encoding = isotype_encoding
         self.alphabet = alphabet
         self.alpha = alpha
-        self.transmat = transmat
+        self.not_trans_prob = not_trans_prob
+        print(self.not_trans_prob)
+        if transmat is None:
+            if isotype_encoding is not None:
+                self.n_isotypes = len(isotype_encoding)
+            else:
+                self.n_isotypes = n_isotypes 
+            print(f"generating transitiom matrix with not jump prob {self.not_trans_prob}")
+            self.transmat = tm.gen_trans_mat(self.not_trans_prob, self.n_isotypes)
+      
+        else:
+            self.transmat = transmat
+        
+        self.init_transmat = self.transmat.copy()
+
     
-        self.states = np.arange(transmat.shape[0])
+        self.states = np.arange(self.transmat.shape[0])
 
         self.seed = seed
         self.rng = np.random.default_rng(seed)
@@ -40,9 +56,12 @@ class Tribal:
         self.obs_states = {key: val.isotypes for key,val in self.clonotypes.items()}
         self.threshold = threshold
         self.niterations = niter
+        self.restarts = restarts 
+        self.mu = mu
+        self.sigma= sigma
 
-      
 
+     
     
 
     def intialize_candidates(self, best_tree_ids=None):
@@ -86,20 +105,93 @@ class Tribal:
         return np.abs(old -new) < threshold
 
 
-    def run(self):
-        print("\nStarting fitting phase.....")
-        fit_score, best_tree_ids, lin_forest = self.fit()
-        print(f"\nFit Phase Complete!\nFit Score: {fit_score}\n")
+    # def run(self):
+    #     best_tree_id_pointer = None
+    #     best_log_like_score = np.NINF
+    #     best_lin_forest = None
+    #     all_transmats ={}
+    #     all_state_probs = {}
+    #     best_trans =None
+    #     best_states = None
+    #     best_fit_scores = {}
+    #     log_like_scores = {}
+    #     for i in range(self.restarts):
+
+    #         print(f"\nStarting fitting phase for restart {i}.....")
+    #         fit_score, best_tree_ids, lin_forest, exp_log_like = self.fit()
+    #         print(f"\nFit Phase Complete for restart {i}!\nFit Score: {fit_score} Exp Log Like {exp_log_like}\n")
+    #         if exp_log_like > best_log_like_score:
+    #             best_log_like_score = exp_log_like
+
+    #             best_trans = self.transmat.copy()
+    #             best_states = self.state_probs.copy()
+    #             best_lin_forest = lin_forest
+    #             best_tree_id_pointer = best_tree_ids 
+    #             best_iter = i
+    #         best_fit_scores[i] = fit_score
+    #         log_like_scores[i] = exp_log_like
+
+    #         all_transmats[i] =self.transmat.copy()
+    #         all_state_probs[i] = self.state_probs.copy()
+    #         self.transmat = self.init_transmat
+    #         self.transmat =tm.add_noise(self.transmat, self.rng, mu=0.05, sigma=0.01, min_prob=0.01)
+
+
+            
+
+
         # search_score, best_lin_trees =self.search(lin_forest)
         # print(f"\nSearch Phase Complete!\nSearch Score: {search_score}")
 
-        return fit_score, lin_forest, self.transmat,self.state_probs
+        # return best_fit_scores[best_iter], best_lin_forest, best_trans,best_states, all_transmats, all_state_probs, log_like_scores
+
+
+    def run(self, nproc=1):
+
+        best_log_like_score = np.NINF
+        best_lin_forest = None
+        all_transmats ={}
+        all_state_probs = {}
+        best_trans =None
+        best_states = None
+        best_fit_scores = {}
+        log_like_scores = {}
+        init_mat_lists = [self.init_transmat.copy()]
+        for i in range(self.restarts-1):
+            init_mat_lists.append(tm.add_noise(self.init_transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma, min_prob=0.01))
+
+        with Pool(nproc) as p:
+            results = p.map(self.fit, init_mat_lists)
+        restart=0
+        for fit_score, best_tree_ids, lin_forest, exp_log_like, tmat, state_probs in results:     
+            print(f"\nFit Phase Complete for restart {restart}!\nFit Score: {fit_score} Exp Log Like {exp_log_like}")
+            if exp_log_like > best_log_like_score:
+                best_log_like_score = exp_log_like
+
+                best_trans = tmat
+                best_states = state_probs
+                best_lin_forest = lin_forest
+                best_tree_id_pointer = best_tree_ids 
+                best_iter = restart
+            best_fit_scores[restart] = fit_score
+            log_like_scores[restart] = exp_log_like
+
+            all_transmats[restart] = tmat
+            all_state_probs[restart] = state_probs
+            restart+= 1
 
 
 
+            
+
+
+        # search_score, best_lin_trees =self.search(lin_forest)
+        # print(f"\nSearch Phase Complete!\nSearch Score: {search_score}")
+
+        return best_fit_scores[best_iter], best_lin_forest, best_trans,best_states, all_transmats, all_state_probs, log_like_scores
 
     
-    def fit(self):
+    def fit(self, transmat):
   
      
         ''' resolve the polytomys using a basic sankoff cost function
@@ -124,10 +216,10 @@ class Tribal:
 
             
             candidates = self.intialize_candidates(best_tree_ids)
-            current_score, best_tree_ids, lin_forest = self.score_candidates(candidates, transmat=self.transmat)
+            current_score, best_tree_ids, lin_forest = self.score_candidates(candidates, transmat=transmat)
 
             print("\nFitting transition matrix...")
-            cur_log_like, self.state_probs, self.transmat= EMProbs(lin_forest, self.transmat, self.states).fit(self.obs_states)
+            cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(self.obs_states)
             # self.transmat = new_tmat
 
          
@@ -139,7 +231,7 @@ class Tribal:
                   break
                    
             old_score = current_score 
-        return  current_score, best_tree_ids, lin_forest
+        return  current_score, best_tree_ids, lin_forest, cur_log_like, transmat, state_probs
                
 
         
@@ -250,8 +342,11 @@ def create_input( path,  tree_path, clonotype, root, seq_fasta_fname, trees_fnam
     alignment = {key: list(value.strip()) for key,value in alignment.items()}
 
 
-
-    isotypes = ut.read_fasta(iso_fname)
+    #only treat isotype file as a fasta file if .fasta is in the name, otherwise, we assme it is a csv file dictionary
+    if ".fasta" in iso_fname:
+        isotypes = ut.read_fasta(iso_fname)
+    else:
+        isotypes = ut.read_dict(iso_fname)
 
     if iso_encoding is not None and start_iso is not None:
         isotypes_filt = {}
@@ -349,6 +444,9 @@ if __name__ == "__main__":
     parser.add_argument("--candidates", type=str, default="outtree", help="filename containing newick strings for candidate trees")
     parser.add_argument("--niter", type=int, help="max number of iterations in the fitting phase", default=10)
     parser.add_argument("--thresh", type=float, help="theshold for convergence in fitting phase" ,default=0.1)
+    parser.add_argument("--mu", type=float, default=0.07, help="mean of gaussian white noise to add for distortion")
+    parser.add_argument("--sigma", type=float, default=0.05, help="std of gaussian white noise to add for distortion")
+    parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event in multiple restarts")
 
     parser.add_argument("--max_cand", type=int, default = 10,  help="max candidate tree size per clonotype")
     parser.add_argument("-s", "--seed", type=int, default=1026)
@@ -356,11 +454,16 @@ if __name__ == "__main__":
     parser.add_argument("--n_isotypes", type=int, default=7, help="the number of isotypes states to use if isotype encoding file is not providied")
 
     parser.add_argument("--alpha", type=float, default=0.9)
-    parser.add_argument("-j", "--jump-prob", type=float, default=0.25, help="for inititalization of transition matrix if not provided")
-    parser.add_argument( "--fasta", type=str, default= "concat.aln.fasta", help="filename where reconstructed ancestral sequences should be saved as fasta file")
+    parser.add_argument("-j", "--jump_prob", type=float, default=0.25, help="for inititalization of transition matrix if not provided")
+    parser.add_argument("--restarts",  type=int, default=1, help="number of restarts")
+    parser.add_argument("--trees_fname", type=str, )
+    
+    
+    
+    parser.add_argument( "--fasta", type=str, default= "concat.aln.fasta", help="filename of input MSA in fasta file")
     parser
-    parser.add_argument("--mode", type=str, choices=["fit", "search"],
-                help="fit only resolves polytomyies and does not perform tree moves, search will search tree space for the candidate set")
+    # parser.add_argument("--mode", type=str, choices=["fit", "search"],
+    #             help="fit only resolves polytomyies and does not perform tree moves, search will search tree space for the candidate set")
     
     
     parser.add_argument( "-o", "--outpath", type=str, help="path to directory where output files should be saved")
@@ -369,6 +472,7 @@ if __name__ == "__main__":
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
     parser.add_argument("--diagram", type=str, help="filename where the png of transition matrix should be saved")
     parser.add_argument("--diagram_pdf", type=str, help="filename where the pdf of transition matrix should be saved")
+    parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
 
     # parser.add_argument( "--sequences", type=bool, action="store_true", help="if ancestral sequences should be saved")
     # parser.add_argument("-n", "--newick", type=bool, action="store_true",  help="if newick string should be saved")
@@ -378,25 +482,29 @@ if __name__ == "__main__":
     # parser.add_argument("--save_candidates", type=bool, action="store_true")
     args= parser.parse_args()
 
-
+    print(f"jump prob: {args.jump_prob}")
     # path = "/scratch/projects/tribal/real_data"
-    # dataset = "GCB_NP_1"
+    # dataset = "GCB_NP_2"
  
 
     # args =parser.parse_args([
     #     "-c", f"{path}/{dataset}/clonotypes.txt",
     #     "-p", f"{path}/{dataset}/input",
     #     "-r", "naive",
-    #     "-t", f"{path}/mouse_transmat2.txt",
+    #     "-j", "0.35",
     #     "-e", f"{path}/mouse_isotype_encoding.txt",
     #     "-s", "3",
-    #     "--score", f"{path}/{dataset}/tribal/score.txt",
-    #     "-o", f"{path}/{dataset}/tribal",
+    #     # "--score", f"{path}/{dataset}/tribal/score.txt",
+    #     "-o", f"{path}/test",
     #     "--alpha", "0.75",
-    #     "--max_cand", "3",
-    #     "--niter", "4",
+    #     "--max_cand", "5",
+    #     "--niter", "3",
     #     "--thresh", "0.1",
-    #     "--tree_path", f"{path}/{dataset}/dnapars"
+    #     "--tree_path", f"{path}/{dataset}/dnapars",
+    #     "--save_all_restarts", f"{path}/test",
+    #     "--diagram", f"{path}/test/state_diagram.png",
+    #     "--restarts", "3",
+    #     "--nworkers", "3"
 
     # ])
 
@@ -410,13 +518,15 @@ if __name__ == "__main__":
         rev_encoding = None
     
     
-    if args.transmat is None:
-        transmat= TransMat(n_isotypes=n_isotypes).fit(args.jump_prob)
-    else:
+    if args.transmat is not None:
+    #     transmat= TransMat(n_isotypes=n_isotypes).fit(args.jump_prob)
+    # else:
         transmat = np.loadtxt(args.transmat)
+    else:
+        transmat= None
 
-    if n_isotypes != transmat.shape[0]:
-        raise ValueError("Isotype states in transition matrix does not match the number of states in encoding file")
+    # if n_isotypes != transmat.shape[0]:
+    #     raise ValueError("Isotype states in transition matrix does not match the number of states in encoding file")
     
     
     if args.clonotypes is not None:
@@ -442,11 +552,17 @@ if __name__ == "__main__":
                 isotype_encoding= iso_encoding,
                 max_cand= args.max_cand,
                 niter = args.niter,
-                threshold=args.thresh)
+                threshold=args.thresh,
+                not_trans_prob= 1-args.jump_prob,
+                restarts=args.restarts,
+                mu = args.mu,
+                sigma=args.sigma
+                )
     
 
-    
-    obj_score, lin_forest, transmat, state_probs = tr.run()
+  
+    # obj_score, lin_forest, transmat, state_probs, all_transmats, all_state_probs, all_log_like = tr.run()
+    obj_score, lin_forest, transmat, state_probs, all_transmats, all_state_probs, all_log_like = tr.run(args.nworkers)
 
     # print(f"Tribal Object Score: {obj_score}")
     print("\nTRIBAL Complete!, saving results...")
@@ -472,7 +588,15 @@ if __name__ == "__main__":
   
 
  
-  
+    if args.save_all_restarts is not None:
+        with open(f"{args.save_all_restarts}/expectation_log_like.csv", "w+") as file:
+            file.write("restart,max_exp_log_like\n")
+            for i in all_transmats:
+                np.savetxt( f"{args.save_all_restarts}/transmat_restart{i}.txt",all_transmats[i])
+                np.savetxt(f"{args.save_all_restarts}/state_probs_restart{i}.txt",all_state_probs[i])
+                DrawStateDiag(all_transmats[i], all_state_probs[i], rev_encoding).save(f"{args.save_all_restarts}/state_diagram_restart{i}.png")
+                file.write(f"{i},{all_log_like[i]}\n")
+
 
 
         

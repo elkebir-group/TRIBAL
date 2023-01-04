@@ -2,17 +2,17 @@
 # table_fname <- "day_14_dandelion_table.tsv"
 # root_fname <- "day_14_root_sequences.csv"
 # 
-run_dir <- "D31"
-
-run_path <- file.path("/scratch/projects/tribal/processed_data_v2", run_dir)
-dat_fname = sprintf("%s/%s_dandelion_table.tsv",run_path, run_dir)
-root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
-
-min_size = 5
-out_path = sprintf("/scratch/projects/tribal/real_data/%s/input", run_dir)
-
- outfile = sprintf("%s/clonotype_summary.csv",run_path)
-id_mapping = sprintf("%s/barcode_id_mapping.csv", run_path)
+# run_dir <- "GCB_OVA_1"
+# 
+# run_path <- file.path("/scratch/projects/tribal/real_data", run_dir)
+# dat_fname = sprintf("%s/%s_dandelion_table.tsv",run_path, run_dir)
+# root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
+# 
+# min_size = 5
+# out_path = sprintf("/scratch/projects/tribal/real_data/%s/input", run_dir)
+# 
+#  outfile = sprintf("%s/clonotype_summary.csv",run_path)
+# id_mapping = sprintf("%s/barcode_id_mapping.csv", run_path)
 # min_size <- 5
 library(tidyverse)
 ###########################
@@ -33,9 +33,9 @@ dat <- read.table(dat_fname, header=F, skip=1, col.names=cols) %>%
 print("read data")
 
 good_clonos <- dat %>% group_by(clonotype) %>% count() %>% filter(n >= min_size) %>% pull(clonotype)
+n_distinct(dat$clonotype)
 dat %>% group_by(clonotype) %>% count()  %>% summary()
-dat %>% group_by(clonotype) %>% count() %>% arrange(desc(n))
-dat.filt <- filter(dat, clonotype %in% good_clonos)
+
 
 #dat.filt %>% group_by(clonotype) %>% count() %>% ungroup() %>% summarize(med= median(n), max=max(n))
 root.cols <- c("clonotype", "light_v_seq", "heavy_v_seq")
@@ -43,7 +43,13 @@ root.dat <- read.csv(root_fname,header=F, skip=1, col.names= root.cols) %>%
   filter(clonotype %in% good_clonos) %>%
   mutate(barcode="naive", heavy_isotype_exp="Ighm")
 
+
+dat.filt <- filter(dat, clonotype %in% good_clonos)
+dat.filt %>% group_by(clonotype) %>% count() %>% summary()
 dat.filt <- bind_rows(dat.filt, root.dat)
+nrow(dat.filt)
+n_distinct(dat.filt$clonotype)
+
 
 #dat.filt <- dat.filt %>% mutate(heavy_len = str_length(heavy_v_seq), light_len = str_length(light_v_seq))
 
