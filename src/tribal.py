@@ -88,8 +88,10 @@ class Tribal:
             best_trees = []
             best_tree_ids = {}
             for i,c in enumerate(self.clonotypes):
-                    ts = TribalSub( transmat=transmat,alpha=self.alpha)
-                    best_score, best_tree, _ = ts.forest_mode(candidates[c], mode="refine")
+                    ts = TribalSub( isotype_weights=transmat,alpha=self.alpha)
+                    best_score,_ = ts.forest_mode_loop(candidates[c], mode="refine")
+                    best_score = best_score[0]
+                    best_tree = best_score.tree
                     total_likelihood += best_score.objective 
                     best_tree_ids[c] = best_tree.id
                     best_tree.set_name(c)
@@ -472,6 +474,7 @@ if __name__ == "__main__":
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
     parser.add_argument("--diagram", type=str, help="filename where the png of transition matrix should be saved")
     parser.add_argument("--diagram_pdf", type=str, help="filename where the pdf of transition matrix should be saved")
+    parser.add_argument("--heatmap", type=str, help="filename where the heatmap pdf of transition matrix should be saved")
     parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
 
     # parser.add_argument( "--sequences", type=bool, action="store_true", help="if ancestral sequences should be saved")
@@ -580,6 +583,8 @@ if __name__ == "__main__":
         DrawStateDiag(transmat, state_probs, rev_encoding).save(args.diagram)
     if args.diagram_pdf is not None:
         DrawStateDiag(transmat, state_probs, rev_encoding).save_pdf(args.diagram_pdf)
+    if args.heatmap is not None:
+            DrawStateDiag(transmat, state_probs, rev_encoding).heatmap(args.heatmap)
 
 
     if args.outpath is not None:

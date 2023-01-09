@@ -29,6 +29,7 @@ class TribalSub:
 
 
         if isotype_weights is None:
+         
 
             #use unweighted sankoff cost function
             self.states = [i for i in range(n_isotypes)]
@@ -46,8 +47,11 @@ class TribalSub:
 
 
         else:
-            self.iso_weights = isotype_weights
-            self.states = list(set([s for s,t in self.iso_weights]))
+            if type(isotype_weights) is np.ndarray:
+                self.iso_weights, self.states = ut.convert_transmat_to_weights(isotype_weights)
+            else:
+                self.iso_weights = isotype_weights
+                self.states = list(set([s for s,t in self.iso_weights]))
 
   
     
@@ -154,8 +158,53 @@ class TribalSub:
             #remove the highest scoring tree in the list
             del results[-1]
 
-           
-   
+    def forest_mode_loop(self, lin_forest, alignment=None, isotypes=None, mode="score", ntrees=1):
+            
+            best_results = []
+            # best_result = None 
+            # best_tree = None
+
+            all_results = {}
+            
+            if alignment is None:
+                alignment = lin_forest.alignment
+            if isotypes is None:
+                isotype_labels = lin_forest.isotypes 
+            else:
+                isotype_labels = isotypes
+
+            if mode =="refine":
+                mode_func = self.refine
+            elif mode == "search":
+                mode_func = self.search 
+            else:
+                mode_func = self.score 
+
+                #    M = pool.starmap(func, zip(a_args, repeat(second_arg)))
+            # with Pool(self.nworkers) as pool:
+            #     all_results = pool.starmap(mode_func,zip(lin_forest.get_trees(), repeat(alignment), repeat(isotype_labels)))     
+            all_results = [] 
+            for lin_tree in lin_forest.get_trees():
+         
+                result = mode_func(lin_tree,alignment, isotype_labels)
+                all_results.append(  result)
+            #scan through results and find the top ntrees results 
+            for result in all_results:
+                if len(best_results) ==0:
+                    best_results.append( result)
+                  
+                    # print(best_result)
+                else:
+                    if result.improvement(best_results[-1]) or len(best_results) < ntrees:
+                        self.update_best_results(result, best_results, ntrees)
+                       
+                        # print(best_result)
+
+      
+            return best_results, all_results
+
+
+
     def forest_mode(self, lin_forest, alignment=None, isotypes=None, mode="score", ntrees=1):
             
             best_results = []
