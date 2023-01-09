@@ -2,3 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
+simulator/
+mouse_data/
+*/__pycache__/
