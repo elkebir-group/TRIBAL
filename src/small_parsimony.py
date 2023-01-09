@@ -488,22 +488,23 @@ class SmallParsimony:
             
     def traceback_helper(self,state, root, dp_matrix, labels):
         self.find_state(state, root, dp_matrix, labels)
-        for c in self.T.successors(root):
+        children = list(self.T.successors(root))
+
+        for c in children:
             self.traceback_helper(labels[root], c,dp_matrix, labels)
     
 
 
-    def find_state(self, state, parent,  dp_matrix, labels):
+    def find_state(self, parent_state, node,  dp_matrix, labels):
 
         min_cost = np.Inf
-        for a in self.alphabet:
-            if parent == self.root:
-                trans_cost = dp_matrix[parent][state]
-            else:
-                trans_cost = self.cost[a,state] + dp_matrix[parent][a]
+        for b in self.alphabet:
+           
+        
+            trans_cost = self.cost[parent_state,b] + dp_matrix[node][b]
             if trans_cost < min_cost:
                 min_cost = trans_cost
-                labels[parent] = a
+                labels[node] = b
 
     @staticmethod 
     def concat_labels(all_labs, nodes):
@@ -534,9 +535,9 @@ class SmallParsimony:
         
         node_labels= self.concat_labels(all_labels, self.nodes)
         if seq_length == 1:
-            for key in node_labels:
-                if key in self.att:
-                    node_labels[key] = self.att[key]
+            # for key in node_labels:
+            #     if key in self.att:
+            #         node_labels[key] = self.att[key]
             node_labels = {key: val[0] for key,val in node_labels.items()}
         # nx.set_node_attributes(self.T, node_labels, self.att_name)
 

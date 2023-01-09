@@ -84,28 +84,26 @@ class LineageTree:
 
 
     
-    @staticmethod
-    def convert_transmat_to_weights(transmat):
+    # @staticmethod
+    # def convert_transmat_to_weights(transmat):
 
-        log_transmat = -1*np.log(transmat)
-        states = np.arange(transmat.shape[0])
-        weights = {}
-        for s in states:
-            for t in states:
-                weights[s,t] = log_transmat[s,t]
-        return weights, states
+    #     log_transmat = -1*np.log(transmat)
+    #     states = np.arange(transmat.shape[0])
+    #     weights = {}
+    #     for s in states:
+    #         for t in states:
+    #             weights[s,t] = log_transmat[s,t]
+    #     return weights, states
     
-    def isotype_parsimony(self, iso_leaves, transmat):
+    def isotype_parsimony(self, iso_leaves, weights, states):
    
-        weights,states = self.convert_transmat_to_weights(transmat)
         
         
         sp = SmallParsimony(self.T, self.root, alphabet=states, cost=weights)
         iso_score, iso_labels = sp.sankoff(iso_leaves)
         return iso_score, iso_labels 
 
-    def isotype_parsimony_polytomy(self, iso_leaves, transmat):
-        weights,states = self.convert_transmat_to_weights(transmat)
+    def isotype_parsimony_polytomy(self, iso_leaves, weights, states):
 
     
 
@@ -119,7 +117,7 @@ class LineageTree:
     def save_png(self,fname, isotypes, iso_encoding=None):
     
         parents = self.get_parents()
-        dt = DrawTree(parents, isotypes, show_legend=True, isotype_encoding=iso_encoding)
+        dt = DrawTree(parents, isotypes, show_legend=False, isotype_encoding=iso_encoding)
         dt.save(fname)
 
     def save_tree(self,fname):
@@ -167,6 +165,9 @@ class LineageForest:
         return self.forest
     
   
+    def save_forest(self, fname):
+        with open(fname, 'wb') as file:
+            pickle.dump(self, file)
 
     def save_trees(self, path):
         for tree in self.forest:

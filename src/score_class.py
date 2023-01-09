@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from lineage_tree import LineageTree
 
 @dataclass
 class Score:
@@ -7,6 +8,7 @@ class Score:
     iso_obj: float 
     labels: dict 
     isotypes: dict 
+    tree: LineageTree= None
 
 
 
@@ -20,3 +22,5 @@ class Score:
     def save_score(self, fname, alpha):
          with open(fname, 'w+') as file:
             file.write(f"{alpha},{self.objective},{self.seq_obj},{self.iso_obj}\n")
+
+

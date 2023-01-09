@@ -540,7 +540,7 @@ if __name__ == "__main__":
 
     clonodict = {}
     for c in clonotypes:
-
+        print(args.isotypes)
         clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
                         args.candidates, args.isotypes, iso_encoding, start_iso)
     

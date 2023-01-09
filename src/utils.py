@@ -88,7 +88,16 @@ def create_distance_matrix(alignment, ids):
 
 
 
-        
+
+def convert_transmat_to_weights(transmat):
+
+        log_transmat = -1*np.log(transmat)
+        states = np.arange(transmat.shape[0])
+        weights = {}
+        for s in states:
+            for t in states:
+                weights[s,t] = log_transmat[s,t]
+        return weights, states
 
 def read_dict(fname):
     mydict= {}

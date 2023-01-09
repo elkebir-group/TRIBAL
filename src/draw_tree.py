@@ -52,20 +52,20 @@ class DrawTree:
               
                 self.graph.add_edge(new_edge)
         
-        if show_legend:
-            used_isotypes.sort()
-            if isotype_encoding is not None:
-                for u in used_isotypes:
-                    iso_name = isotype_encoding[u]
-                    self.graph.add_node(pydot.Node(iso_name, shape="circle", color=self.color_encoding[u], style='filled'))
+        # if show_legend:
+        #     used_isotypes.sort()
+        #     if isotype_encoding is not None:
+        #         for u in used_isotypes:
+        #             iso_name = isotype_encoding[u]
+        #             self.graph.add_node(pydot.Node(iso_name, shape="circle", color=self.color_encoding[u], style='filled'))
                 
-                for u,v in iso_trans:
-                    if iso_trans[u,v] > 0:
-                            u_name = isotype_encoding[u]
-                            v_name = isotype_encoding[v]
-                            lab = str(round(iso_trans[u,v]/total_trans,2))
-                            new_edge = pydot.Edge(src=u_name, dst=v_name, color="black", label=lab)
-                            self.graph.add_edge(new_edge)
+        #         for u,v in iso_trans:
+        #             if iso_trans[u,v] > 0:
+        #                     u_name = isotype_encoding[u]
+        #                     v_name = isotype_encoding[v]
+        #                     lab = str(round(iso_trans[u,v]/total_trans,2))
+        #                     new_edge = pydot.Edge(src=u_name, dst=v_name, color="black", label=lab)
+        #                     self.graph.add_edge(new_edge)
 
     
     def save(self, fname):
@@ -88,9 +88,9 @@ if __name__ == "__main__":
         help="filename of input file containing inferred isotypes")
     parser.add_argument("-e", "--encoding", required=False, type=str,
         help="filename of input transition matrix")
-    parser.add_argument("-l", "--legend", type=bool, action="store_true")
-    parser.add_argument("-o", "--outfile", type=str, default="TRIBAL_Tree.png")
-    parser.add_argument("--pdf", type=str, default="TRIBAL_Tree.pdf")
+    parser.add_argument("-l", "--legend", action="store_true")
+    parser.add_argument("-o", "--outfile", type=str)
+    parser.add_argument("--pdf", type=str)
     args= parser.parse_args()
 
     # clono = "B_75_1_1_148_1_40"
@@ -101,11 +101,22 @@ if __name__ == "__main__":
     # iso_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.isotypes"
     # out_fname = f"/scratch/projects/tribal/real_data/day_14/tribal_fit/{clono}/candidate{i}.png"
     
-    # parser.add_argument([
+    # args= parser.parse_args([
+    #     "-t", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/1/GCsim_collapsed_tree.parents",
+    #     "-i", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/1/GCsim_collapsed_tree.isotypes",
+    #     "-o", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/1/GCsim_collapsed_tree.png"
 
 
     # ])
 
+    
+    # args= parser.parse_args([
+    #     "-t", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/tribal_refine/1/0.75/inferred_collapsed_tree.parents",
+    #     "-i", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/tribal_refine/1/0.75/inferred_collapsed_tree.isotype",
+    #     "-o", "bcr-phylo-benchmark/sim_data/replicates/cells35/size25/rep1/2.0/0.365/tribal_refine/1/0.75/inferred_collapsed_tree.png"
+
+
+    # ])
 
     iso_labels = read_dict(args.isotypes)
     parents = read_dict(args.tree)
@@ -123,7 +134,7 @@ if __name__ == "__main__":
     
     dt.save(args.outfile)
 
-    if dt.save_pdf is not None:
+    if args.pdf is not None:
         dt.save_pdf(args.pdf)
 
 

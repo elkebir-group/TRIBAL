@@ -3,9 +3,11 @@ import pydot
 import argparse
 import seaborn as sns
 import pandas as pd 
+import matplotlib.pyplot as plt
+
 class DrawStateDiag:
     def __init__(self, transmat, state_probs=None, isotype_mapping=None, color_encoding=None, cmap_name="rocket_r") -> None:
-        
+    
         if isotype_mapping is None:
             isotype_mapping = {i: i for i in range(transmat.shape[0])}
         
@@ -14,7 +16,7 @@ class DrawStateDiag:
         self.cmap = sns.color_palette(cmap_name, as_cmap=True)
         self.states = [i for i in range(transmat.shape[0])]
         self.transmat = transmat
-        
+  
         if color_encoding is None:
             self.color_encoding =  {
                 0 : "antiquewhite",
@@ -58,14 +60,16 @@ class DrawStateDiag:
                 
                     self.graph.add_edge(new_edge)
     
+     
     def heatmap(self,fname):
+        plt.figure()
         labs= [self.isotype_mapping[s] for s in self.states]
         df = pd.DataFrame(self.transmat, index=labs, columns=labs)
         fig =sns.heatmap(df, annot=True, fmt=".03f", cmap=self.cmap)
 
         fig.set(xlabel="Isotype", ylabel="Isotype")
-        fig_obj =fig.get_figure()
-        fig_obj.savefig(fname) 
+        plt.savefig(fname)
+      
         
     def save(self, fname):
         self.graph.write_png(fname)
