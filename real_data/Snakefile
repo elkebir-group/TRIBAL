@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def get_clonotypes():
-    datadir = "day_14"
+    datadir = "GCB_NP_2"
     fname = f"/scratch/projects/tribal/real_data/{datadir}/clonotype_summary.csv"
     df = pd.read_csv(fname)
     return df['clonotype'].to_list()
@@ -44,7 +44,16 @@ rule all:
             mode = ["search"],
             clonotype = get_clonotypes(),
             # clonotype = ["B_21_3_13_154_2_3"]
-        )
+        ),
+        expand("heatmaps/{run_dir}.pdf",
+            run_dir = config["run_dir"]
+        ),
+        expand("{run_dir}/tribal_refine/{clonotype}/{alpha}/tree.png",
+            run_dir=config["run_dir"],
+            alpha = config['alpha'],
+            clonotype = get_clonotypes(),
+            # clonotype = ["B_21_3_13_154_2_3"]
+        ),
 
 
 
@@ -119,7 +128,7 @@ rule tribal_infer:
         encoding = "mouse_isotype_encoding.txt",
     params:
         inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
-        alpha = config["alpha"],
+        alpha = 0.75,
         max_cand = config["max_cand"],
         niter = config["niter"],
         thresh = config["threshold"],
@@ -151,16 +160,31 @@ rule tribal_infer:
         "--diagram {output.diagram} > {log.std} 2> {log.err} "
 
 
-# rule state_pdf:
+rule state_pdf:
+    input: 
+        transmat =  "{run_dir}/tribal/0.25/transmat.txt",
+        encoding = "mouse_isotype_encoding.txt",
+    output: "heatmaps/{run_dir}.pdf",
+    shell:
+        "python ../src/draw_state_diagram.py -t {input.transmat}  -e {input.encoding} --heatmap {output} "
+
+# rule save_heatmap:
 #     input: 
-#         transmat =  "{run_dir}/tribal/transmat.txt",
+#         infer =  "{run_dir}/tribal/0.25/transmat.txt",
 #         encoding = "mouse_isotype_encoding.txt",
-#         stateprobs = "{run_dir}/tribal/state_probs.txt",
 #     output: 
-#         pdf = "{run_dir}/tribal/transmat.pdf",
-#         png ="{run_dir}/tribal/transmat.png"
-#     shell:
-#         "python ../src/draw_state_diagram.py -t {input.transmat} -s {input.stateprobs} -e {input.encoding} --pdf {output.pdf} -o {output.png} "
+#         heatmap ="heatmaps/{run_dir}.pdf",
+#         png  ="heatmaps/{run_dir}.png"
+#     run:
+#         import numpy as np 
+#         import sys 
+#         sys.path.insert(0, '/scratch/projects/tribal/src')
+#         from draw_state_diagram import DrawStateDiag
+
+#         infer = np.loadtxt(input.infer)
+#         ds = DrawStateDiag(infer)
+#         ds.heatmap(output.heatmap)
+#         ds.heatmap(output.png)
 
 
 
@@ -206,7 +230,43 @@ rule tribal_search:
 
 
 
-
+rule tribal_refine:
+    input: 
+        alignment= "{run_dir}/input/{clonotype}/concat.aln.fasta",
+        isotypes = "{run_dir}/input/{clonotype}/isotype.fasta",
+        transmat =  "{run_dir}/tribal/0.25/transmat.txt",
+        candidates ="/scratch/projects/tribal/real_data/{run_dir}/dnapars/{clonotype}/outtree",
+        encoding = "mouse_isotype_encoding.txt",
+    output: 
+        tree= "{run_dir}/tribal_refine/{clonotype}/{alpha}/tree.txt",
+        seq= "{run_dir}/tribal_refine/{clonotype}/{alpha}/inferred_seq.csv",
+        fasta= "{run_dir}/tribal_refine/{clonotype}/{alpha}/inferred_seq.fasta",
+        isotypes= "{run_dir}/tribal_refine/{clonotype}/{alpha}/isotypes.csv",
+        score= "{run_dir}/tribal_refine/{clonotype}/{alpha}/score.csv",
+        png = "{run_dir}/tribal_refine/{clonotype}/{alpha}/tree.png",
+    params:
+        root = "naive",
+        mode = "refine"
+    log: 
+        run= "{run_dir}/tribal_refine/{clonotype}/{alpha}/refine.log",
+        err ="{run_dir}/tribal_refine/{clonotype}/{alpha}/refine.err.log"  
+    benchmark: "{run_dir}/tribal_refine/{clonotype}/{alpha}/refine.benchmark.log" 
+    shell:
+        "python ../src/tribal_sub.py "
+        " -r {params.root} "
+        " -a {input.alignment} "
+        "-t {input.transmat} "
+        "-e {input.encoding} "
+        "-i {input.isotypes} "
+        "--candidates {input.candidates} "
+        "--alpha {wildcards.alpha} "
+        "--sequences {output.seq} "
+        "--fasta {output.fasta} "
+        "--score {output.score} "
+        "--iso_infer {output.isotypes} "
+        "--png {output.png} "
+        "--mode {params.mode} "
+        "-o {output.tree} > {log.run} 2> {log.err} "  
 
    
 
