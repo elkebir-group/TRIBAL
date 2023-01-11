@@ -145,14 +145,15 @@ class TribalSub:
     def update_best_results(new_result, results, ntrees):
         #find index where new result should be inserted
         new_score = new_result.objective
-       
+        added = False 
         for index, res in enumerate(results):
             if new_score < res.objective:
                  #insert new result in its proper place
                 results.insert(index, new_result)
+                added = True
                 break 
-            if index == len(results) -1 and len(results) <= ntrees:
-                results.append(new_result)
+        if not added and len(results) < ntrees:
+            results.append(new_result)
         
         if len(results) > ntrees:
             #remove the highest scoring tree in the list
@@ -399,9 +400,39 @@ if __name__ == "__main__":
     #     # "--fit"
     # ])
 
-    # if args.candidates is not None:
-    #     args.init = "candidates"
+    # path = "/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/replicates/cells65/size25/rep1/2.0/0.365"
+    # # dataset = "day_14"
+    # # folder = "tribal"
+    # # clonotype = "B_147_6_76_148_1_41"
+    # clono=21
 
+    # args =parser.parse_args([
+    #     "-a", f"{path}/{clono}/GCsim_dedup.fasta",
+    #     "-r", "naive",
+    #     "-t", f"{path}/tribal/transmat.txt",
+    #     # "-l", f"{path}/tribal_refine/{clono}/0.75/forest.pickle",
+    #     # "--forest",
+    #     "-e", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
+    #     "-i", f"{path}/{clono}/GCsim.isotypes",
+    #     "-o", f"{path}/{clono}/test_search/best_forest.pickle",
+    #     # "--init", "candidates",
+    #     # "-s", "1",
+    #     "--alpha", "0.95",
+    #     "--sequences", f"{path}/{clono}/test_search/tribal.seq",
+    #     "--fasta",f"{path}/{clono}/test_search/tribal.fasta",
+    #     "--score",f"{path}/{clono}/test_search/score.csv",
+    #     "--iso_infer", f"{path}/{clono}/test_search/tribal.isotypes",
+    #     "--candidates", f"{path}/{clono}/dnapars/outtree",
+    #     # "--save_candidates",f"{path}/test",
+    #     # "--save_all_scores",f"{path}/test/all_scores.csv",
+    #     "--png", f"{path}/{clono}/test_search/tree.png",
+    #     "--mode", "refine",
+    #     # "--timeout", "0.1"
+    #     "--ntrees", "10",
+    #     "--nworkers", "7",
+    #     # "--start_png", f"{path}/test/start_tree.png",
+    #     # "--fit"
+    # ])
 
     
     iso_encoding = {}
