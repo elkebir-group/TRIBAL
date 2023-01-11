@@ -3,11 +3,11 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,7)]
-reps= [7]
+reps= [1]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
-        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
             n = config["ncells"],
             r = [1],
             k = config["size"],
