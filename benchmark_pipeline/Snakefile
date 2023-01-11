@@ -7,9 +7,9 @@ reps= [7]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
-        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_diff.pdf",
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
             n = config["ncells"],
-            r = reps,
+            r = [1],
             k = config["size"],
         ),
         #generate heatmaps for ground truth transition matrices  
@@ -165,14 +165,19 @@ rule compare_tmats:
     input: 
         gt= "transmats/transmat{r}.txt",
         infer =  "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
+        states = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_probs.txt",
     output: 
         mse = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
         heatmapDiff ="sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_diff.pdf",
+        heatmapStates= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
+        heatmapTrans= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_heatmap.pdf",
     params:
         bin_path = "../src"
     run:
         import numpy as np 
-        
+        import pandas as pd 
+        import seaborn as sns 
+        import matplotlib.pyplot as plt 
         import sys 
         sys.path.insert(0, params.bin_path)
         from draw_state_diagram import DrawStateDiag
@@ -190,6 +195,25 @@ rule compare_tmats:
         with open(output.mse, "w") as file:
             file.write("RMSE,MSE,MAE,nparams\n")
             file.write( f"{np.sqrt(mse)},{mse},{mae},{n_params}\n")
+
+        isotypes = [ "IgM/D", "IgG3", "IgG1" ,  "IgG2b",  "IgG2c" , "IgE", "IgA"]
+        
+        plt.figure()
+        states = np.loadtxt(input.states).reshape(1,-1)
+   
+        
+    
+        df = pd.DataFrame(states.reshape(1,-1), columns=isotypes)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap="rocket_r", square=True, yticklabels=False, vmin=0, vmax=1)
+
+        fig.set(xlabel="Isotype")
+        plt.savefig(output.heatmapStates)
+        plt.figure()
+        df = pd.DataFrame(infer, index=isotypes, columns=isotypes)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap="rocket_r", square=True, vmin=0, vmax=1)
+
+        fig.set(xlabel="Isotype", ylabel="Isotype")
+        plt.savefig(output.heatmapTrans)
 
 
 
@@ -376,7 +400,9 @@ rule tribal_search_gt:
         "-o {output.lin_forest} > {log.run} 2> {log.err} "  
 
 
- 
+
+
+
 
 
 #TODO: update code to allow no transition matrix input 

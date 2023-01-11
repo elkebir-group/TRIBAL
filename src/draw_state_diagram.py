@@ -70,6 +70,7 @@ class DrawStateDiag:
         fig.set(xlabel="Isotype", ylabel="Isotype")
         plt.savefig(fname)
       
+
         
     def save(self, fname):
         self.graph.write_png(fname)
