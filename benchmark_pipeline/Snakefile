@@ -66,6 +66,12 @@ rule all:
             alpha= config["alpha"],
             clonotype= clonotypes,
             mode = ['search']
+        ),
+        expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/tribal_tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            clonotype= clonotypes,
         )
         
 
@@ -429,6 +435,44 @@ rule gctree_isotype:
     shell:
         "python ../src/tribal_sub.py "
         " -r {params.root} "
+        "--candidates {input.candidates} "
+        " -a {input.alignment} "
+        "-e {input.encoding} "
+        "-i {input.isotypes} "
+        "--alpha {wildcards.alpha} "
+        "--sequences {output.seq} "
+        "--fasta {output.fasta} "
+        "--score {output.score} "
+        "--iso_infer {output.isotypes} "
+        "--png {output.png} "
+        "--mode {params.mode} "
+        "-o {output.tree} > {log.run} 2> {log.err} "  
+    
+
+rule dnaml_isotype:
+    input: 
+        alignment= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta",
+        isotypes = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes",
+        candidates = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/outtree",
+        transmat =  "transmats/transmat{r}.txt",
+        encoding = "sim_encoding.txt",
+    output: 
+        tree= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/tribal_tree.txt",
+        seq= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/tribal_inferred_seq.csv",
+        fasta= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/tribal_inferred_seq.fasta",
+        isotypes= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/isotypes.csv",
+        score= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/score.csv",
+        png = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/tribal_tree.png",
+    params:
+        root = "naive",
+        mode = "score"
+    log: 
+        run= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/dnaml_isotype.log",
+        err ="sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/2.0/0.365/{clonotype}/dnaml/dnaml_isotype.err.log"  
+    shell:
+        "python ../src/tribal_sub.py "
+        " -r {params.root} "
+        "-t {input.transmat} "
         "--candidates {input.candidates} "
         " -a {input.alignment} "
         "-e {input.encoding} "
