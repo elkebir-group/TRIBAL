@@ -247,7 +247,7 @@ class TribalSub:
                        
                         # print(best_result)
 
-      
+    
             return best_results, all_results
       
   
@@ -360,6 +360,7 @@ if __name__ == "__main__":
     parser.add_argument("--save_candidates", type=str, help="directory where to save data for candidate trees")
     parser.add_argument("--save_all_scores", type=str, help="file where to save data for candidate trees")
     parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event in multiple restarts")
+    parser.add_argument("--seed", type=int, default=1026, help="random seed for picking a single best tree among all tied trees")
 
 
 
@@ -511,20 +512,29 @@ if __name__ == "__main__":
     lin_forest_out = LineageForest(lin_forest.alignment, lin_forest.isotypes, [res.tree for res in best_results])
     
 
-    best_tree = best_results[0].tree
-  
-    print(f"{args.mode} complete! \nBest Tree: {best_results[0].tree.id}")
+    #randomly pick the best result if there are multiple trees with the same optimal objective
+    top_score = best_results[0].objective
+    tied_trees = []
+    for res in best_results:
+        if res.objective ==top_score:
+            tied_trees.append(res)
+    rng = np.random.default_rng(args.seed)
+    best_result = rng.choice(tied_trees, 1)[0]
+    
+    best_tree= best_result.tree
+    print(f"{args.mode} complete! \nBest Tree: {best_result.tree.id}")
     print(best_results[0])
     print("\nsaving results......")
 
 
     if args.output is not None:
         lin_forest_out.save_forest(args.output)
-        if args.png is not None:
-            best_tree.save_png(args.png, best_results[0].isotypes, isotype_encoding)
+    
+    if args.png is not None:
+            best_tree.save_png(args.png, best_result.isotypes, isotype_encoding)
         
     
-    best_labels = ut.update_labels(best_results[0].labels)
+    best_labels = ut.update_labels(best_result.labels)
 
     if args.fasta is not None:
         
@@ -535,10 +545,10 @@ if __name__ == "__main__":
     
 
     if args.tree is not None:
-        best_results[0].tree.save_tree(args.tree)
+        best_result.tree.save_tree(args.tree)
        
     if args.iso_infer is not None:
-        ut.save_dict(best_results[0].isotypes, args.iso_infer)
+        ut.save_dict(best_result.isotypes, args.iso_infer)
     
     if args.score:
         with open(args.score, 'w+') as file:
@@ -547,16 +557,15 @@ if __name__ == "__main__":
     
     if args.save_candidates is not None:
         pth =args.save_candidates
-        for tree in lin_forest:
-            res= all_results[tree.id]
-            parents = tree.get_parents()
+        for res in best_results:
+          
+            
             labs = ut.update_labels(res.labels)
-            ut.write_fasta(f"{pth}/tree{tree.id}.seq.fasta", labs)
-            ut.save_dict(labs, f"{pth}/tree{tree.id}.seq.csv")
-            ut.save_dict(res.isotypes, f"{pth}/tree{tree.id}.isotypes.csv")
-            tree.save_tree(f"{pth}/tree{tree.id}.txt")
-            if args.all_pngs:
-                tree.save_png(f"{pth}/tree{tree.id}.png", res.isotypes, isotype_encoding)
+            ut.write_fasta(f"{pth}/tribal_tree{res.tree.id}.seq.fasta", labs)
+            ut.save_dict(labs, f"{pth}/tribal_tree{res.tree.id}.seq.csv")
+            ut.save_dict(res.isotypes, f"{pth}/tribal_tree{res.tree.id}.isotypes.csv")
+            res.tree.save_tree(f"{pth}/tribal_tree{res.tree.id}.txt")
+
         
 
 
