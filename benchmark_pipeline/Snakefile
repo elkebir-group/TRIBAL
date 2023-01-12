@@ -3,35 +3,34 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
-reps= [1]
+reps= [1,4,5]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
-        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
-            n = config["ncells"],
-            r = reps,
-            k = config["size"],
-        ),
-        #generate heatmaps for ground truth transition matrices  
-        # expand("sim_data/transmats/transmat{r}_heatmap.pdf",
-        #     r = reps
+        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+        #     n = config["ncells"],
+        #     r = reps,
+        #     k = config["size"],
         # ),
+        # #generate heatmaps for ground truth transition matrices  
+        # # expand("sim_data/transmats/transmat{r}_heatmap.pdf",
+        # #     r = reps
+        # # ),
         # expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_{treetype}_tree.png",
-        #     n = [config["ncells"]],
+        #     n = config["ncells"],
         #     # r = reps,
-        #     r = [7],
-        #     k = [config["size"]],
-        #     # clonotype= clonotypes ,
-        #     clonotype = [22],
+        #     r = [1],
+        #     k = config["size"],
+        #     clonotype= clonotypes ,
         #     treetype = ["collapsed", "lineage"]
         # ),
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine/{clonotype}/{alpha}/inferred_collapsed_tree.png",
-        #     n = [config["ncells"]],
+        #     n = config["ncells"],
         #     r = [1],
-        #     k = [config["size"]],
+        #     k = config["size"],
         #     alpha= [0.75],
         #     clonotype= clonotypes
-        # )
+        # ),
         #refine and score using inferred transition matrix
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
         #     n = config["ncells"],
@@ -431,6 +430,7 @@ rule dnapars_isotype:
         root = "naive",
         mode = "score",
         alpha = 0.75
+    threads: config['nworkers']
     log: 
         run= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/dnapars_isotype.log",
         err ="sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/dnapars_isotype.err.log"  
@@ -449,7 +449,8 @@ rule dnapars_isotype:
         "--iso_infer {output.isotypes} "
         "--png {output.png} "
         "--mode {params.mode} "
-        "-o {output.tree} > {log.run} 2> {log.err} "  
+        "--nworkers {threads} "
+        "--tree {output.tree} > {log.run} 2> {log.err} "  
     
 
 rule dnaml_isotype:
@@ -463,7 +464,7 @@ rule dnaml_isotype:
         tree= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/tribal_tree.txt",
         seq= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/tribal_inferred_seq.csv",
         fasta= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/tribal_inferred_seq.fasta",
-        isotypes= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/isotypes.csv",
+        isotypes= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/tribal_isotypes.csv",
         score= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/score.csv",
         png = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnaml/tribal_tree.png",
     params:
@@ -488,4 +489,4 @@ rule dnaml_isotype:
         "--iso_infer {output.isotypes} "
         "--png {output.png} "
         "--mode {params.mode} "
-        "-o {output.tree} > {log.run} 2> {log.err} "  
+        "--tree {output.tree}  > {log.run} 2> {log.err} "  
