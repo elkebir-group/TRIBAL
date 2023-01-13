@@ -17,7 +17,24 @@ def gen_trans_mat(alpha,n ):
     trans[n-1, n-1] = 1
     # print(trans.sum(axis=1))
     return trans
+
+def gen_seq_mat(alpha,n, eps ):
+    trans = np.zeros((n,n))
+    for i in range(n):
+       
+        for j in range(n):
+            if i > j:
+                continue
+            elif i ==j:
+                trans[i,j] = alpha
+            elif j == i+1:
+                trans[i,j] = (1-alpha)
+            else:
+                trans[i,j] = eps
     
+    trans =trans/trans.sum(axis=1).reshape(-1,1)
+    # print(trans.sum(axis=1))
+    return trans
 
 def add_noise(transmat, rng, mu=0.05, sigma=0.005, min_prob=0.01):
 

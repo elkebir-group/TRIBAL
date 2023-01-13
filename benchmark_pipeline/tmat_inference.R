@@ -7,46 +7,68 @@ fname <- "inference_error.txt"
 my_theme <- get_theme(base_size)
 
 
-pth <- sprintf("/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/replicates/cells%d/size%d", cells, size)
 
 get_errors <- function(r, pth){
  
   error_fname <- file.path(pth, sprintf("rep%d",r),"2.0/0.365/tribal", fname)
-  print(error_fname)
-  df <- read.csv(error_fname,header=T)
+
+  if(file.exists(error_fname)){
+    df <- read.csv(error_fname,header=T)
+    df$rep <- r
+  }else{
+    print(sprintf("%s does not exist!!",error_fname))
+    df <- data.frame()
+  }
+
 
 
   return(df)
 }
 
-error.df <- bind_rows(lapply(reps, get_errors, pth))
-error.df$cells <- cells 
-error.df$size <- size
-error.df <- mutate(error.df, cells =factor(cells), size=factor(size))
+error.df <- data.frame()
+size <- 25
+for(c in cell_values){
+  pth <- sprintf("/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/replicates/cells%d/size%d", c, size)
+  
+  e.df <- bind_rows(lapply(reps, get_errors, pth))
+  if(nrow(e.df) >0){
+    e.df$cells <- c 
+    e.df$size <- size
+    error.df <- bind_rows(error.df, e.df)
+  }
 
-error.df$RMSE <- sqrt(error.df$MSE)
-head(error.df)
+}
 
 
-entropy.df <- leaf.iso %>% group_by(rep) %>% summarize(entropy = entropy(isotype))
-error.df <- inner_join(entropy.df, error.df)
-entropy.sum <-entropy_per_clono %>% group_by(rep) %>% summarize(mean_entropy=mean(entropy))
+error.df <- mutate(error.df,
+                   RMSE = sqrt(MSE))
+
+
+
+
+
+entropy.df <- leaf.iso %>% group_by(cells, rep) %>% summarize(entropy = entropy(isotype)) %>% ungroup()
+error.df <- inner_join(entropy.df, error.df, by=c("cells", "rep"))
 
 cor(error.df$entropy, error.df$MAE)
 
-ent_corr_plot <-ggplot(error.df, aes(x=entropy, y=MAE)) + geom_point(size=2.5) + geom_smooth(method="lm") +
+ent_corr_plot <-ggplot(error.df, aes(x=entropy, y=MAE, shape=factor(cells))) + 
+  geom_point(size=2.75) + geom_smooth(method="lm") +
   xlab("entropy of simulated observed isotypes") + my_theme +
-  annotate("text", x = 2.3, y = 0.061, label = "rho == -0.96", size=8,
-           parse = TRUE) +  ylab("isotype transition probability MAE")
+  scale_shape_discrete(name="cells per clonotype") +
+  annotate("text", x = 2.0, y = 0.06, label = "rho == -0.95", size=8,
+           parse = TRUE) +  ylab("isotype transition probability MAE") +
+  theme(legend.position=c(.775,.86))
 
 ent_corr_plot
 plot_save(file.path(plot_path, "mae_entropy_corr.pdf"), ent_corr_plot, width=width)
 
 error.df %>% group_by(cells, size) %>% summarize(median_mae = median(MAE), iqr_mae = IQR(MAE))
 
-mae_plot <- ggplot(error.df, aes(x="", y=MAE)) + geom_boxplot() + xlab("experiment") + 
+mae_plot <- ggplot(error.df, aes(x=factor(cells), y=MAE)) + geom_boxplot() + xlab("experiment") + 
   geom_point(size=2.5)   + my_theme +
-  scale_x_discrete(labels="k=25,n=35") +  ylab("isotype transition probability MAE")
+  scale_x_discrete(name="cells per clonotype") +  ylab("isotype transition probability MAE")
+mae_plot
 plot_save(file.path(plot_path, "mae_plot.pdf"), mae_plot, width=width/3) 
 
 
@@ -83,8 +105,8 @@ comp.states.df <- comp.states %>% pivot_longer(cols=contains("prop")) %>%
 
 comp.states.sum <- comp.states.df %>% group_by(rep, name) %>% summarize(MAE = sum(AE)/n_distinct(isotype))
 iso_dist_comp <- ggplot(comp.states.sum, aes(x=name, y=MAE)) + geom_boxplot() +
-  scale_x_discrete(labels=c("observed isotype\nproportions", "inferred isotype\nproportions")) +
-  xlab("isotype distribution estimate") + my_theme + ylab("isotype proportion MAE")
+  scale_x_discrete(labels=c("observed isotypes", "TRIBAL")) +
+  xlab("isotype proportion inference") + my_theme + ylab("isotype proportion MAE")
 
 comp.states.sum %>% group_by(name) %>% summarize(med = median(MAE))
 
