@@ -10,18 +10,31 @@ class DrawTree:
         self.isotypes = isotypes
 
         if color_encoding is None:
+                # if color_encoding is None:
             self.color_encoding =  {
-                0 : "antiquewhite",
-                1 : "turquoise1",
-                2 : "darkcyan",
-                3 : "cornflowerblue",
-                4 : "darksalmon",
+                0 : "#f0f0f0",
+                1 : "#FFEDA0",
+                2 : "#FD8D3C",
+                3 : "#E31A1C",
+                4 : "#800026",
                 5 : "mediumseagreen",
-                6 : "orangered",
-                7 : "orchid",
+                6 : "#74C476"
+                7 : "#6A51A3"
                 8 : "darkgoldenrod",
                 9 : "thistle1"
             }
+            # self.color_encoding =  {
+            #     0 : "antiquewhite",
+            #     1 : "turquoise1",
+            #     2 : "darkcyan",
+            #     3 : "cornflowerblue",
+            #     4 : "darksalmon",
+            #     5 : "mediumseagreen",
+            #     6 : "orangered",
+            #     7 : "orchid",
+            #     8 : "darkgoldenrod",
+            #     9 : "thistle1"
+            # }
         else:
             self.color_encoding = color_encoding
 

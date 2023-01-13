@@ -16,20 +16,33 @@ class DrawStateDiag:
         self.cmap = sns.color_palette(cmap_name, as_cmap=True)
         self.states = [i for i in range(transmat.shape[0])]
         self.transmat = transmat
-  
+
         if color_encoding is None:
             self.color_encoding =  {
-                0 : "antiquewhite",
-                1 : "turquoise1",
-                2 : "darkcyan",
-                3 : "cornflowerblue",
-                4 : "darksalmon",
-                5 : "mediumseagreen",
-                6 : "orangered",
-                7 : "orchid",
-                8 : "darkgoldenrod",
+                0 : "#f0f0f0",
+                1 : "#FFEDA0",
+                2 : "#FD8D3C",
+                3 : "#E31A1C",
+                4 : "#800026",
+                5 : "#74C476"
+                6 : "#6A51A3"
+                7 : "darkgoldenrod",
+                8 : "mediumseagreen",
                 9 : "thistle1"
+                
             }
+            # self.color_encoding =  {
+            #     0 : "antiquewhite",
+            #     1 : "turquoise1",
+            #     2 : "darkcyan",
+            #     3 : "cornflowerblue",
+            #     4 : "darksalmon",
+            #     5 : "mediumseagreen",
+            #     6 : "orangered",
+            #     7 : "orchid",
+            #     8 : "darkgoldenrod",
+            #     9 : "thistle1"
+            # }
 
         self.graph = pydot.Dot("state_diagram", graph_type="digraph", bgcolor="white")
         added_nodes = []
@@ -69,7 +82,14 @@ class DrawStateDiag:
 
         fig.set(xlabel="Isotype", ylabel="Isotype")
         plt.savefig(fname)
-      
+
+    def state_heatmap(self, fname):
+        
+        df = pd.DataFrame(states.reshape(1,-1), columns=isotypes)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap=self.cmap_name, square=True, yticklabels=False, vmin=0, vmax=1)
+
+        fig.set(xlabel="Isotype")
+        plt.savefig(fname)
 
         
     def save(self, fname):
@@ -96,6 +116,7 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--outfile", type=str)
     parser.add_argument("--pdf", type=str)
     parser.add_argument("--heatmap", type=str)
+    parser.add_argument("--statemap", type=str)
     args= parser.parse_args()
 
     # args = parser.parse_args([
@@ -132,3 +153,6 @@ if __name__ == "__main__":
 
     if args.heatmap is not None:
         ds.heatmap(args.heatmap)
+    
+    if args.statemap is not None:
+        ds.state_heatmap(args.statemap)
