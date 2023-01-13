@@ -16,7 +16,7 @@ nreps: 20
 
 alpha: 
   - 0.75
-  - 0.9
+  # - 0.9
   - 0.95
 
 max_cand: 25
@@ -37,4 +37,4 @@ jump_prob: 0.25
 
 
 #search parameters
-search_timeout: 2
+search_timeout: 1.5

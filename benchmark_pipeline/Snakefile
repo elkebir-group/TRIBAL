@@ -3,15 +3,19 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
+<<<<<<< HEAD
 reps= [5]
+=======
+reps= [2]
+>>>>>>> cf97f32b62e525f03462d03872aca29c2a300b6e
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        # ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+        ),
         # #generate heatmaps for ground truth transition matrices  
         # # expand("sim_data/transmats/transmat{r}_heatmap.pdf",
         # #     r = reps
@@ -32,14 +36,14 @@ rule all:
         #     clonotype= clonotypes
         # ),
         #refine and score using inferred transition matrix
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        #     alpha=[0.75],
-        #     clonotype= clonotypes,
-        #     mode = ['score', 'refine'],
-        # ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            alpha=[0.75],
+            clonotype= clonotypes,
+            mode = ['score', 'refine'],
+        ),
         #  #refine and score using ground truth transition matrix
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/tree_gt.png",
         #     n = config["ncells"],
@@ -50,14 +54,14 @@ rule all:
         #     mode = ['score', 'refine'],
         # ),
         # #search using inferred transition matrix
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        #     alpha= config["alpha"],
-        #     clonotype= clonotypes,
-        #     mode = ['search']
-        # ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            alpha= config["alpha"],
+            clonotype= clonotypes,
+            mode = ['search']
+        ),
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/tree_search_gt.png",
         #     n = config["ncells"],
         #     r = reps,
@@ -71,9 +75,8 @@ rule all:
             r = reps,
             k = config["size"],
             clonotype= clonotypes,
-            # phylip = ['dnaml','dnapars', 'igphyml']
-            # phylip = ['dnaml','dnapars']
-            phylip = ['igphyml']
+            phylip = ['dnaml','dnapars', 'igphyml']
+
         )
         
 
@@ -269,48 +272,6 @@ rule tribal_refine_score:
         "--tree {output.best_tree} "
         "-o {output.forest} > {log.run} 2> {log.err} "  
 
-# rule tribal_score_gctree
-#     input: 
-#         alignment= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta",
-#         isotypes = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes",
-#         # transmat =   "transmats/transmat{r}.txt",
-#         candidates = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree",
-#         encoding = "sim_encoding.txt",
-#     output: 
-#         forest= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/forest_gt.pickle",
-#         best_tree ="sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/tree.txt",
-#         seq= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/inferred_seq.csv",
-#         fasta= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/inferred_seq.fasta",
-#         isotypes= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/isotypes.csv",
-#         score= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/score.csv",
-#         png = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_score_gt/{clonotype}/{alpha}/tree_gt.png",
-#     params:
-#         root = "naive",
-#         ntrees = config["ntrees"]
-#     threads: config["nworkers"]
-#     log: 
-#         run= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/{mode}.log",
-#         err ="sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/{mode}.err.log"  
-#     benchmark: "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/{mode}.benchmark.log" 
-#     shell:
-#         "python ../src/tribal_sub.py "
-#         " -r {params.root} "
-#         "--candidates {input.candidates} "
-#         " -a {input.alignment} "
-#         "-t {input.transmat} "
-#         "-e {input.encoding} "
-#         "-i {input.isotypes} "
-#         "--alpha {wildcards.alpha} "
-#         "--sequences {output.seq} "
-#         "--fasta {output.fasta} "
-#         "--score {output.score} "
-#         "--iso_infer {output.isotypes} "
-#         "--png {output.png} "
-#         "--mode {wildcards.mode} "
-#         "--ntrees {params.ntrees} "
-#         "--nworkers {threads} "
-#         "--tree {output.best_tree} "
-#         "-o {output.forest} > {log.run} 2> {log.err} "  
 
 
 rule tribal_search:
