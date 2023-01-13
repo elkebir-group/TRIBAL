@@ -3,7 +3,7 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
-reps= [1,4]
+reps= [5]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
