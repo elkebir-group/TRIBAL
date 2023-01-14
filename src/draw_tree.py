@@ -18,8 +18,8 @@ class DrawTree:
                 3 : "#E31A1C",
                 4 : "#800026",
                 5 : "mediumseagreen",
-                6 : "#74C476"
-                7 : "#6A51A3"
+                6 : "#74C476",
+                7 : "#6A51A3",
                 8 : "darkgoldenrod",
                 9 : "thistle1"
             }
