@@ -3,11 +3,7 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
-<<<<<<< HEAD
-reps= [5]
-=======
-reps= [2]
->>>>>>> cf97f32b62e525f03462d03872aca29c2a300b6e
+
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
@@ -70,14 +66,14 @@ rule all:
         #     clonotype= clonotypes,
         #     mode = ['search']
         # ),
-        expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/{phylip}/tribal_tree.png",
-            n = config["ncells"],
-            r = reps,
-            k = config["size"],
-            clonotype= clonotypes,
-            phylip = ['dnaml','dnapars', 'igphyml']
+        # expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/{phylip}/tribal_tree.png",
+        #     n = config["ncells"],
+        #     r = reps,
+        #     k = config["size"],
+        #     clonotype= clonotypes,
+        #     phylip = ['dnaml','dnapars', 'igphyml']
 
-        )
+        # )
         
 
 

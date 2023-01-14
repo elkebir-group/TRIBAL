@@ -3,9 +3,9 @@ seq:
   - light
 
 run_dir:
-  # - day_14
+  - day_14
   # - GCB_NP_1
-  - GCB_NP_2
+  # - GCB_NP_2
   # - GCB_OVA_1
 
 
@@ -26,8 +26,13 @@ clono_file:
 #tribal params
 alpha:
   - 0.75
-  - 0.9
+  - 0.95
 
+ntrees: 
+  - 10
+
+nworkers:
+  - 10
 
 max_cand:
   -50
@@ -46,7 +51,7 @@ seed:
 threshold:
   - 0.1
 
-search_timeout: 8
+search_timeout: 4
 
 
 jump_probs:
