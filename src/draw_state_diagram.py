@@ -24,8 +24,8 @@ class DrawStateDiag:
                 2 : "#FD8D3C",
                 3 : "#E31A1C",
                 4 : "#800026",
-                5 : "#74C476"
-                6 : "#6A51A3"
+                5 : "#74C476",
+                6 : "#6A51A3",
                 7 : "darkgoldenrod",
                 8 : "mediumseagreen",
                 9 : "thistle1"
