@@ -1,0 +1,141 @@
+configfile: "config.yaml"
+reps = [i+1 for i in range(config['nreps'])]
+
+rule all:
+    input:
+       expand("gen_tmat_{ttype}.log",
+        ttype = ['direct', 'seq']
+       ),
+       expand("../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+        ttype = config["ttype"],
+        n = config["ncells"],
+        k = config["size"],
+        r = reps 
+       )
+
+rule gen_tmat:
+    params:
+        mu = 0.02,
+        sigma = 0.01,
+        nreps = 20,
+        n_isotypes = 7,
+        min_jump = 0.15,
+        max_jump = 0.30,
+        path ="/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/{ttype}/transmats"
+    output: "gen_tmat_{ttype}.log"
+
+    shell:
+        "python ../../src/gen_ground_truth_transmats.py "
+        "--mu {params.mu} "
+        "-n {params.nreps} "
+        "--type {wildcards.ttype} "
+        "--sigma {params.sigma} "
+        "--noise " 
+        "--n_isotypes {params.n_isotypes} "
+        "--path {params.path} "
+        "--min_jump {params.min_jump} "
+        "--max_jump {params.max_jump}  > {output}"
+    
+
+
+
+
+rule tribal_infer:
+    input: 
+        clonotypes = "clonotypes{k}.txt", 
+        encoding = "../sim_encoding.txt",
+    params:
+        inpath = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365",
+        max_cand = config["max_cand"],
+        niter = config["niter"],
+        thresh = config["threshold"],
+        root = "naive",
+        tree_path =  "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365",
+        nworkers = config['nworkers'],
+        restarts = config["nrestarts"],
+        mu = config["mu"],
+        sigma = config["sigma"],
+        fasta = "GCsim_dedup.fasta",
+        isotypes =  "GCsim.isotypes",
+        candidates = "dnapars/outtree",
+        jump_prob = config["jump_prob"]
+    threads: config["nworkers"]
+    output:
+        transmat = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
+        stateprobs = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_probs.txt",
+        score ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit_score.txt",
+        diagram = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/diagram.png",
+        diagram_pdf = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/diagram.pdf",
+        heatmap = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/heatmap.pdf"
+    benchmark: "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/benchmark.log"
+    log:
+        std = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.log",
+        err = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.err.log"
+    shell:
+        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} --fasta {params.fasta} --isotypes {params.isotypes} "
+        "-r {params.root} -e {input.encoding} -s {wildcards.r} --candidates {params.candidates} "
+        "--niter {params.niter} -j {params.jump_prob} "
+        "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
+        "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
+        "--heatmap {output.heatmap} "
+        "--nworkers {threads} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
+        "--diagram {output.diagram} > {log.std} 2> {log.err} "
+
+
+rule compare_tmats:
+    input: 
+        gt= "../sim_data/tmat_inf/{ttype}/transmats/transmat{r}.txt",
+        infer =  "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
+        states = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_probs.txt",
+    output: 
+        mse = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+        heatmapDiff ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_diff.pdf",
+        heatmapStates= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
+        heatmapTrans= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_heatmap.pdf",
+    params:
+        bin_path = "../src"
+    run:
+    
+        import numpy as np 
+        import pandas as pd 
+        import seaborn as sns 
+        import matplotlib.pyplot as plt 
+        import sys 
+        sys.path.insert(0, params.bin_path)
+     
+        from draw_state_diagram import DrawStateDiag
+
+        gt = np.loadtxt(input.gt)
+     
+        infer = np.loadtxt(input.infer)
+        diff = np.abs(gt-infer)
+       
+        n = diff.shape[0]
+        n_params = n*(n+1)/2
+        se = np.square(diff)
+        mse = np.sum(se)/n_params 
+        mae = np.sum(diff)/n_params
+        DrawStateDiag(diff).heatmap(output.heatmapDiff) 
+
+        with open(output.mse, "w") as file:
+            file.write("RMSE,MSE,MAE,nparams\n")
+            file.write( f"{np.sqrt(mse)},{mse},{mae},{n_params}\n")
+
+        isotypes = [ "IgM/D", "IgG3", "IgG1" ,  "IgG2b",  "IgG2a" , "IgE", "IgA"]
+        
+        plt.figure()
+        states = np.loadtxt(input.states).reshape(1,-1)
+   
+        
+      
+        df = pd.DataFrame(states.reshape(1,-1), columns=isotypes)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap="rocket_r", square=True, yticklabels=False, vmin=0, vmax=1)
+
+        fig.set(xlabel="Isotype")
+        plt.savefig(output.heatmapStates)
+        plt.figure()
+        df = pd.DataFrame(infer, index=isotypes, columns=isotypes)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap="rocket_r", square=True, vmin=0, vmax=1)
+
+        fig.set(xlabel="Isotype", ylabel="Isotype")
+        plt.savefig(output.heatmapTrans)
