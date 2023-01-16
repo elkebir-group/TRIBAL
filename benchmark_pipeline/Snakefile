@@ -3,34 +3,40 @@ reps = [i for i in range(config['nreps'])]
 # reps = [i for i in range(51)]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
-
+reps = [1,2,4,5]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
-        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/likelihood.csv",
             n = config["ncells"],
             r = reps,
             k = config["size"],
+            clonotype= clonotypes
         ),
+        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+        #     n = config["ncells"],
+        #     r = reps,
+        #     k = config["size"],
+        # ),
         # #generate heatmaps for ground truth transition matrices  
         # # expand("sim_data/transmats/transmat{r}_heatmap.pdf",
         # #     r = reps
         # # ),
-        # expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_{treetype}_tree.png",
-        #     n = config["ncells"],
-        #     # r = reps,
-        #     r = [1],
-        #     k = config["size"],
-        #     clonotype= clonotypes ,
-        #     treetype = ["collapsed", "lineage"]
-        # ),
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine/{clonotype}/{alpha}/inferred_collapsed_tree.png",
-        #     n = config["ncells"],
-        #     r = [1],
-        #     k = config["size"],
-        #     alpha= [0.75],
-        #     clonotype= clonotypes
-        # ),
+        expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_{treetype}_tree.png",
+            n = config["ncells"],
+            # r = reps,
+            r = reps,
+            k = config["size"],
+            clonotype= clonotypes ,
+            treetype = ["collapsed", "lineage"]
+        ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine/{clonotype}/{alpha}/inferred_collapsed_tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            alpha= [0.75],
+            clonotype= clonotypes
+        ),
         #refine and score using inferred transition matrix
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
         #     n = config["ncells"],
@@ -502,3 +508,17 @@ rule igphyml_isotype:
         "--ntrees {params.ntrees} "
         "--save_candidates {params.all_path} "
         "--tree {output.tree}  > {log.run} 2> {log.err} " 
+
+
+rule compute_true_likelihood:
+    input:
+        transmat =  "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
+        tree = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_collapsed_tree.parents",
+        isotype = "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_collapsed_tree.isotypes",
+        seq =  "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_collapsed_tree.sequences",
+    output:"sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/likelihood.csv"
+    log: 
+        std= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/likelihood.log",
+        err= "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/likelihood.err.log"
+    shell:
+        "python ../src/compute_true_likelihood.py --transmat {input.transmat} -t {input.tree} -i {input.isotype} -s {input.seq} -o {output} > {log.std} 2> {log.err} "

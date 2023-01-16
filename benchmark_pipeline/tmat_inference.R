@@ -71,7 +71,7 @@ mae_plot <- ggplot(error.df, aes(x=factor(cells), y=MAE)) + geom_boxplot() + xla
   geom_point(size=2.5)   + my_theme +
   scale_x_discrete(name="cells") +  ylab("isotype transition probability MAE")
 mae_plot
-plot_save(file.path(plot_path, "mae_plot.pdf"), mae_plot, width=width) 
+plot_save(file.path(plot_path, "mae_plot.pdf"), mae_plot, width=width/2) 
 
 
 
@@ -112,7 +112,7 @@ comp.states.sum <- comp.states.df %>% group_by(cells,rep, name) %>%
   summarize(MAE = sum(AE)/n_distinct(isotype)) %>%
   inner_join(combos_to_use)
 iso_dist_comp <- ggplot(comp.states.sum, aes(x=factor(cells), y=MAE, fill=name)) + geom_boxplot() +
-  scale_fill_discrete(name="inference", labels=c("observed isotypes", "TRIBAL")) +
+  scale_fill_discrete(name="", labels=c("obs.cells", "TRIBAL")) +
   xlab("cells") + my_theme + 
   # theme(legend.position=c(.7,.86))+
   ylab("isotype proportion MAE")# +
@@ -120,7 +120,7 @@ iso_dist_comp <- ggplot(comp.states.sum, aes(x=factor(cells), y=MAE, fill=name))
 iso_dist_comp
 comp.states.sum %>% group_by(name) %>% summarize(med = median(MAE))
 
-plot_save(file.path(plot_path, "isotype_dist_comp.pdf"), iso_dist_comp, width=width)
+plot_save(file.path(plot_path, "isotype_dist_comp.pdf"), iso_dist_comp, width=width*0.5)
 
 
                                                       
