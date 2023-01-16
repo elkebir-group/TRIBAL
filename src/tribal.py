@@ -23,8 +23,9 @@ class Tribal:
                 isotype_encoding=None, seed= 1026, 
                 max_cand=50, niter=10,
                 threshold=0.1, restarts=5,
-                n_isotypes = 7, not_trans_prob=0.65, mu=0.07, sigma=0.05 ):
+                n_isotypes = 7, not_trans_prob=0.65, mu=0.07, sigma=0.05, mode="refine" ):
         
+        self.mode= mode
         self.clonotypes = clonotypes
         self.isotype_encoding = isotype_encoding
         self.alphabet = alphabet
@@ -89,7 +90,7 @@ class Tribal:
             best_tree_ids = {}
             for i,c in enumerate(self.clonotypes):
                     ts = TribalSub( isotype_weights=transmat,alpha=self.alpha)
-                    best_score,_ = ts.forest_mode_loop(candidates[c], mode="refine")
+                    best_score,_ = ts.forest_mode_loop(candidates[c], mode=self.mode)
                     best_score = best_score[0]
                     best_tree = best_score.tree
                     total_likelihood += best_score.objective 
@@ -459,6 +460,7 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--jump_prob", type=float, default=0.25, help="for inititalization of transition matrix if not provided")
     parser.add_argument("--restarts",  type=int, default=1, help="number of restarts")
     parser.add_argument("--trees_fname", type=str, )
+    parser.add_argument("--mode", choices=["score", "refine", "search"], default="score")
     
     
     
@@ -559,7 +561,8 @@ if __name__ == "__main__":
                 not_trans_prob= 1-args.jump_prob,
                 restarts=args.restarts,
                 mu = args.mu,
-                sigma=args.sigma
+                sigma=args.sigma,
+                mode = args.mode
                 )
     
 
