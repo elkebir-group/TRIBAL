@@ -3,9 +3,9 @@ reps = [i+1 for i in range(config['nreps'])]
 
 rule all:
     input:
-       expand("gen_tmat_{ttype}.log",
-        ttype = ['direct', 'seq']
-       ),
+    #    expand("gen_tmat_{ttype}.log",
+    #     ttype = ['direct', 'seq']
+    #    ),
        expand("../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
         ttype = config["ttype"],
         n = config["ncells"],
@@ -72,7 +72,7 @@ rule tribal_infer:
         std = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.log",
         err = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.err.log"
     shell:
-        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} --fasta {params.fasta} --isotypes {params.isotypes} "
+        "python ../../src/tribal.py -c {input.clonotypes} -p {params.inpath} --fasta {params.fasta} --isotypes {params.isotypes} "
         "-r {params.root} -e {input.encoding} -s {wildcards.r} --candidates {params.candidates} "
         "--niter {params.niter} -j {params.jump_prob} "
         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
@@ -93,7 +93,7 @@ rule compare_tmats:
         heatmapStates= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
         heatmapTrans= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_heatmap.pdf",
     params:
-        bin_path = "../src"
+        bin_path = "../../src"
     run:
     
         import numpy as np 
