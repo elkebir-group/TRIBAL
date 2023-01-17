@@ -6,11 +6,12 @@ rule all:
     #    expand("gen_tmat_{ttype}.log",
     #     ttype = ['direct', 'seq']
     #    ),
-       expand("../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+       expand("../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/inference_error.txt",
         ttype = config["ttype"],
         n = config["ncells"],
         k = config["size"],
-        r = reps 
+        r = reps ,
+        mode= ['score']
        )
 
 rule gen_tmat:
@@ -61,23 +62,23 @@ rule tribal_infer:
         jump_prob = config["jump_prob"]
     threads: config["nworkers"]
     output:
-        transmat = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
-        stateprobs = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_probs.txt",
-        score ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit_score.txt",
-        diagram = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/diagram.png",
-        diagram_pdf = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/diagram.pdf",
-        heatmap = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/heatmap.pdf"
-    benchmark: "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/benchmark.log"
+        transmat = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/transmat.txt",
+        stateprobs = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/state_probs.txt",
+        score ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/fit_score.txt",
+        diagram = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/diagram.png",
+        diagram_pdf = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/diagram.pdf",
+        heatmap = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/heatmap.pdf"
+    benchmark: "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/benchmark.log"
     log:
-        std = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.log",
-        err = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/fit.err.log"
+        std = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/fit.log",
+        err = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/fit.err.log"
     shell:
         "python ../../src/tribal.py -c {input.clonotypes} -p {params.inpath} --fasta {params.fasta} --isotypes {params.isotypes} "
         "-r {params.root} -e {input.encoding} -s {wildcards.r} --candidates {params.candidates} "
         "--niter {params.niter} -j {params.jump_prob} "
         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
         "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
-        "--heatmap {output.heatmap} "
+        "--heatmap {output.heatmap} --mode {wildcards.mode} "
         "--nworkers {threads} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
         "--diagram {output.diagram} > {log.std} 2> {log.err} "
 
@@ -85,13 +86,13 @@ rule tribal_infer:
 rule compare_tmats:
     input: 
         gt= "../sim_data/tmat_inf/{ttype}/transmats/transmat{r}.txt",
-        infer =  "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt",
-        states = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_probs.txt",
+        infer =  "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/transmat.txt",
+        states = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/state_probs.txt",
     output: 
-        mse = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
-        heatmapDiff ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_diff.pdf",
-        heatmapStates= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/state_heatmap.pdf",
-        heatmapTrans= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat_heatmap.pdf",
+        mse = "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/inference_error.txt",
+        heatmapDiff ="../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/transmat_diff.pdf",
+        heatmapStates= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/state_heatmap.pdf",
+        heatmapTrans= "../sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/transmat_heatmap.pdf",
     params:
         bin_path = "../../src"
     run:
