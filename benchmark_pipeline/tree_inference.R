@@ -86,11 +86,11 @@ for(c in cell_values){
   
 }
 
-t.res <- filter(tree.results,  alpha==0.75, method=="tribal_search") %>% mutate(method="TRIBAL")
-
+#t.res <- filter(tree.results,  alpha==0.75, method=="tribal_search") %>% mutate(method="TRIBAL")
+t.res <- tree.results
 
 tree.results <- bind_rows(t.res, iso_res) %>% 
-  select(-alpha) %>%
+#  select(-alpha) %>%
   mutate(method =as.character(method)) %>% inner_join(combos_to_use)
 
 # dnaml1 <- filter(tree.results, method=="dnaml") %>% select(-RF, -MRCA_ISO,  -N_taxa) 
@@ -120,10 +120,17 @@ tree.results.long <- tree.results.long %>%
     method_labs = factor(method, levels=c("dnaml", "igphyml", "dnapars","gctree_isotype", "TRIBAL"),
                     labels = c("dnaml", "IgPhyML", "dnapars", "GCTree", "TRIBAL")))
 
-cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method_labs, y=value)) + geom_boxplot() + 
+cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method, y=value)) + geom_boxplot() + 
   facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
 
-plot_save(file.path(plot_path, "cells.65.tree.metrics.pdf"), cells.65.plot, width=width, height=height)
+ ggplot(tree.results.long %>% filter(cells==65), aes(x=method, y=value, fill=factor(alpha))) + geom_boxplot() + 
+  facet_wrap(~name, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+   ggtitle("65 cells") + get_theme_vertx(base_size) + scale_fill_discrete(name="lambda")
+ 
+ ggplot(tree.results.long %>% filter(cells==35), aes(x=method, y=value,fill=factor(alpha))) + geom_boxplot() + 
+   facet_wrap(~name, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+   ggtitle("35 cells") + get_theme_vertx(base_size) + scale_fill_discrete(name="lambda")
+ plot_save(file.path(plot_path, "cells.65.tree.metrics.pdf"), cells.65.plot, width=width, height=height)
 
 cells.65.large <-ggplot(tree.results.long %>% filter(cells==65) %>%
          inner_join(large_forest),
@@ -139,10 +146,11 @@ plot_save(file.path(plot_path, "cells.35.tree.metrics.pdf"), cells.35.plot)
 
 
 
-cells.65.large <-ggplot(tree.results.long %>% filter(cells==65) %>%
+cells.35.large <-ggplot(tree.results.long %>% filter(cells==35) %>%
                           inner_join(large_forest),
                         aes(x=method_labs, y=value)) + geom_boxplot() + 
   facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
+plot_save(file.path(plot_path, "cells.35.tree.large.metrics.pdf"), cells.35.large)
 
 #large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >= quantile(ncand, 0.75) )
 #large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >=4 )

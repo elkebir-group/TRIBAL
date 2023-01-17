@@ -4,6 +4,7 @@ reps = [i for i in range(config['nreps'])]
 clonotypes = [i+1 for i in range(config['size'][0])]
 reps = [i for i in range(1,8)]
 reps = [1,2,4,5]
+reps = [3]
 rule all:
     input:
         #infer the simulated transition matrix and compare with ground truth
@@ -13,11 +14,11 @@ rule all:
             k = config["size"],
             clonotype= clonotypes
         ),
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        # ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/inference_error.txt",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+        ),
         # #generate heatmaps for ground truth transition matrices  
         # # expand("sim_data/transmats/transmat{r}_heatmap.pdf",
         # #     r = reps
@@ -30,22 +31,22 @@ rule all:
             clonotype= clonotypes ,
             treetype = ["collapsed", "lineage"]
         ),
-        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine/{clonotype}/{alpha}/inferred_collapsed_tree.png",
-            n = config["ncells"],
-            r = reps,
-            k = config["size"],
-            alpha= [0.75],
-            clonotype= clonotypes
-        ),
-        #refine and score using inferred transition matrix
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
+        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine/{clonotype}/{alpha}/inferred_collapsed_tree.png",
         #     n = config["ncells"],
         #     r = reps,
         #     k = config["size"],
-        #     alpha=[0.75],
-        #     clonotype= clonotypes,
-        #     mode = ['score', 'refine'],
+        #     alpha= [0.75],
+        #     clonotype= clonotypes
         # ),
+        #refine and score using inferred transition matrix
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            alpha=[0.75],
+            clonotype= clonotypes,
+            mode = ['score', 'refine'],
+        ),
         #  #refine and score using ground truth transition matrix
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/tree_gt.png",
         #     n = config["ncells"],
@@ -56,14 +57,14 @@ rule all:
         #     mode = ['score', 'refine'],
         # ),
         # #search using inferred transition matrix
-        # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        #     alpha= config["alpha"],
-        #     clonotype= clonotypes,
-        #     mode = ['search']
-        # ),
+        expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}/{clonotype}/{alpha}/search_tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            alpha= config["alpha"],
+            clonotype= clonotypes,
+            mode = ['search']
+        ),
         # expand("sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_{mode}_gt/{clonotype}/{alpha}/tree_search_gt.png",
         #     n = config["ncells"],
         #     r = reps,
@@ -72,14 +73,14 @@ rule all:
         #     clonotype= clonotypes,
         #     mode = ['search']
         # ),
-        # expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/{phylip}/tribal_tree.png",
-        #     n = config["ncells"],
-        #     r = reps,
-        #     k = config["size"],
-        #     clonotype= clonotypes,
-        #     phylip = ['dnaml','dnapars', 'igphyml']
+        expand( "sim_data/replicates/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/{phylip}/tribal_tree.png",
+            n = config["ncells"],
+            r = reps,
+            k = config["size"],
+            clonotype= clonotypes,
+            phylip = ['dnaml','dnapars', 'igphyml']
 
-        # )
+        )
         
 
 
