@@ -36,9 +36,8 @@ cand.tree.dist <- ggplot(cand.counts %>% inner_join(combos_to_use), aes(x=ncand)
 
 plot_save(file.path(plot_path, "forest_size.pdf"), cand.tree.dist)
 
-#ggplot(cand.counts, aes(x=factor(cells), y=ncand)) +  geom_boxplot() + scale_y_log10() +
-#methods <- c("tribal_score", "tribal_score_gt", "tribal_search",  "tribal_search_gt", "tribal_refine", "tribal_refine_gt", "validaggreg")
-#methods <- c("tribal_score", "tribal_search")# #"tribal_refine")
+#ggplot(cand.counts, aes(x=factor(cells), y=ncand)) +  geom_boxplot() + scale_y_log10() +methods <- c("tribal_score", "tribal_score_gt", "tribal_search",  "tribal_search_gt", "tribal_refine", "tribal_refine_gt", "validaggreg")
+#methods <- c("tribal_score", "tribal_search", "tribal_refine")
 methods <- c("tribal_search")
 
 get_results <- function(r, methods, cells, size ){
@@ -115,13 +114,19 @@ View(res.sum %>% ungroup() %>% arrange(cells,name, median))
 tree.results.long <- tree.results.long %>%
   mutate(
     metric = factor(name, levels=c("RF", "MRCA", "MRCA_ISO"),
-                         labels = c("Robinson-Foulds\ndistance", "sequence\nMRCA","isotype\nMRCA"),
+                         labels = c("RF\ndistance", "sequence\nMRCA","isotype\nMRCA"),
                          ordered=T),
-    method_labs = factor(method, levels=c("dnaml", "igphyml", "dnapars","gctree_isotype", "TRIBAL"),
-                    labels = c("dnaml", "IgPhyML", "dnapars", "GCTree", "TRIBAL")))
+    method_labs = factor(method, levels=c("tribal_search","igphyml", "dnapars","gctree_isotype", "dnaml" ),
+                    labels = c("TRIBAL",  "IgPhyML", "dnapars", "GCTree","dnaml" )))
 
-cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method, y=value)) + geom_boxplot() + 
-  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
+cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method_labs, y=value, fill=method_labs)) + geom_boxplot() + 
+  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+  scale_fill_manual(values=method_cols) + theme(legend.position="none")
+
+plot_save(file.path(plot_path, "cells.65.tree.metrics.pdf"), cells.65.plot, width=0.73*width, height=height)
+
+
+cells.65.plot
 
  ggplot(tree.results.long %>% filter(cells==65), aes(x=method, y=value, fill=factor(alpha))) + geom_boxplot() + 
   facet_wrap(~name, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
@@ -130,12 +135,12 @@ cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method, y
  ggplot(tree.results.long %>% filter(cells==35), aes(x=method, y=value,fill=factor(alpha))) + geom_boxplot() + 
    facet_wrap(~name, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
    ggtitle("35 cells") + get_theme_vertx(base_size) + scale_fill_discrete(name="lambda")
- plot_save(file.path(plot_path, "cells.65.tree.metrics.pdf"), cells.65.plot, width=width, height=height)
 
 cells.65.large <-ggplot(tree.results.long %>% filter(cells==65) %>%
          inner_join(large_forest),
-       aes(x=method_labs, y=value)) + geom_boxplot() + 
-  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
+       aes(x=method_labs, y=value, fill=method_labs)) + geom_boxplot() + 
+  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+  scale_fill_manual(values=method_cols) +  theme(legend.position="none")
 
 plot_save(file.path(plot_path, "cells.65.tree.large.metrics.pdf"), cells.65.large, width=width, height=height)
 
