@@ -12,6 +12,9 @@ def get_clonotypes():
 
 rule all:
     input: 
+        expand("{run_dir}/{run_dir}_W33L_levels_0.75.csv",
+            run_dir = config["run_dir"]
+        )
         # expand("{run_dir}/clonotype_summary.csv",
         # run_dir = config["run_dir"]),
         # expand("{run_dir}/input/{clonotype}/{seq}.aln.fasta",
@@ -37,20 +40,20 @@ rule all:
         #     run_dir=config["run_dir"],
         #     jump_prob = config["jump_probs"]
         # ),
-        expand("{run_dir}/tribal_search/{clonotype}/{alpha}/search_tree.png",
-            run_dir=config["run_dir"],
-            alpha = config['alpha'],
-            clonotype = get_clonotypes(),
-            # clonotype = ["B_21_3_13_154_2_3"]
-        ),
+        # expand("{run_dir}/tribal_search/{clonotype}/{alpha}/search_tree.png",
+        #     run_dir=config["run_dir"],
+        #     alpha = config['alpha'],
+        #     clonotype = get_clonotypes(),
+        #     # clonotype = ["B_21_3_13_154_2_3"]
+        # ),
         # expand("heatmaps/{run_dir}.pdf",
         #     run_dir = config["run_dir"]
         # ),
-        expand("{run_dir}/tribal_refine/{clonotype}/0.75/tree.png",
-            run_dir=config["run_dir"],
-            clonotype = get_clonotypes(),
-            # clonotype = ["B_21_3_13_154_2_3"]
-        )
+        # expand("{run_dir}/tribal_refine/{clonotype}/0.75/tree.png",
+        #     run_dir=config["run_dir"],
+        #     clonotype = get_clonotypes(),
+        #     # clonotype = ["B_21_3_13_154_2_3"]
+        # )
 
 
 
@@ -68,7 +71,14 @@ rule all:
 #     script:
 #         "scripts/preprocess.R"
 
-
+rule get_tree_levels:
+    input: "{run_dir}/{run_dir}_W33L.csv",
+    output: "{run_dir}/{run_dir}_W33L_levels_0.75.csv",
+    params:
+        treepath = "/scratch/projects/tribal/real_data/{run_dir}/tribal_search",
+        lamb = 0.75
+    shell:
+        "python ../src/get_mut_level.py -i {input} -o {output} -l {params.lamb} --treepath {params.treepath} "
 
 rule align:
     input: 

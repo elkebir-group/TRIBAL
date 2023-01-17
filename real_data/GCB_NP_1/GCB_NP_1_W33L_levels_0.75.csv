@@ -1,0 +1,23 @@
+clonotype,nodes,min_mut_level
+B_17_2_12_64_1_56,"1, seq7, 2, seq3, seq2, 3, seq6, seq5, seq4, seq1, 12",1
+B_17_2_17_64_1_56,"3, seq8, 5, 6, seq7, seq5, seq3, seq1",2
+B_17_2_20_64_1_56,"1, 2, seq1, seq4, 3, seq3, 4, seq6, 5, seq7, seq5, seq2",1
+B_17_2_6_64_1_56,"1, seq5, 2, seq3, 3, seq1, seq7, seq4, seq6, seq2, 12",1
+B_17_3_7_64_1_56,"1, seq5, seq4, 2, seq3, seq2, seq1",1
+B_44_4_14_64_1_58,"1, seq6, seq3, 2, 3, seq5, seq2, seq4, seq1",1
+B_44_5_11_64_1_56,seq6,4
+B_47_3_30_64_1_56,"2, seq4, 3, 4, 5, seq7, seq6, seq5, seq3, seq2, seq1",2
+B_47_3_34_64_1_56,"1, 2, 3, 4, seq9, seq6, seq4, seq3, 5, seq7, 6, seq8, 7, seq2, seq11, seq5, 21",1
+B_47_3_34_64_1_59,"1, seq4, seq3, seq2, 2, seq5, seq1, 9",1
+B_47_3_59_64_1_56,"2, seq7, seq22, seq20, 4, 5, seq2, 6, seq5, seq14, seq9, seq6, seq4, seq17, 7, 8, seq3, seq13, seq18, 11, seq10",2
+B_47_3_62_64_1_56,"1, seq6, seq5, 2, 3, seq4, seq3, seq2, seq1, 11",1
+B_47_3_74_64_1_56,"1, seq8, 2, seq6, 3, 4, 5, 6, seq9, seq7, seq4, seq13, 7, seq12, seq11, seq3, seq15, seq14, seq2, seq10, seq5, seq1, 24",1
+B_47_3_82_64_1_56,"1, seq6, seq5, seq2, 2, seq4, seq3, seq1",1
+B_47_3_86_64_1_56,"3, seq7, 4, 5, seq5, seq2, seq3, seq1",2
+B_47_4_55_64_1_56,seq1,3
+B_47_4_61_16_1_4,"3, seq3, 5, seq8, seq6, seq2",2
+B_47_4_61_64_1_56,"2, seq5, 5, seq6, 6, seq3",2
+B_47_4_67_64_1_56,"7, seq9, seq14, seq13, seq7",4
+B_47_4_68_64_1_56,"4, seq3, 5, seq12, seq11",3
+B_47_5_14_64_1_56,"1, seq9, seq6, seq3, 2, 3, 4, 5, seq4, seq14, seq7, seq11, 6, seq10, seq5, seq2, 7, seq8, seq12, seq13, seq1, 23",1
+B_79_1_8_64_1_56,seq27,2

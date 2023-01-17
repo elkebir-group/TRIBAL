@@ -4,8 +4,8 @@ seq:
 
 run_dir:
   - day_14
-  # - GCB_NP_1
-  # - GCB_NP_2
+  - GCB_NP_1
+  - GCB_NP_2
   # - GCB_OVA_1
 
 
