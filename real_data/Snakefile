@@ -16,7 +16,7 @@ rule all:
         #     run_dir = config["run_dir"],
         #     mut = config["mut"],
         # ),
-        expand("{run_dir}/{sub}Mut/transmat.txt",
+        expand("{run_dir}/{sub}Mut/state_probs.pdf",
             run_dir = config["run_dir"],
             sub = ["with", "without"]
         )
@@ -306,14 +306,15 @@ rule tribal_infer:
         clonotypes = "{run_dir}/clonotypes_{sub}Mut.txt",
         encoding = "mouse_isotype_encoding.txt",
     params:
-        inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
+        # inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
+        inpath ="/home/ec2-user/tribal/real_data/{run_dir}/input",
         alpha = 0.75,
         max_cand = config["max_cand"],
         niter = config["niter"],
         thresh = config["threshold"],
         seed =  config["seed"],
         root = "naive",
-        tree_path = "/scratch/projects/tribal/real_data/{run_dir}/dnapars",
+        tree_path = "/home/ec2-user/tribal/real_data/{run_dir}/dnapars",
         nworkers = config['nworkers'],
         restarts = config["nrestarts"],
         mu = config["mu"],
@@ -339,3 +340,14 @@ rule tribal_infer:
         "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
         "-j {params.jump_prob} --heatmap {output.heatmap} "
         "--diagram {output.diagram} > {log.std} 2> {log.err} "
+
+rule get_state_maps_strat:
+    input:        
+        transmat = "{run_dir}/{sub}Mut/transmat.txt",
+        stateprobs = "{run_dir}/{sub}Mut/state_probs.txt",
+        encoding = "mouse_isotype_encoding.txt",
+
+    output: "{run_dir}/{sub}Mut/state_probs.pdf"
+    shell: 
+        "python ../src/draw_state_diagram.py -t {input.transmat} -e {input.encoding} "
+        "-s {input.stateprobs} --statemap {output} "

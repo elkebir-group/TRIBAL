@@ -12,7 +12,7 @@ class DrawStateDiag:
             isotype_mapping = {i: i for i in range(transmat.shape[0])}
         
         self.isotype_mapping = isotype_mapping
-        
+        self.state_probs = state_probs
         self.cmap = sns.color_palette(cmap_name, as_cmap=True)
         self.states = [i for i in range(transmat.shape[0])]
         self.transmat = transmat
@@ -84,9 +84,9 @@ class DrawStateDiag:
         plt.savefig(fname)
 
     def state_heatmap(self, fname):
-        
-        df = pd.DataFrame(states.reshape(1,-1), columns=isotypes)
-        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap=self.cmap_name, square=True, yticklabels=False, vmin=0, vmax=1)
+        labs= [self.isotype_mapping[s] for s in self.states]
+        df = pd.DataFrame(self.state_probs.reshape(1,-1), columns=labs)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap=self.cmap, square=True, yticklabels=False, vmin=0, vmax=1)
 
         fig.set(xlabel="Isotype")
         plt.savefig(fname)
