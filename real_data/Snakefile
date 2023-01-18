@@ -12,8 +12,13 @@ def get_clonotypes():
 
 rule all:
     input: 
-        expand("{run_dir}/{run_dir}_W33L_levels_0.75.csv",
-            run_dir = config["run_dir"]
+        # expand("mut_levels/{run_dir}_{mut}_levels_0.75.csv",
+        #     run_dir = config["run_dir"],
+        #     mut = config["mut"],
+        # ),
+        expand("{run_dir}/{sub}Mut/transmat.txt",
+            run_dir = config["run_dir"],
+            sub = ["with", "without"]
         )
         # expand("{run_dir}/clonotype_summary.csv",
         # run_dir = config["run_dir"]),
@@ -72,8 +77,8 @@ rule all:
 #         "scripts/preprocess.R"
 
 rule get_tree_levels:
-    input: "{run_dir}/{run_dir}_W33L.csv",
-    output: "{run_dir}/{run_dir}_W33L_levels_0.75.csv",
+    input: "mut_levels_in/{run_dir}_{mut}.csv",
+    output: "mut_levels/{run_dir}_{mut}_levels_0.75.csv",
     params:
         treepath = "/scratch/projects/tribal/real_data/{run_dir}/tribal_search",
         lamb = 0.75
@@ -296,3 +301,41 @@ rule tribal_search:
 
 
 
+rule tribal_infer:
+    input: 
+        clonotypes = "{run_dir}/clonotypes_{sub}Mut.txt",
+        encoding = "mouse_isotype_encoding.txt",
+    params:
+        inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
+        alpha = 0.75,
+        max_cand = config["max_cand"],
+        niter = config["niter"],
+        thresh = config["threshold"],
+        seed =  config["seed"],
+        root = "naive",
+        tree_path = "/scratch/projects/tribal/real_data/{run_dir}/dnapars",
+        nworkers = config['nworkers'],
+        restarts = config["nrestarts"],
+        mu = config["mu"],
+        sigma = config["sigma"],
+        mode= "refine",
+        jump_prob = 0.25
+    output:
+        transmat = "{run_dir}/{sub}Mut/transmat.txt",
+        stateprobs = "{run_dir}/{sub}Mut/state_probs.txt",
+        score = "{run_dir}/{sub}Mut/fit_score.txt",
+        diagram = "{run_dir}/{sub}Mut/transmat.png",
+        diagram_pdf = "{run_dir}/{sub}Mut/transmat.pdf",
+        heatmap = "{run_dir}/{sub}Mut/heatmap.pdf"
+    log:
+        std = "{run_dir}/{sub}Mut/fit.log",
+        err = "{run_dir}/{sub}Mut/fit.err.log"
+    shell:
+        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
+        "-r {params.root} -e {input.encoding} -s {params.seed} --mode {params.mode} "
+        "--alpha {params.alpha} --niter {params.niter} "
+        "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
+        "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
+        "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
+        "-j {params.jump_prob} --heatmap {output.heatmap} "
+        "--diagram {output.diagram} > {log.std} 2> {log.err} "

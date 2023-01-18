@@ -8,7 +8,12 @@ run_dir:
   - GCB_NP_2
   # - GCB_OVA_1
 
-
+mut:
+  # - W33L
+  # - S66N
+  # - K59R
+  # - K59R+S66N
+  - Mut
 
 # clono_file:
 #   - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"

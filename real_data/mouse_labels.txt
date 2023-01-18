@@ -1,0 +1,7 @@
+IgM/D
+IgG3
+IgG1
+IgG2b
+IgG2c
+IgE
+IgE
