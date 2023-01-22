@@ -3,15 +3,15 @@
 
 ttype:
   - direct
-  - seq
+  # - seq
   
 size: 
-  - 25
-  - 50
+  # - 25
+  # - 50
   - 75
   
 ncells: 
-  - 35
+  # - 35
   - 65
 
 
@@ -23,7 +23,7 @@ nreps: 5
 alpha: 
   - 0.75
   # - 0.9
-  - 0.95
+  # - 0.95
 
 max_cand: 25
 
