@@ -11,58 +11,12 @@ def get_clonotypes():
 
 rule all:
     input: 
-        expand( "{dataset}/tribal/transmat.txt",
+        expand(  "{dataset}/tribal_search/{clonotype}/search_tree.png",
             dataset=config["dataset"],
+            clonotypes = get_clonotypes(),
         ),
-        # expand("mut_levels/{dataset}_{mut}_levels_0.75.csv",
-        #     dataset = config["dataset"],
-        #     mut = config["mut"],
-        # ),
-        expand("{dataset}/{sub}Mut/state_probs.pdf",
-            dataset = config["dataset"],
-            sub = ["with", "without"]
-        )
-        # expand("{dataset}/clonotype_summary.csv",
-        # dataset = config["dataset"]),
-        # expand("{dataset}/input/{clonotype}/{seq}.aln.fasta",
-        # dataset = config["dataset"],
-        # clonotype= get_clonotypes(),
-        # seq = config["seq"]),
-        # expand("{dataset}/input/{clonotype}/concat.aln.fasta",
-        # dataset = config["dataset"],
-        # clonotype = get_clonotypes(),
-        # ),
-        # expand("{dataset}/input/{clonotype}/concat.algn.phylip",
-        # dataset = config["dataset"],
-        # clonotype = get_clonotypes(),
-        # ),
-        # expand( "{dataset}/dnapars/{clonotype}/dnapars.log",
-        #  dataset = config["dataset"],
-        #  clonotype = get_clonotypes(),
-        # ),
-  
-        # expand( "{dataset}/tribal/{jump_prob}/transmat.pdf",
-        #     dataset=config["dataset"],
-        #     jump_prob = config["jump_probs"]
-        # ),
-        # expand("{dataset}/tribal_search/{clonotype}/{alpha}/search_tree.png",
-        #     dataset=config["dataset"],
-        #     alpha = config['alpha'],
-        #     clonotype = get_clonotypes(),
-        #     # clonotype = ["B_21_3_13_154_2_3"]
-        # ),
-        # expand("heatmaps/{dataset}.pdf",
-        #     dataset = config["dataset"]
-        # ),
-        # expand("{dataset}/tribal_refine/{clonotype}/0.75/tree.png",
-        #     dataset=config["dataset"],
-        #     clonotype = get_clonotypes(),
-        #     # clonotype = ["B_21_3_13_154_2_3"]
-        # )
-
-
        
-
+       
 
 rule tribal_infer:
     input: 
@@ -129,7 +83,7 @@ rule tribal_refine:
         err ="{dataset}/tribal_refine/{clonotype}/refine.err.log"  
     benchmark: "{dataset}/tribal_refine/{clonotype}/refine.benchmark.log" 
     shell:
-        "python ../src/tribal_sub.py "
+        "python ../src/tribal_tree.py "
         " -r {params.root} "
         " -a {input.alignment} "
         "-t {input.transmat} "
@@ -197,44 +151,4 @@ rule tribal_search:
 
 
 
-
-rule tribal_infer:
-    input: 
-        clonotypes = "{dataset}/clonotypes_{sub}Mut.txt",
-        encoding = "mouse_isotype_encoding.txt",
-    params:
-        # inpath = "/scratch/projects/tribal/real_data/{dataset}/input",
-        inpath ="/home/ec2-user/tribal/real_data/{dataset}/input",
-        alpha = 0.75,
-        max_cand = config["max_cand"],
-        niter = config["niter"],
-        thresh = config["threshold"],
-        seed =  config["seed"],
-        root = "naive",
-        tree_path = "/home/ec2-user/tribal/real_data/{dataset}/dnapars",
-        nworkers = config['nworkers'],
-        restarts = config["nrestarts"],
-        mu = config["mu"],
-        sigma = config["sigma"],
-        mode= "refine",
-        jump_prob = 0.25
-    output:
-        transmat = "{dataset}/{sub}Mut/transmat.txt",
-        stateprobs = "{dataset}/{sub}Mut/state_probs.txt",
-        score = "{dataset}/{sub}Mut/fit_score.txt",
-        diagram = "{dataset}/{sub}Mut/transmat.png",
-        diagram_pdf = "{dataset}/{sub}Mut/transmat.pdf",
-        heatmap = "{dataset}/{sub}Mut/heatmap.pdf"
-    log:
-        std = "{dataset}/{sub}Mut/fit.log",
-        err = "{dataset}/{sub}Mut/fit.err.log"
-    shell:
-        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
-        "-r {params.root} -e {input.encoding} -s {params.seed} --mode {params.mode} "
-        "--alpha {params.alpha} --niter {params.niter} "
-        "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
-        "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
-        "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
-        "-j {params.jump_prob} --heatmap {output.heatmap} "
-        "--diagram {output.diagram} > {log.std} 2> {log.err} "
 
