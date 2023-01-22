@@ -12,7 +12,7 @@ from em_weight_matrix import EMProbs
 from lineage_tree import LineageForest
 import init_transmat as tm
 
-from tribal_sub import TribalSub
+from tribal_tree import TribalSub
 from draw_state_diagram import DrawStateDiag
 
 class Tribal:
@@ -406,9 +406,6 @@ if __name__ == "__main__":
     parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
-  
-
-    print(f"jump prob: {args.jump_prob}")
 
 
     if args.encoding is not None:
@@ -440,7 +437,7 @@ if __name__ == "__main__":
 
     clonodict = {}
     for c in clonotypes:
-        print(args.isotypes)
+        print(f"reading input for clonotype {c}")
         clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
                         args.candidates, args.isotypes, iso_encoding, start_iso)
     

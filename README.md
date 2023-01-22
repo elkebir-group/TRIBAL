@@ -21,6 +21,7 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
   - [Isotype transition probability inference](#isotype-transition-probability-inference-1)
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference-1)
+- [Snakemake](#snakemake)
 
 <a name="install"></a>
 
@@ -211,12 +212,12 @@ Here we show an example of how to run `TRIBAL` to infer isotype transition proba
 The input files are located in the `experimental_data/GCB_NP_2`:
 
 
-    $   python src/tribal.py -c experimental_data/GCB_NP_2/clonotypes.txt 
+    $   python src/tribal.py -c experimental_data/GCB_NP_2/clonotypes.txt \
         -p experimental_data/GCB_NP_2/input \
         -r naive \
         -e experimental_data/mouse_isotype_encoding.txt \
         --tree_path experimental_data/GCB_NP_2/dnapars \
-        --alpha 0.75 --niter 20  --thresh 0.1  \
+        --alpha 0.75 --niter 10  --thresh 0.1  \
          -j 0.25 --mu 0.075 --sigma 0.05 \
         --nworkers 5 --restarts 5 \
         --transmat_infer experimental_data/GCB_NP_2/transmat.txt  \
@@ -239,7 +240,7 @@ Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree fo
        --mode refine \
         --ntrees 10 \
        --nworkers 5 \
-       -o example/forest.pickle
+       -o experimental_data/GCB_NP_2/example/forest.pickle
 
 Then, we perform a greedy hill climbing search starting from each of the top canidates using an isotype aware SPR tree move.
 
@@ -249,14 +250,22 @@ Then, we perform a greedy hill climbing search starting from each of the top can
        -t experimental_data/GCB_NP_2/transmat.txt \
        -e experimental_data/mouse_isotype_encoding.txt \
        -i experimental_data/GCB_NP_2/B_12_1_5_24_1_5/isotype.fasta \
-       -l example/forest.pickle
+       -l experimental_data/GCB_NP_2/example/forest.pickle
        --forest 
        --alpha 0.75 \
-       --fasta example/seq.fasta \
-       --score example/score.csv \
-       --iso_infer example/isotypes.csv \
-       --png example/tree.png \
+       --fasta experimental_data/GCB_NP_2/example/seq.fasta \
+       --score experimental_data/GCB_NP_2/example/score.csv \
+       --iso_infer experimental_data/GCB_NP_2/example/isotypes.csv \
+       --png experimental_data/GCB_NP_2/example/tree.png \
        --mode search \
        --nworkers 5 \
-       --tree example/tree.txt 
+       --tree experimental_data/GCB_NP_2/example/tree.txt 
+
+## Snakemake 
+To simplify the process of inference, we have provided  `experimental_data/Snakfile` and `experimental_data/config.yaml` files. To run the snakemake pipeline, navigate to the `experimental_data` directory.
+     $   cd experimental_data
+
+Update the `config.yaml` file with the desired dataset and TRIBAL parameters. Then use the following 
+command to execute the pipeline, where the argument `-j` specifies the number of cores. 
+     $   snakemake -j 10
 

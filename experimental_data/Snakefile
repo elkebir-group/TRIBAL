@@ -15,8 +15,7 @@ rule all:
             dataset=config["dataset"],
             clonotypes = get_clonotypes(),
         ),
-       
-       
+              
 
 rule tribal_infer:
     input: 
