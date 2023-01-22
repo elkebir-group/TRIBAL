@@ -72,24 +72,24 @@ TRIBAL is run in two phases:
       b. A text file containing the ordred encoding of isotypes 
       d. A specified id of the root sequence
       c. Each clonotype subdirectory should contain the following two files: 
-         1. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
-         2. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correpond to sequence ids)
+          1. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
+          2. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correpond to sequence ids)
     + Output: 
-      a. a text file containing the inferred isotype transition probabilties
-      b. a text file containing the inferred isotype proportions
-      c. Optional outputs include heatmaps and state diagrams of the isotype transition probabilities
+        a. a text file containing the inferred isotype transition probabilties
+        b. a text file containing the inferred isotype proportions
+        c. Optional outputs include heatmaps and state diagrams of the isotype transition probabilities
  2. *Tree inference 
     + Input: 
-         a. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
-         b. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correspond to sequence ids)
-         c. A text file containing the ordered encoding of isotypes 
-         d. istoype transition probabilities inferred during the previous phase
-         e. tree inference mode (score, refine, search)
+        a. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
+        b. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correspond to sequence ids)
+        c. A text file containing the ordered encoding of isotypes 
+        d. istoype transition probabilities inferred during the previous phase
+        e. tree inference mode (score, refine, search)
     +Output:
-         a. a text file containing the tree encoded with each row in the file encoding an edge in the tree as  child, parent
-         b. a fasta for csv file containing the inferred sequences of the heavy and light chain
-         c. a fasta or csv file containing the inferred isotype states
-         d. Optional outputs include png or pdf visualizations of the inferred tree
+        a. a text file containing the tree encoded with each row in the file encoding an edge in the tree as  child, parent
+        b. a fasta for csv file containing the inferred sequences of the heavy and light chain
+        c. a fasta or csv file containing the inferred isotype states
+        d. Optional outputs include png or pdf visualizations of the inferred tree
 
 
 
