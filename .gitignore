@@ -7,3 +7,5 @@ mouse_data/
 */__pycache__/
 /bcr-phylo-iso-benchmark/
 */.snakemake/
+*.log
+*/*.log
