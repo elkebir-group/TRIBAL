@@ -38,7 +38,7 @@ if __name__ == "__main__":
 
 
     args= parser.parse_args()
-
+    # mut = ""
     lamb =args.lamb
     # pth = "/scratch/projects/tribal/real_data/day_14"
     # args= parser.parse_args([

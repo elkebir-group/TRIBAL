@@ -3,194 +3,124 @@ import pandas as pd
 
 
 def get_clonotypes():
-    datadir = "day_14"
-    fname = f"/home/ec2-user/tribal/real_data/{datadir}/clonotype_summary.csv"
-    # fname = f"/scratch/projects/tribal/real_data/{datadir}/clonotype_summary.csv"
+    datadir = config["dataset"]
+    fname = f"{datadir}/clonotype_summary.csv"
     df = pd.read_csv(fname)
     return df['clonotype'].to_list()
 
 
 rule all:
     input: 
-        # expand("mut_levels/{run_dir}_{mut}_levels_0.75.csv",
-        #     run_dir = config["run_dir"],
+        expand( "{dataset}/tribal/transmat.txt",
+            dataset=config["dataset"],
+        ),
+        # expand("mut_levels/{dataset}_{mut}_levels_0.75.csv",
+        #     dataset = config["dataset"],
         #     mut = config["mut"],
         # ),
-        expand("{run_dir}/{sub}Mut/state_probs.pdf",
-            run_dir = config["run_dir"],
+        expand("{dataset}/{sub}Mut/state_probs.pdf",
+            dataset = config["dataset"],
             sub = ["with", "without"]
         )
-        # expand("{run_dir}/clonotype_summary.csv",
-        # run_dir = config["run_dir"]),
-        # expand("{run_dir}/input/{clonotype}/{seq}.aln.fasta",
-        # run_dir = config["run_dir"],
+        # expand("{dataset}/clonotype_summary.csv",
+        # dataset = config["dataset"]),
+        # expand("{dataset}/input/{clonotype}/{seq}.aln.fasta",
+        # dataset = config["dataset"],
         # clonotype= get_clonotypes(),
         # seq = config["seq"]),
-        # expand("{run_dir}/input/{clonotype}/concat.aln.fasta",
-        # run_dir = config["run_dir"],
+        # expand("{dataset}/input/{clonotype}/concat.aln.fasta",
+        # dataset = config["dataset"],
         # clonotype = get_clonotypes(),
         # ),
-        # expand("{run_dir}/input/{clonotype}/concat.algn.phylip",
-        # run_dir = config["run_dir"],
+        # expand("{dataset}/input/{clonotype}/concat.algn.phylip",
+        # dataset = config["dataset"],
         # clonotype = get_clonotypes(),
         # ),
-        # expand( "{run_dir}/dnapars/{clonotype}/dnapars.log",
-        #  run_dir = config["run_dir"],
+        # expand( "{dataset}/dnapars/{clonotype}/dnapars.log",
+        #  dataset = config["dataset"],
         #  clonotype = get_clonotypes(),
         # ),
-        # expand( "{run_dir}/tribal/transmat.txt",
-        #     run_dir=config["run_dir"],
-        # ),
-        # expand( "{run_dir}/tribal/{jump_prob}/transmat.pdf",
-        #     run_dir=config["run_dir"],
+  
+        # expand( "{dataset}/tribal/{jump_prob}/transmat.pdf",
+        #     dataset=config["dataset"],
         #     jump_prob = config["jump_probs"]
         # ),
-        # expand("{run_dir}/tribal_search/{clonotype}/{alpha}/search_tree.png",
-        #     run_dir=config["run_dir"],
+        # expand("{dataset}/tribal_search/{clonotype}/{alpha}/search_tree.png",
+        #     dataset=config["dataset"],
         #     alpha = config['alpha'],
         #     clonotype = get_clonotypes(),
         #     # clonotype = ["B_21_3_13_154_2_3"]
         # ),
-        # expand("heatmaps/{run_dir}.pdf",
-        #     run_dir = config["run_dir"]
+        # expand("heatmaps/{dataset}.pdf",
+        #     dataset = config["dataset"]
         # ),
-        # expand("{run_dir}/tribal_refine/{clonotype}/0.75/tree.png",
-        #     run_dir=config["run_dir"],
+        # expand("{dataset}/tribal_refine/{clonotype}/0.75/tree.png",
+        #     dataset=config["dataset"],
         #     clonotype = get_clonotypes(),
         #     # clonotype = ["B_21_3_13_154_2_3"]
         # )
 
 
-
-
-# rule preprocess:
-#     input: 
-#         data_fname = "{run_dir}/{run_dir}_dandelion_table.tsv",
-#         root_fname = "{run_dir}/{run_dir}_root_sequences.csv"
-#     params: 
-#         min_size = 5,
-#         pth = "/scratch/projects/tribal/real_data/{run_dir}/input"
-#     output: 
-#         summary = "{run_dir}/clonotype_summary.csv",
-#         id_mapping = "{run_dir}/barcode_id_mapping.csv"
-#     script:
-#         "scripts/preprocess.R"
-
-rule get_tree_levels:
-    input: "mut_levels_in/{run_dir}_{mut}.csv",
-    output: "mut_levels/{run_dir}_{mut}_levels_0.75.csv",
-    params:
-        treepath = "/scratch/projects/tribal/real_data/{run_dir}/tribal_search",
-        lamb = 0.75
-    shell:
-        "python ../src/get_mut_level.py -i {input} -o {output} -l {params.lamb} --treepath {params.treepath} "
-
-rule align:
-    input: 
-        fasta = "{run_dir}/input/{clonotype}/{seq}.fasta",
-        summary = "{run_dir}/clonotype_summary.csv"
-    output: "{run_dir}/input/{clonotype}/{seq}.aln.fasta"
-    log:
-        err = "{run_dir}/input/{clonotype}/{seq}.muscle.err.log",
-        std ="{run_dir}/input/{clonotype}/{seq}.muscle.log"
-    shell:
-        "./muscle5.1.linux_intel64 -align {input.fasta} -output {output} > {log.std} 2> {log.err}"
-
-
-rule concat_fasta:
-    input:
-        light= "{run_dir}/input/{clonotype}/light.aln.fasta",
-        heavy= "{run_dir}/input/{clonotype}/heavy.aln.fasta"
-    output:  "{run_dir}/input/{clonotype}/concat.aln.fasta"
-    shell:
-        "python ../scripts/concat_fasta.py -l {input.light} -y {input.heavy} -o {output}"
-
-rule convert_phylip:
-    input: "{run_dir}/input/{clonotype}/concat.aln.fasta"
-    output: "{run_dir}/input/{clonotype}/concat.algn.phylip"
-    shell:
-        "seqmagick convert {input} {output}"
-
-
-rule dnapars_config:
-    input: "{run_dir}/input/{clonotype}/concat.algn.phylip",
-    output: "{run_dir}/dnapars/{clonotype}/dnapars.cfg",
-    shell:
-        "mkconfig {input} dnapars > {output} "
-
-
-rule dnapars_run:
-    input: "{run_dir}/dnapars/{clonotype}/dnapars.cfg",
-    params: 
-        direct="{run_dir}/dnapars/{clonotype}"
-    output:  "{run_dir}/dnapars/{clonotype}/dnapars.log"
-    shell:       
-        """
-        (
-        cd {params.direct}
-        dnapars < dnapars.cfg > dnapars.log
-        )
-        """
-     
        
 
 
-# rule tribal_infer:
-#     input: 
-#         clonotypes = "{run_dir}/clonotypes.txt",
-#         encoding = "mouse_isotype_encoding.txt",
-#     params:
-#         inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
-#         alpha = 0.75,
-#         max_cand = config["max_cand"],
-#         niter = config["niter"],
-#         thresh = config["threshold"],
-#         seed =  config["seed"],
-#         root = "naive",
-#         outpath = "/scratch/projects/tribal/real_data/{run_dir}/tribal/{jump_prob}",
-#         tree_path = "/scratch/projects/tribal/real_data/{run_dir}/dnapars",
-#         nworkers = config['nworkers'],
-#         restarts = config["nrestarts"],
-#         mu = config["mu"],
-#         sigma = config["sigma"]
-#     output:
-#         transmat = "{run_dir}/tribal/{jump_prob}/transmat.txt",
-#         stateprobs = "{run_dir}/tribal/{jump_prob}/state_probs.txt",
-#         score = "{run_dir}/tribal/{jump_prob}/fit_score.txt",
-#         diagram = "{run_dir}/tribal/{jump_prob}/transmat.png",
-#         diagram_pdf = "{run_dir}/tribal/{jump_prob}/transmat.pdf",
-#     log:
-#         std = "{run_dir}/tribal/{jump_prob}/fit.log",
-#         err = "{run_dir}/tribal/{jump_prob}/fit.err.log"
-#     shell:
-#         "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
-#         "-r {params.root} -e {input.encoding} -s {params.seed} "
-#         "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
-#         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
-#         "--state_probs {output.stateprobs} --score {output.score} --diagram_pdf {output.diagram_pdf}  "
-#         "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
-#         "--save_all_restarts {params.outpath} -j {wildcards.jump_prob} "
-#         "--diagram {output.diagram} > {log.std} 2> {log.err} "
+rule tribal_infer:
+    input: 
+        clonotypes = "{dataset}/clonotypes.txt",
+        encoding = "mouse_isotype_encoding.txt",
+    params:
+        inpath = "./{dataset}/input",
+        lamb = config["lamb"],
+        max_cand = config["max_cand"],
+        niter = config["niter"],
+        thresh = config["threshold"],
+        seed =  config["seed"],
+        root = "naive",
+        outpath = "./{dataset}/tribal/{jump_prob}",
+        tree_path = "./{dataset}/dnapars",
+        nworkers = config['nworkers'],
+        restarts = config["nrestarts"],
+        mu = config["mu"],
+        sigma = config["sigma"]
+        jump_prob = config["jump_prob"]
+    output:
+        transmat = "{dataset}/tribal/transmat.txt",
+        stateprobs = "{dataset}/tribal/state_probs.txt",
+        heatmap = "{dataset}/tribal/transmat.png",
+        statmape = "{dataset}/tribal/statemap.png",
+        score = "{dataset}/tribal/fit_score.txt",
+    log:
+        std = "{dataset}/tribal/fit.log",
+        err = "{dataset}/tribal/fit.err.log"
+    shell:
+        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
+        "-r {params.root} -e {input.encoding} -s {params.seed} "
+        "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
+        "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
+        "--state_probs {output.stateprobs} --score {output.score}  "
+        "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
+        "--save_all_restarts {params.outpath} -j {params.jump_prob} "
+        "--heatmap {output.heatmap} > {log.std} 2> {log.err} "
 
 
 # rule state_pdf:
 #     input: 
-#         transmat =  "{run_dir}/tribal/{jump_prob}/transmat.txt",
+#         transmat =  "{dataset}/tribal/{jump_prob}/transmat.txt",
 #         encoding = "mouse_labels.txt",
 #     output: 
-#         heatmap ="heatmaps/{run_dir}_{jump_prob}.pdf",
-#         state_heatmap="heatmaps/{run_dir}_{jump_prob}_isotype_prop.pdf"
+#         heatmap ="heatmaps/{dataset}_{jump_prob}.pdf",
+#         state_heatmap="heatmaps/{dataset}_{jump_prob}_isotype_prop.pdf"
 #     shell:
 #         "python ../src/draw_state_diagram.py -t {input.transmat}  -e {input.encoding} "
 #         "--heatmap {output.heatmap} --statemap {output.state_heatmap} "
 
 # rule save_heatmap:
 #     input: 
-#         infer =  "{run_dir}/tribal/0.25/transmat.txt",
+#         infer =  "{dataset}/tribal/0.25/transmat.txt",
 #         encoding = "mouse_isotype_encoding.txt",
 #     output: 
-#         heatmap ="heatmaps/{run_dir}.pdf",
-#         png  ="heatmaps/{run_dir}.png"
+#         heatmap ="heatmaps/{dataset}.pdf",
+#         png  ="heatmaps/{dataset}.png"
 #     run:
 #         import numpy as np 
 #         import sys 
@@ -209,29 +139,29 @@ rule dnapars_run:
 
 rule tribal_refine:
     input: 
-        alignment= "{run_dir}/input/{clonotype}/concat.aln.fasta",
-        isotypes = "{run_dir}/input/{clonotype}/isotype.fasta",
-        transmat =  "{run_dir}/tribal/0.25/transmat.txt",
-        candidates ="{run_dir}/dnapars/{clonotype}/outtree",
+        alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
+        isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
+        transmat =  "{dataset}/tribal/transmat.txt",
+        candidates ="{dataset}/dnapars/{clonotype}/outtree",
         encoding = "mouse_isotype_encoding.txt",
     output: 
-        forest="{run_dir}/tribal_refine/{clonotype}/0.75/forest.pickle",
-        tree= "{run_dir}/tribal_refine/{clonotype}/0.75/tree.txt",
-        seq= "{run_dir}/tribal_refine/{clonotype}/0.75/inferred_seq.csv",
-        fasta= "{run_dir}/tribal_refine/{clonotype}/0.75/inferred_seq.fasta",
-        isotypes= "{run_dir}/tribal_refine/{clonotype}/0.75/isotypes.csv",
-        score= "{run_dir}/tribal_refine/{clonotype}/0.75/score.csv",
-        png = "{run_dir}/tribal_refine/{clonotype}/0.75/tree.png",
+        forest="{dataset}/tribal_refine/{clonotype}/forest.pickle",
+        tree= "{dataset}/tribal_refine/{clonotype}/tree.txt",
+        seq= "{dataset}/tribal_refine/{clonotype}/inferred_seq.csv",
+        fasta= "{dataset}/tribal_refine/{clonotype}/inferred_seq.fasta",
+        isotypes= "{dataset}/tribal_refine/{clonotype}/isotypes.csv",
+        score= "{dataset}/tribal_refine/{clonotype}/score.csv",
+        png = "{dataset}/tribal_refine/{clonotype}/tree.png",
     params:
         root = "naive",
         mode = "refine",
         ntrees = config["ntrees"],
-        alpha= 0.75
+        lamb = config["lamb"],
     threads: config['nworkers']
     log: 
-        run= "{run_dir}/tribal_refine/{clonotype}/0.75/refine.log",
-        err ="{run_dir}/tribal_refine/{clonotype}/0.75/refine.err.log"  
-    benchmark: "{run_dir}/tribal_refine/{clonotype}/0.75/refine.benchmark.log" 
+        run= "{dataset}/tribal_refine/{clonotype}/refine.log",
+        err ="{dataset}/tribal_refine/{clonotype}/refine.err.log"  
+    benchmark: "{dataset}/tribal_refine/{clonotype}/refine.benchmark.log" 
     shell:
         "python ../src/tribal_sub.py "
         " -r {params.root} "
@@ -255,28 +185,28 @@ rule tribal_refine:
    
 rule tribal_search:
     input: 
-        alignment= "{run_dir}/input/{clonotype}/concat.aln.fasta",
-        isotypes = "{run_dir}/input/{clonotype}/isotype.fasta",
-        transmat =  "{run_dir}/tribal/0.25/transmat.txt",
-        lin_forest = "{run_dir}/tribal_refine/{clonotype}/0.75/forest.pickle",
+        alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
+        isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
+        transmat =  "{dataset}/tribal/0.25/transmat.txt",
+        lin_forest = "{dataset}/tribal_refine/{clonotype}/0.75/forest.pickle",
         encoding = "mouse_isotype_encoding.txt",
     output: 
-        tree= "{run_dir}/tribal_search/{clonotype}/{alpha}/tree.txt",
-        lin_forest ="{run_dir}/tribal_search/{clonotype}/{alpha}/forest.pickle",
-        seq= "{run_dir}/tribal_search/{clonotype}/{alpha}/inferred_seq.csv",
-        fasta= "{run_dir}/tribal_search/{clonotype}/{alpha}/inferred_seq.fasta",
-        isotypes= "{run_dir}/tribal_search/{clonotype}/{alpha}/isotypes.csv",
-        score= "{run_dir}/tribal_search/{clonotype}/{alpha}/score.csv",
-        png = "{run_dir}/tribal_search/{clonotype}/{alpha}/search_tree.png",
+        tree= "{dataset}/tribal_search/{clonotype}/{alpha}/tree.txt",
+        lin_forest ="{dataset}/tribal_search/{clonotype}/{alpha}/forest.pickle",
+        seq= "{dataset}/tribal_search/{clonotype}/{alpha}/inferred_seq.csv",
+        fasta= "{dataset}/tribal_search/{clonotype}/{alpha}/inferred_seq.fasta",
+        isotypes= "{dataset}/tribal_search/{clonotype}/{alpha}/isotypes.csv",
+        score= "{dataset}/tribal_search/{clonotype}/{alpha}/score.csv",
+        png = "{dataset}/tribal_search/{clonotype}/{alpha}/search_tree.png",
     params:
         root = "naive",
         timeout = config["search_timeout"],
         ntrees = config["ntrees"],
     threads: config["nworkers"]
     log: 
-        run= "{run_dir}/tribal_search/{clonotype}/{alpha}/search.log",
-        err ="{run_dir}/tribal_search/{clonotype}/{alpha}/search.err.log"  
-    benchmark: "{run_dir}/tribal_search/{clonotype}/{alpha}/search.benchmark.log" 
+        run= "{dataset}/tribal_search/{clonotype}/{alpha}/search.log",
+        err ="{dataset}/tribal_search/{clonotype}/{alpha}/search.err.log"  
+    benchmark: "{dataset}/tribal_search/{clonotype}/{alpha}/search.benchmark.log" 
     shell:
         "python ../src/tribal_sub.py "
         " -r {params.root} "
@@ -303,18 +233,18 @@ rule tribal_search:
 
 rule tribal_infer:
     input: 
-        clonotypes = "{run_dir}/clonotypes_{sub}Mut.txt",
+        clonotypes = "{dataset}/clonotypes_{sub}Mut.txt",
         encoding = "mouse_isotype_encoding.txt",
     params:
-        # inpath = "/scratch/projects/tribal/real_data/{run_dir}/input",
-        inpath ="/home/ec2-user/tribal/real_data/{run_dir}/input",
+        # inpath = "/scratch/projects/tribal/real_data/{dataset}/input",
+        inpath ="/home/ec2-user/tribal/real_data/{dataset}/input",
         alpha = 0.75,
         max_cand = config["max_cand"],
         niter = config["niter"],
         thresh = config["threshold"],
         seed =  config["seed"],
         root = "naive",
-        tree_path = "/home/ec2-user/tribal/real_data/{run_dir}/dnapars",
+        tree_path = "/home/ec2-user/tribal/real_data/{dataset}/dnapars",
         nworkers = config['nworkers'],
         restarts = config["nrestarts"],
         mu = config["mu"],
@@ -322,15 +252,15 @@ rule tribal_infer:
         mode= "refine",
         jump_prob = 0.25
     output:
-        transmat = "{run_dir}/{sub}Mut/transmat.txt",
-        stateprobs = "{run_dir}/{sub}Mut/state_probs.txt",
-        score = "{run_dir}/{sub}Mut/fit_score.txt",
-        diagram = "{run_dir}/{sub}Mut/transmat.png",
-        diagram_pdf = "{run_dir}/{sub}Mut/transmat.pdf",
-        heatmap = "{run_dir}/{sub}Mut/heatmap.pdf"
+        transmat = "{dataset}/{sub}Mut/transmat.txt",
+        stateprobs = "{dataset}/{sub}Mut/state_probs.txt",
+        score = "{dataset}/{sub}Mut/fit_score.txt",
+        diagram = "{dataset}/{sub}Mut/transmat.png",
+        diagram_pdf = "{dataset}/{sub}Mut/transmat.pdf",
+        heatmap = "{dataset}/{sub}Mut/heatmap.pdf"
     log:
-        std = "{run_dir}/{sub}Mut/fit.log",
-        err = "{run_dir}/{sub}Mut/fit.err.log"
+        std = "{dataset}/{sub}Mut/fit.log",
+        err = "{dataset}/{sub}Mut/fit.err.log"
     shell:
         "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
         "-r {params.root} -e {input.encoding} -s {params.seed} --mode {params.mode} "
@@ -341,13 +271,3 @@ rule tribal_infer:
         "-j {params.jump_prob} --heatmap {output.heatmap} "
         "--diagram {output.diagram} > {log.std} 2> {log.err} "
 
-rule get_state_maps_strat:
-    input:        
-        transmat = "{run_dir}/{sub}Mut/transmat.txt",
-        stateprobs = "{run_dir}/{sub}Mut/state_probs.txt",
-        encoding = "mouse_isotype_encoding.txt",
-
-    output: "{run_dir}/{sub}Mut/state_probs.pdf"
-    shell: 
-        "python ../src/draw_state_diagram.py -t {input.transmat} -e {input.encoding} "
-        "-s {input.stateprobs} --statemap {output} "

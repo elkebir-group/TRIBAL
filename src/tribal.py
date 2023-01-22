@@ -400,9 +400,9 @@ if __name__ == "__main__":
     parser.add_argument("--score", type=str, help="filename where the score file should be saved")
     parser.add_argument("--transmat_infer", type=str, help="filename where the inferred transition matrix should be saved")
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
-    parser.add_argument("--diagram", type=str, help="filename where the png of transition matrix should be saved")
-    parser.add_argument("--diagram_pdf", type=str, help="filename where the pdf of transition matrix should be saved")
-    parser.add_argument("--heatmap", type=str, help="filename where the heatmap pdf of transition matrix should be saved")
+    parser.add_argument("--heatmap", type=str, help="filename where the {png,pdf} of transition matrix should be saved")
+    parser.add_argument("--propmap", type=str, help="filename where the {pdf,png} of isotype proportions should be saved")
+
     parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
@@ -476,12 +476,11 @@ if __name__ == "__main__":
     if args.state_probs is not None:
         np.savetxt(args.state_probs, state_probs)
     
-    if args.diagram is not None:
-        DrawStateDiag(transmat, state_probs, rev_encoding).save(args.diagram)
-    if args.diagram_pdf is not None:
-        DrawStateDiag(transmat, state_probs, rev_encoding).save_pdf(args.diagram_pdf)
     if args.heatmap is not None:
-            DrawStateDiag(transmat, state_probs, rev_encoding).heatmap(args.heatmap)
+        DrawStateDiag(transmat, state_probs, rev_encoding).heatmap(args.heatmap)
+   
+    if args.propmap is not None:
+        DrawStateDiag(transmat, state_probs, rev_encoding).state_heatmap(args.propmap)
 
 
     if args.outpath is not None:

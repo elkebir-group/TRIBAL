@@ -1,43 +1,20 @@
-seq:
-  - heavy
-  - light
 
-run_dir:
-  - day_14
-  - GCB_NP_1
-  - GCB_NP_2
-  # - GCB_OVA_1
+#changed to set the name of the dataset to be run
+dataset: GCB_NP_1
 
-mut:
-  # - W33L
-  # - S66N
-  # - K59R
-  # - K59R+S66N
-  - Mut
 
-# clono_file:
-#   - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
 
-clono_file:
-  day_14: 
-    - "/scratch/projects/tribal/real_data/day_14/clonotype_summary.csv"
-  GCB_NP_1:
-    - "/scratch/projects/tribal/real_data/GCB_NP_1/clonotype_summary.csv"
-  GCB_NP_2: 
-    - "/scratch/projects/tribal/real_data/GCB_NP_2/clonotype_summary.csv"
-  GCB_OVA_1: 
-    - "/scratch/projects/tribal/real_data/GCB_OVA_1/clonotype_summary.csv"
-#tribal params
-#tribal params
-alpha:
-  - 0.75
-  - 0.95
+
+
+
+#TRIBAL parameters
+
+lamb: 0.75
+
 
 ntrees: 
   - 10
 
-nworkers:
-  - 10
 
 max_cand:
   -50
@@ -53,14 +30,10 @@ sigma: 0.05
 seed:
   - 3
 
-threshold:
-  - 0.1
+threshold: 0.1
 
 search_timeout: 4
 
 
-jump_probs:
+jump_probs: 
   - 0.25
-  - 0.2
-  - 0.1
-  - 0.35

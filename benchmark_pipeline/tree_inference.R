@@ -101,6 +101,7 @@ tree.results <- bind_rows(t.res, iso_res) %>%
 # igphy<- inner_join(igphy1, igphy2)
 # 
 # tree.results <- filter(tree.results, !(str_detect(method, "dnaml"))) %>% bind_rows(dnaml)
+large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >= quantile(ncand, 0.5) )
 
 tree.results.long <- tree.results %>% 
   pivot_longer( cols=c("RF", "MRCA_ISO", "MRCA")) %>%
@@ -121,7 +122,7 @@ tree.results.long <- tree.results.long %>%
 
 cells.65.plot <- ggplot(tree.results.long %>% filter(cells==65), aes(x=method_labs, y=value, fill=method_labs)) + geom_boxplot() + 
   facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
-  scale_fill_manual(values=method_cols) + theme(legend.position="none")
+  scale_fill_manual(values=tree_cols) + theme(legend.position="none")
 
 plot_save(file.path(plot_path, "cells.65.tree.metrics.pdf"), cells.65.plot, width=0.73*width, height=height)
 
@@ -144,8 +145,10 @@ cells.65.large <-ggplot(tree.results.long %>% filter(cells==65) %>%
 
 plot_save(file.path(plot_path, "cells.65.tree.large.metrics.pdf"), cells.65.large, width=width, height=height)
 
-cells.35.plot <- ggplot(tree.results.long %>% filter(cells==35), aes(x=method_labs, y=value)) + geom_boxplot() + 
-  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
+
+cells.35.plot <- ggplot(tree.results.long %>% filter(cells==35), aes(x=method_labs, y=value, fill=method_labs)) + geom_boxplot() + 
+  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+  scale_fill_manual(values=method_cols) + theme(legend.position="none")
 
 plot_save(file.path(plot_path, "cells.35.tree.metrics.pdf"), cells.35.plot)
 
@@ -153,13 +156,13 @@ plot_save(file.path(plot_path, "cells.35.tree.metrics.pdf"), cells.35.plot)
 
 cells.35.large <-ggplot(tree.results.long %>% filter(cells==35) %>%
                           inner_join(large_forest),
-                        aes(x=method_labs, y=value)) + geom_boxplot() + 
-  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")
+                        aes(x=method_labs, y=value, fill=method_labs)) + geom_boxplot() + 
+  facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method") +
+  scale_fill_manual(values=method_cols) +  theme(legend.position="none")
 plot_save(file.path(plot_path, "cells.35.tree.large.metrics.pdf"), cells.35.large)
 
 #large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >= quantile(ncand, 0.75) )
 #large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >=4 )
-large_forest <- cand.counts %>% group_by(cells) %>% filter( ncand >= quantile(ncand, 0.5) )
 
 ggplot(tree.results.long %>% filter(cells==65) %>% inner_join(large_forest), aes(x=method_labs, y=value)) + geom_boxplot() + 
   facet_wrap(~metric, scales="free_y") + vertx_theme + ylab("")  + xlab("method")

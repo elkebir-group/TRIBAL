@@ -78,7 +78,7 @@ class DrawStateDiag:
         plt.figure()
         labs= [self.isotype_mapping[s] for s in self.states]
         df = pd.DataFrame(self.transmat, index=labs, columns=labs)
-        fig =sns.heatmap(df, annot=True, fmt=".03f", cmap=self.cmap)
+        fig =sns.heatmap(df, annot=True, fmt=".02f", cmap=self.cmap)
 
         fig.set(xlabel="Isotype", ylabel="Isotype")
         plt.savefig(fname)

@@ -1,11 +1,8 @@
 
 import networkx as nx
 import numpy as np
-import neighbor_joining as nj
 import argparse 
-import re
-from spr import SPR
-from unrooted_spr import USPR
+import sys, re
 from copy import deepcopy
 import utils as ut
 import time
@@ -180,10 +177,7 @@ class TribalSub:
                 mode_func = self.search 
             else:
                 mode_func = self.score 
-
-                #    M = pool.starmap(func, zip(a_args, repeat(second_arg)))
-            # with Pool(self.nworkers) as pool:
-            #     all_results = pool.starmap(mode_func,zip(lin_forest.get_trees(), repeat(alignment), repeat(isotype_labels)))     
+     
             all_results = [] 
             for lin_tree in lin_forest.get_trees():
          
@@ -199,7 +193,7 @@ class TribalSub:
                     if result.improvement(best_results[-1]) or len(best_results) < ntrees:
                         self.update_best_results(result, best_results, ntrees)
                        
-                        # print(best_result)
+                      
 
       
             return best_results, all_results
@@ -209,8 +203,7 @@ class TribalSub:
     def forest_mode(self, lin_forest, alignment=None, isotypes=None, mode="score", ntrees=1):
             
             best_results = []
-            # best_result = None 
-            # best_tree = None
+        
 
             all_results = {}
             
@@ -228,24 +221,23 @@ class TribalSub:
             else:
                 mode_func = self.score 
 
-                #    M = pool.starmap(func, zip(a_args, repeat(second_arg)))
+        
             with Pool(self.nworkers) as pool:
                 all_results = pool.starmap(mode_func,zip(lin_forest.get_trees(), repeat(alignment), repeat(isotype_labels)))     
-            # for lin_tree in lin_forest.get_trees():
+
          
-            #     result = mode_func(lin_tree,alignment, isotype_labels)
-            #     all_results[lin_tree.id] = result
+         
             #scan through results and find the top ntrees results 
             for result in all_results:
                 if len(best_results) ==0:
                     best_results.append( result)
                   
-                    # print(best_result)
+        
                 else:
                     if result.improvement(best_results[-1]) or len(best_results) < ntrees:
                         self.update_best_results(result, best_results, ntrees)
                        
-                        # print(best_result)
+            
 
     
             return best_results, all_results
@@ -273,11 +265,8 @@ def create_trees(cand_fname):
             
 
             ete_tree = Tree(nw, format=0)
-            # ete_tree.name = args.root
-            # print(ete_tree)
+      
             nx_tree= convert_to_nx(ete_tree, args.root)
-            # print(list(nx_tree.edges))
-            # ttree = TribalTree(nx_tree, root=args.root, is_rooted=True)
             cand_trees.append(nx_tree)
         return cand_trees
 
@@ -294,22 +283,19 @@ def convert_to_nx(ete_tree, root):
         if node.is_root():
             root_name =node.name
 
-        # print(node.name)
+
         for c in node.children:
             if c.name == "":
                 c.name = str(internal_node)
                 internal_node += 1
                 internal_node_count += 1
-            # else:
-            #     print(c.name)
-            # if isinstance(c.name, str):
-            #     print(c.name)
+    
        
 
             nx_tree.add_edge(node.name, c.name)
     
     if len(list(nx_tree.neighbors(root))) == 0:
-        # print("root is outgroup")
+   
         nx_tree.remove_edge(root_name, root)
         nx_tree.add_edge(root, root_name)
   
@@ -336,104 +322,36 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--root", required=True,
         help="the id of the root sequence in the alignment")
     parser.add_argument("--timeout", type = float, help="max number of hours to let tribal search per tree", default=8)
-    parser.add_argument("-l", "--lineage", type=str, help="pickle file of lineage tree/forest")
+    parser.add_argument("-l", "--lineage", type=str, help="pickle file of lineage tree/forest returned from tribal.py")
+    parser.add_argument("--forest",  action="store_true")
     parser.add_argument("--candidates", type=str, help="filename containing newick strings for candidate tree(s)")
     parser.add_argument("--mode", choices=["score", "refine", "search"], default="score")
     parser.add_argument("-e", "--encoding", type=str, required=True)
     parser.add_argument("--alpha", type=float, default=0.9)
     parser.add_argument("-j", "--jump-prob", type=float, default=0.25)
-    parser.add_argument("--forest",  action="store_true")
+
     parser.add_argument("--ntrees", type=int, help="number of top scoring trees to return", default=1)
-
-
     parser.add_argument("-o", "--output", type=str, help="outputfile of all best trees")
     parser.add_argument("--tree",  type=str, help="outputfile of best tree")
 
     parser.add_argument( "--fasta", type=str, help="filename where reconstructed ancestral sequences should be saved as fasta file")
     parser.add_argument( "--png", type=str, help="filename where to save a png of the optimal tree")
     parser.add_argument( "--all_pngs", action="store_true")
-
     parser.add_argument( "--sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
-    parser.add_argument("-n", "--newick", type=str, help="filename where newick string should be saved")
     parser.add_argument("--score",  type=str, help="filename of the objective function value objective function value")
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
     parser.add_argument("--save_candidates", type=str, help="directory where to save data for candidate trees")
-    parser.add_argument("--save_all_scores", type=str, help="file where to save data for candidate trees")
-    parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event in multiple restarts")
+    parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event of multiple input candidate trees")
     parser.add_argument("--seed", type=int, default=1026, help="random seed for picking a single best tree among all tied trees")
 
 
 
-    args= parser.parse_args()
+    args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
 
 
 
-    # path = "/scratch/projects/tribal/real_data"
-    # dataset = "day_14"
-    # folder = "tribal"
-    # clonotype = "B_147_6_76_148_1_41"
-
-    # args =parser.parse_args([
-    #     "-a", f"{path}/{dataset}/input/{clonotype}/concat.aln.fasta",
-    #     "-r", "naive",
-    #     "-t", f"{path}/{dataset}/{folder}/0.25/transmat.txt",
-    #     # "-l", "/scratch/projects/tribal/real_data/test/best_forest.pickle",
-    #     # "--forest",
-    #     "-e", f"{path}/mouse_isotype_encoding.txt",
-    #     "-i", f"{path}/{dataset}/input/{clonotype}/isotype.fasta",
-    #     "-o", f"{path}/test/best_forest.pickle",
-    #     # "--init", "candidates",
-    #     # "-s", "1",
-    #     "--alpha", "0.75",
-    #     "--sequences", f"{path}/test/tribal.seq",
-    #     "--fasta",f"{path}/test/tribal.fasta",
-    #     "--score",f"{path}/test/tribal.score",
-    #     "--iso_infer", f"{path}/test/tribal.isotypes",
-    #     "--candidates", f"{path}/{dataset}/dnapars/{clonotype}/outtree",
-    #     # "--save_candidates",f"{path}/test",
-    #     # "--save_all_scores",f"{path}/test/all_scores.csv",
-    #     "--png", f"{path}/test/best_tree.png",
-    #     "--mode", "score",
-    #     # "--timeout", "0.1"
-    #     "--ntrees", "10"
-    #     # "--start_png", f"{path}/test/start_tree.png",
-    #     # "--fit"
-    # ])
-
-    # path = "/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/replicates/cells65/size25/rep1/2.0/0.365"
-    # # dataset = "day_14"
-    # # folder = "tribal"
-    # # clonotype = "B_147_6_76_148_1_41"
-    # clono=21
-
-    # args =parser.parse_args([
-    #     "-a", f"{path}/{clono}/GCsim_dedup.fasta",
-    #     "-r", "naive",
-    #     "-t", f"{path}/tribal/transmat.txt",
-    #     # "-l", f"{path}/tribal_refine/{clono}/0.75/forest.pickle",
-    #     # "--forest",
-    #     "-e", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
-    #     "-i", f"{path}/{clono}/GCsim.isotypes",
-    #     "-o", f"{path}/{clono}/test_search/best_forest.pickle",
-    #     # "--init", "candidates",
-    #     # "-s", "1",
-    #     "--alpha", "0.95",
-    #     "--sequences", f"{path}/{clono}/test_search/tribal.seq",
-    #     "--fasta",f"{path}/{clono}/test_search/tribal.fasta",
-    #     "--score",f"{path}/{clono}/test_search/score.csv",
-    #     "--iso_infer", f"{path}/{clono}/test_search/tribal.isotypes",
-    #     "--candidates", f"{path}/{clono}/dnapars/outtree",
-    #     # "--save_candidates",f"{path}/test",
-    #     # "--save_all_scores",f"{path}/test/all_scores.csv",
-    #     "--png", f"{path}/{clono}/test_search/tree.png",
-    #     "--mode", "refine",
-    #     # "--timeout", "0.1"
-    #     "--ntrees", "10",
-    #     "--nworkers", "7",
-    #     # "--start_png", f"{path}/test/start_tree.png",
-    #     # "--fit"
-    # ])
+  
 
     
     iso_encoding = {}
@@ -566,177 +484,4 @@ if __name__ == "__main__":
             ut.save_dict(res.isotypes, f"{pth}/tribal_tree{res.tree.id}.isotypes.csv")
             res.tree.save_tree(f"{pth}/tribal_tree{res.tree.id}.txt")
 
-        
-
-
-
-
-
-
-
-            # dt = DrawTree(parents, isotypes, show_legend=True, isotype_encoding=isotype_encoding)
-            # dt.save(args.png)
-    # if args.newick is not None:
-    #     newick = best_tree.tree_to_newick(rooted=False)
-    #     with open(args.newick, "w+") as file:
-    #         file.write(newick)
-
     
-
-
-
-    # if args.candidates is None:
-    #     tr = Tribal(
-    #         alignment=alignment,
-    #         root= args.root,
-    #         isotype_labels= isotypes_filt,
-    #         seed = args.seed,
-    #         init = args.init,
-    #         transmat = transMat,
-    #         jump_prob = args.jump_prob,
-    #         isotype_encoding= isotype_encoding
-
-    #     )
-
-    #     best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.run(args.n_init, args.alpha, 
-    #                                                                 args.kmax, args.temp)
-    # else:
-    
-    #     cand_trees = []
-    #     import re
-    #     exp = '\[.*\]'
-       
-    #     with open(args.candidates, 'r') as file:
-    #         nw_strings = []
-    #         nw_string = ""
-    #         for nw in file:
-    #                 line = nw.strip()
-    #                 nw_string += line
-    #                 if ";" in line:
-                        
-    #                     nw_strings.append(nw_string)
-    #                     nw_string = ""
-
-    #         for nw in nw_strings:
-    
-    #             nw = re.sub(exp, '', nw)
-             
-
-    #             ete_tree = Tree(nw, format=0)
-    #             # ete_tree.name = args.root
-    #             # print(ete_tree)
-    #             nx_tree= convert_to_nx(ete_tree, args.root)
-    #             # print(list(nx_tree.edges))
-    #             # ttree = TribalTree(nx_tree, root=args.root, is_rooted=True)
-    #             cand_trees.append(nx_tree)
-        
-        
-
-    #     tr = Tribal(
-    #         alignment=alignment,
-    #         root= args.root,
-    #         isotype_labels= isotypes_filt,
-    #         seed = args.seed,
-    #         init = args.init,
-    #         transmat = transMat,
-    #         jump_prob = args.jump_prob,
-    #         candidates= cand_trees,
-    #         isotype_encoding=isotype_encoding
-
-    #     )
-
-    #     #test em weight matrix
-    #     # states = np.arange(transMat.shape[0])
-    #     # forest = LineageForest()
-    #     # for c in cand_trees:
-    #     #     lt = LineageTree(c, "naive")
-    #     #     forest.add(lt)
-   
-    #     # em = EMProbs(forest,  transMat )
-    #     # exp_log_like, state_probs, transMat = em.fit(isotypes_filt)
-   
-
-    #     if args.fit:
-    #         best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.fit(cand_trees, args.alpha, save_candidates=args.save_candidates)
-    #     else:
-    #         best_tree, obj, par_obj, iso_obj, labels, isotypes = tr.run(len(cand_trees), args.alpha, args.kmax, args.temp)
-
-
-
-
-
-
-        # for k in alignment:
-        #     print(k)
-        #     seq = "".join(alignment[k])
-        #     if seq != labels[k]:
-        #         print(best_tree.is_leaf(k))
-
- 
-
-
-
-
-
-  
-
-
-
-
-
-
-
-
-
-
-####### SCRATCH##############
-
-# def simulated_annealing(self, curr_state, restart, temp=50, k_max=1000):
-    
-      
-
-#         curr_obj, curr_pars, curr_iso, _, _ = self.parsimony(curr_state)
-      
-#         best_obj = curr_obj
-#         best_state = deepcopy(curr_state)
-
-#         #initialize neighbors
-#         neighbors = iter(USPR(curr_state.get_unrooted_tree(), self.rng))
-
-#         for k in range(k_max):
-#             if (curr_obj - best_obj)/best_obj >= 0.50:
-#                 curr_obj = best_obj 
-#                 curr_state = best_state
-#             cand_state = deepcopy(curr_state)
-              
-#             #get the next candidate spr tree 
-#             try:
-#                 t = next(neighbors)
-#             except StopIteration:
-#                 # print("no other trees in neighborhood")
-#                 # neighbors =iter(USPR(cand_state.get_unrooted_tree(), self.rng,min_radius=3, max_radius=3))
-#                 # try:
-#                 #     t = next(neighbors)
-#                 break
-
-#             cand_state.set_unrooted_tree(t)
-#             curr_temp = temp*np.power(0.99,k)
-
-#             #compute the objective value
-#             cand_obj, cand_pars, cand_iso, _, _ = self.parsimony(cand_state)
-#             if k % 25 ==0:
-#                 print(f"{restart},{k},{cand_obj},{curr_obj},{best_obj}")     
-
-#             #check if solution is better than current state or randomly jump to new state with probability P(cand_obj, curr_obj,curr_temp)
-#             if cand_obj < curr_obj or  self.rng.random() <= self.prob_state_change(cand_obj, curr_obj, curr_temp ):
-       
-#                 curr_state = deepcopy(cand_state)
-#                 neighbors = iter(USPR(curr_state.get_unrooted_tree(), self.rng))
-#                 curr_obj = cand_obj
-#                 if curr_obj < best_obj:
-#                     best_obj = curr_obj
-#                     best_state = deepcopy(curr_state)
-                    
-           
-              
-#         return best_obj, best_state
