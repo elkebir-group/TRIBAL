@@ -262,7 +262,7 @@ Then, we perform a greedy hill climbing search starting from each of the top can
        --tree experimental_data/GCB_NP_2/example/tree.txt 
 
 ## Snakemake 
-To simplify the process of inference, we have provided  `experimental_data/Snakfile` and `experimental_data/config.yaml` files. To run the snakemake pipeline, navigate to the `experimental_data` directory.  
+To simplify the process of inference, we have provided  `experimental_data/Snakefile` and `experimental_data/config.yaml` files. To run the snakemake pipeline, navigate to the `experimental_data` directory.  
      ```$   cd experimental_data```
 
 Update the `config.yaml` file with the desired dataset and TRIBAL parameters. Then use the following 
