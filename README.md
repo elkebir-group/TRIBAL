@@ -98,61 +98,60 @@ See `example/output` for examples of all output files
 
 
 
-<!-- <a name="usage"></a>
+ <a name="usage"></a>
 ## Usage
 
-      usage: phertilizer [-h] -f FILE --bin_count_data BIN_COUNT_DATA [--bin_count_normal BIN_COUNT_NORMAL] [--snv_bin_mapping SNV_BIN_MAPPING] [-a ALPHA]
-                        [--min_cells MIN_CELLS] [--min_snvs MIN_SNVS] [--min_frac MIN_FRAC] [-j ITERATIONS] [-s STARTS] [-d SEED] [--npass NPASS] [--radius RADIUS]
-                        [-c COPIES] [--neutral_mean NEUTRAL_MEAN] [--neutral_eps NEUTRAL_EPS] [-m PRED_MUT] [-n PRED_CELL] [-e PRED_EVENT] [--tree TREE]
-                        [--tree_pickle TREE_PICKLE] [--tree_path TREE_PATH] [--tree_list TREE_LIST] [--cell_lookup CELL_LOOKUP] [--mut_lookup MUT_LOOKUP]
+        usage: tribal.py [-h] -p PATH [-c CLONOTYPES] [-e ENCODING] [--n_isotypes N_ISOTYPES] [--fasta FASTA] [-i ISOTYPES] [-j JUMP_PROB] [-t TRANSMAT] [-r ROOT] --tree_path TREE_PATH
+                        [--candidates CANDIDATES] [--niter NITER] [--thresh THRESH] [--mu MU] [--sigma SIGMA] [--nworkers NWORKERS] [--max_cand MAX_CAND] [-s SEED] [--alpha ALPHA]
+                        [--restarts RESTARTS] [--mode {score,refine,search}] [-o OUTPATH] [--score SCORE] [--transmat_infer TRANSMAT_INFER] [--state_probs STATE_PROBS]
+                        [--diagram DIAGRAM] [--diagram_pdf DIAGRAM_PDF] [--heatmap HEATMAP] [--save_all_restarts SAVE_ALL_RESTARTS]
 
-      optional arguments:
-      -h, --help            show this help message and exit
-      -f FILE, --file FILE  input file for variant and total read counts with unlabled columns: [chr snv cell base var total]
-      --bin_count_data BIN_COUNT_DATA
-                              input binned read counts with headers containing bin ids
-      --bin_count_normal BIN_COUNT_NORMAL
-                              input binned read counts for normal cells with identical bins as the bin count data
-      --snv_bin_mapping SNV_BIN_MAPPING
-                              a comma delimited file with unlabeled columns: [snv chr bin]
-      -a ALPHA, --alpha ALPHA
-                              per base read error rate
-      --min_cells MIN_CELLS
-                              smallest number of cells required to form a clone
-      --min_snvs MIN_SNVS   smallest number of SNVs required to form a cluster
-      --min_frac MIN_FRAC   smallest proportion of total cells(snvs) needed to form a cluster, if min_cells or min_snvs are given, min_frac is ignored
-      -j ITERATIONS, --iterations ITERATIONS
-                              maximum number of iterations
-      -s STARTS, --starts STARTS
-                              number of restarts
-      -d SEED, --seed SEED  seed
-      --npass NPASS
-      --radius RADIUS
-      -c COPIES, --copies COPIES
-                              max number of copies
-      --neutral_mean NEUTRAL_MEAN
-                              center of neutral RDR distribution
-      --neutral_eps NEUTRAL_EPS
-                              cutoff of neutral RDR distribution
-      -m PRED_MUT, --pred-mut PRED_MUT
-                              output file for mutation clusters
-      -n PRED_CELL, --pred_cell PRED_CELL
-                              output file cell clusters
-      -e PRED_EVENT, --pred_event PRED_EVENT
-                              output file cna genotypes
-      --tree TREE           output file for png (dot) of Phertilizer tree
-      --tree_pickle TREE_PICKLE
-                              output pickle of Phertilizer tree
-      --tree_path TREE_PATH
-                              path to directory where pngs of all trees are saved
-      --tree_list TREE_LIST
-                              pickle file to save a ClonalTreeList of all generated trees
-      --cell_lookup CELL_LOOKUP
-                              output file that maps internal cell index to the input cell label
-      --mut_lookup MUT_LOOKUP
-                              output file that maps internal mutation index to the input mutation label
+        optional arguments:
+        -h, --help            show this help message and exit
+        -p PATH, --path PATH  path to the directory containing input files
+        -c CLONOTYPES, --clonotypes CLONOTYPES
+                                filename with list of clonotype subdirectories that should be included in the inference. If not provided, scans provided path for all subdirectory names
+        -e ENCODING, --encoding ENCODING
+                                text file isotype states listed in germline order
+        --n_isotypes N_ISOTYPES
+                                the number of isotypes states to use if isotype encoding file is not provided and input isotypes are encoded numerically
+        --fasta FASTA         filename of input MSA in fasta file
+        -i ISOTYPES, --isotypes ISOTYPES
+                                filename of isotype fasta file within each clonotype directory
+        -j JUMP_PROB, --jump_prob JUMP_PROB
+                                for inititalization of transition matrix if not provided
+        -t TRANSMAT, --transmat TRANSMAT
+                                optional filename of input transition matrix for initialization
+        -r ROOT, --root ROOT  the common id of the root in all clonotypes
+        --tree_path TREE_PATH
+                                path to directory where candidate trees are saved
+        --candidates CANDIDATES
+                                filename containing newick strings for candidate trees
+        --niter NITER         max number of iterations in the fitting phase
+        --thresh THRESH       theshold for convergence in fitting phase
+        --mu MU               mean of gaussian white noise to add for distortion
+        --sigma SIGMA         std of gaussian white noise to add for distortion
+        --nworkers NWORKERS   number of workers to use in the event in multiple restarts
+        --max_cand MAX_CAND   max candidate tree size per clonotype
+        -s SEED, --seed SEED
+        --alpha ALPHA
+        --restarts RESTARTS   number of restarts
+        --mode {score,refine,search}
+        -o OUTPATH, --outpath OUTPATH
+                                path to directory where output files should be saved
+        --score SCORE         filename where the score file should be saved
+        --transmat_infer TRANSMAT_INFER
+                                filename where the inferred transition matrix should be saved
+        --state_probs STATE_PROBS
+                                filename where the inferred state probabilities should be saved
+        --diagram DIAGRAM     filename where the png of transition matrix should be saved
+        --diagram_pdf DIAGRAM_PDF
+                                filename where the pdf of transition matrix should be saved
+        --heatmap HEATMAP     filename where the heatmap pdf of transition matrix should be saved
+        --save_all_restarts SAVE_ALL_RESTARTS
+                                path where all restarts should be saved
 
-<a name="cna-mode-example"></a>
+<!-- <a name="cna-mode-example"></a>
 ### CNA mode example
 
 
@@ -184,4 +183,4 @@ The input files are located in the `example/input` directory.
     -m example/snv_mode_output/SNV_clusters.csv 
 
 This command generates output files `tree.png`, `cell_clusters.csv`, and `SNV_clsuters.csv` in directory `example\snv_mode_output`.
- -->
+ --> -->
