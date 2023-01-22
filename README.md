@@ -47,7 +47,8 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
          + [snakemake](https://snakemake.readthedocs.io/en/stable/)
          + [phylip](https://anaconda.org/bioconda/phylip) >3.697
       
-
+      A conda environment named `tribal` with required dependencies can also be created from the provided `tribal_env.yml` files as follows:  
+        ``` $ conda env -f tribal_env.yml```
 <a name="phases"></a>
 ## Phases
 TRIBAL is run in two phases. 
