@@ -13,8 +13,8 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
   1. [Installation](#install)
      * [Using github](#compilation)
      * [Dependencies](#pre-requisites)
-  2. [I/O formats](#io)
-  3. [Modes](#modes)  
+  2. [Phases](#phases) 
+  3. [I/O formats](#io)
   4. [Usage](#usage)
       + [Inferring isotype transition probabilities and proportions](#probabilities)
       + [Inferring B cel clonal lineages](#trees)
@@ -30,19 +30,22 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
       ```bash
             $ git clone https://github.com/elkebir-group/tribal.git
    2. Install dependencies
-      + python3 (>=3.9)
+      + python3 >=3.9
       + [numpy](https://numpy.org/doc/)
-      + [ete3 >=3.1.2] (http://etetoolkit.org)
+      + [ete3](http://etetoolkit.org) >=3.1.2
       + [networkx](https://networkx.org)
-      + [pydot](https://pygraphviz.github.io)
-      Optional:
-       + [phylip >3.697](https://anaconda.org/bioconda/phylip)
+      + [pydot](https://pygraphviz.github.io)  
+      
+      Optional: 
+         + [snakemake](https://snakemake.readthedocs.io/en/stable/)
+         + [phylip](https://anaconda.org/bioconda/phylip) >3.697
 
 
-
-
-
-
+<a name="phases"></a>
+## Phases
+TRIBAL is run in two phases. 
+  1. It infers the isotype transition probabilities for a set of k clonotypes. 
+  2. It uses the inferred isotype transition probabilities to aid in B cell lineage tree inference. 
 
 
 <a name="io"></a>
@@ -51,45 +54,44 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
  
  See `example/input` for examples of all input files.  
 
-<!-- The ouput file options include:   -->
-  <!-- 1. A png of the clonal tree with maximum posterior probability
-  2. A dataframe mapping cells to nodes
-  3. A dataframe mappping SNVs to nodes
-  4. A dataframe containing the CNA genotypes
-  5. A pickle file of the ouput clonal tree
-  6. A pickle file containing a ClonalTreeList of all enumerated clonal trees
-  7. A dataframe mapping the internal Phertilizer cell indices to cell labels
-  8. A  dataframe mapping the internal Phertilizer SNV indices to cell labels -->
 
 See `example/output` for examples of all output files
 
-<a name="modes"></a>
-## Phases
-TRIBAL is run in two phases:
- 1. *Isotype transition probability inference* 
-    + Input: 
-      a. A text file containing a list of clonotype subdirectories in the working directory which are to be included in the inference
-      b. A text file containing the ordred encoding of isotypes 
-      d. A specified id of the root sequence
-      c. Each clonotype subdirectory should contain the following two files: 
-          1. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
-          2. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correpond to sequence ids)
-    + Output: 
-        a. a text file containing the inferred isotype transition probabilties
-        b. a text file containing the inferred isotype proportions
-        c. Optional outputs include heatmaps and state diagrams of the isotype transition probabilities
- 2. *Tree inference 
-    + Input: 
-        a. fasta file for the concatenated and aligned heavy and light chain variable region sequences, 
-        b. a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correspond to sequence ids)
-        c. A text file containing the ordered encoding of isotypes 
-        d. istoype transition probabilities inferred during the previous phase
-        e. tree inference mode (score, refine, search)
-    +Output:
-        a. a text file containing the tree encoded with each row in the file encoding an edge in the tree as  child, parent
-        b. a fasta for csv file containing the inferred sequences of the heavy and light chain
-        c. a fasta or csv file containing the inferred isotype states
-        d. Optional outputs include png or pdf visualizations of the inferred tree
+
+1. *Isotype transition probability inference:* 
+    + **Input**:  
+        - A text file containing a list of clonotype subdirectory names (see example below) which are to be included in the inference
+            ```
+             clonotype_1
+             clontoype_2
+             clonotype_3
+            ```
+        - A text file containing the ordered encoding of isotypes (see example below). The names of isotypes should match the names in the input files.    
+             ```
+             IgM/D
+             IgG3
+             IgA
+            ```
+        - A specified id of the root sequence  
+        - Each clonotype subdirectory should contain the following two files:  
+            1. fasta file for the concatenated and aligned heavy and light chain variable region sequences  
+            2. fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correpond to sequence ids)  
+    + **Output**:  
+        - a text file containing the inferred isotype transition probabilties   
+        - a text file containing the inferred isotype proportions   
+        - Optional outputs include heatmaps and state diagrams of the isotype transition probabilities  
+2. *Tree inference:* 
+    + **Input**:  
+        - fasta file for the concatenated and aligned heavy and light chain variable region sequences  
+        - a fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correspond to sequence ids)      
+        - A text file containing the ordered encoding of isotypes  
+        - istoype transition probabilities inferred during the previous phase     
+        - tree inference mode (score, refine, search)  
+    + **Output**:  
+        - a text file containing the tree encoded with each row in the file encoding an edge in the tree as  child, parent    
+        - a fasta for csv file containing the inferred sequences of the heavy and light chain   
+        - a fasta or csv file containing the inferred isotype states     
+        - Optional outputs include png or pdf visualizations of the inferred tree  
 
 
 
