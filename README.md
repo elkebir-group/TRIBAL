@@ -10,14 +10,15 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 
 ## Contents
 
-  1. [Installation](#install)
-     * [Using github](#compilation)
-     * [Dependencies](#pre-requisites)
-  2. [Phases](#phases) 
-  3. [I/O formats](#io)
-  4. [Usage](#usage)
-      + [Inferring isotype transition probabilities and proportions](#probabilities)
-      + [Inferring B cel clonal lineages](#trees)
+- [TRIBAL: Tree inference of B cell clonal lineages](#tribal-tree-inference-of-b-cell-clonal-lineages)
+- [Contents](#contents)
+- [Installation](#installation)
+  - [Using github](#using-github)
+- [Phases](#phases)
+- [IO Formats](#io-formats)
+- [Usage](#usage)
+  - [Isotype Transition Probability Inference](#isotype-transition-probability-inference)
+  - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
 
 <a name="install"></a>
 
@@ -152,6 +153,50 @@ See `example/output` for examples of all output files
         --heatmap HEATMAP     filename where the heatmap pdf of transition matrix should be saved
         --save_all_restarts SAVE_ALL_RESTARTS
                                 path where all restarts should be saved
+
+
+### B cell lineage tree inference
+<a name="tree"></a>
+
+      usage: tribal_tree.py [-h] [-a ALIGNMENT] [-i ISOTYPES] [-t TRANSMAT] -r ROOT [--timeout TIMEOUT] [-l LINEAGE] [--forest] [--candidates CANDIDATES]
+                            [--mode {score,refine,search}] -e ENCODING [--alpha ALPHA] [-j JUMP_PROB] [--ntrees NTREES] [-o OUTPUT] [--tree TREE] [--fasta FASTA] [--png PNG]
+                            [--all_pngs] [--sequences SEQUENCES] [--score SCORE] [--iso_infer ISO_INFER] [--save_candidates SAVE_CANDIDATES] [--nworkers NWORKERS] [--seed SEED]
+
+      optional arguments:
+        -h, --help            show this help message and exit
+        -a ALIGNMENT, --alignment ALIGNMENT
+                              filename of input fasta file containing the alignment
+        -i ISOTYPES, --isotypes ISOTYPES
+                              filename of input file containing the isotype labels
+        -t TRANSMAT, --transmat TRANSMAT
+                              filename of input transition matrix
+        -r ROOT, --root ROOT  the id of the root sequence in the alignment
+        --timeout TIMEOUT     max number of hours to let tribal search per tree
+        -l LINEAGE, --lineage LINEAGE
+                              pickle file of lineage tree/forest returned from tribal.py
+        --forest
+        --candidates CANDIDATES
+                              filename containing newick strings for candidate tree(s)
+        --mode {score,refine,search}
+        -e ENCODING, --encoding ENCODING
+        --alpha ALPHA
+        -j JUMP_PROB, --jump-prob JUMP_PROB
+        --ntrees NTREES       number of top scoring trees to return
+        -o OUTPUT, --output OUTPUT
+                              outputfile of all best trees
+        --tree TREE           outputfile of best tree
+        --fasta FASTA         filename where reconstructed ancestral sequences should be saved as fasta file
+        --png PNG             filename where to save a png of the optimal tree
+        --all_pngs
+        --sequences SEQUENCES
+                              filename where reconstructed ancestral sequences should be saved as csv file
+        --score SCORE         filename of the objective function value objective function value
+        --iso_infer ISO_INFER
+                              filename of the inferred isotypes for the internal nodes
+        --save_candidates SAVE_CANDIDATES
+                              directory where to save data for candidate trees
+        --nworkers NWORKERS   number of workers to use in the event of multiple input candidate trees
+        --seed SEED           random seed for picking a single best tree among all tied trees
 
 <!-- <a name="cna-mode-example"></a>
 ### CNA mode example
