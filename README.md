@@ -40,11 +40,13 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
       + [ete3](http://etetoolkit.org) >=3.1.2
       + [networkx](https://networkx.org)
       + [pydot](https://pygraphviz.github.io)  
+      + [seaborn](https://seaborn.pydata.org)
+      + [matplotlib](https://matplotlib.org)
       
       Optional: 
          + [snakemake](https://snakemake.readthedocs.io/en/stable/)
          + [phylip](https://anaconda.org/bioconda/phylip) >3.697
-
+      
 
 <a name="phases"></a>
 ## Phases
