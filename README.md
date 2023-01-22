@@ -100,6 +100,8 @@ See `example/output` for examples of all output files
 
  <a name="usage"></a>
 ## Usage
+### Isotype Transition Probability Inference
+<a name="probabilities"></a>
 
         usage: tribal.py [-h] -p PATH [-c CLONOTYPES] [-e ENCODING] [--n_isotypes N_ISOTYPES] [--fasta FASTA] [-i ISOTYPES] [-j JUMP_PROB] [-t TRANSMAT] [-r ROOT] --tree_path TREE_PATH
                         [--candidates CANDIDATES] [--niter NITER] [--thresh THRESH] [--mu MU] [--sigma SIGMA] [--nworkers NWORKERS] [--max_cand MAX_CAND] [-s SEED] [--alpha ALPHA]
@@ -183,4 +185,4 @@ The input files are located in the `example/input` directory.
     -m example/snv_mode_output/SNV_clusters.csv 
 
 This command generates output files `tree.png`, `cell_clusters.csv`, and `SNV_clsuters.csv` in directory `example\snv_mode_output`.
- --> -->
+ -->
