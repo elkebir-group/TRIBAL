@@ -19,6 +19,8 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 - [Usage](#usage)
   - [Isotype Transition Probability Inference](#isotype-transition-probability-inference)
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
+  - [Isotype transition probability inference](#isotype-transition-probability-inference-1)
+  - [SNV mode example](#snv-mode-example)
 
 <a name="install"></a>
 
@@ -198,26 +200,32 @@ See `example/output` for examples of all output files
         --nworkers NWORKERS   number of workers to use in the event of multiple input candidate trees
         --seed SEED           random seed for picking a single best tree among all tied trees
 
-<!-- <a name="cna-mode-example"></a>
-### CNA mode example
+
+### Isotype transition probability inference
 
 
-Here we show an example of how to run `Phertilizer` in CNA Mode.
-The input files are located in the `example/input` directory.
+Here we show an example of how to run `TRIBAL` to infer isotype transition probabilities. We will use experimental dataset GCB_NP_2.  To run TRIBAL for different datasets, replace `GCB_NP_2` with either `day_14` or `GCB_NP_1`.
+The input files are located in the `experimental_data/GCB_NP_2`:
 
 
-    $ phertilizer -f example/input/variant_counts.tsv  \
-      --bin_count_data example/input/binned_read_counts.csv \
-      --bin_count_normal example/input/normal_cells.tsv --snv_bin_mapping example/input/snv_bin_mapping.csv \
-      --min_cells 100 --min_snvs 100 -d 14 --tree example/cna_mode_output/tree.png \
-      -n example/cna_mode_output/cell_clusters.csv \
-      -m example/cna_mode_output/SNV_clusters.csv -e example/cna_mode_output/CNA_genotypes.csv 
+    $   python src/tribal.py -c experimental_data/GCB_NP_2/clonotypes.txt 
+        -p experimental_data/GCB_NP_2/input \
+        -r naive \
+        -e experimental_data/mouse_isotype_encoding.txt \
+        --tree_path experimental_data/GCB_NP_2/dnapars \
+        --alpha 0.75 --niter 20  --thresh 0.1  \
+         -j 0.25 --mu 0.075 --sigma 0.05 \
+        --nworkers 5 --restarts 5 \
+        --transmat_infer experimental_data/GCB_NP_2/transmat.txt  \
+        --state_probs experimental_data/GCB_NP_2/proportions.txt \
+        --heatmap experimental_data/GCB_NP_2/transmat.png  \
+        --propmap experimental_data/GCB_NP_2/proportions.png 
 
-This command generates output files `tree.png`, `cell_clusters.csv`, `SNV_clsuters.csv` and `CNA_genotypes.csv` in directory `example\cna_mode_output`.
 
 
 
-<a name="snv-mode-example"></a>
+
+<!-- <a name="snv-mode-example"></a>
 ### SNV mode example
 
 Here we show an example of how to run `Phertilizer` in SNV Mode.
@@ -230,4 +238,4 @@ The input files are located in the `example/input` directory.
     -m example/snv_mode_output/SNV_clusters.csv 
 
 This command generates output files `tree.png`, `cell_clusters.csv`, and `SNV_clsuters.csv` in directory `example\snv_mode_output`.
- -->
+

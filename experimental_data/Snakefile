@@ -76,18 +76,18 @@ rule tribal_infer:
         thresh = config["threshold"],
         seed =  config["seed"],
         root = "naive",
-        outpath = "./{dataset}/tribal/{jump_prob}",
+        outpath = "./{dataset}/tribal",
         tree_path = "./{dataset}/dnapars",
         nworkers = config['nworkers'],
         restarts = config["nrestarts"],
         mu = config["mu"],
-        sigma = config["sigma"]
+        sigma = config["sigma"],
         jump_prob = config["jump_prob"]
     output:
         transmat = "{dataset}/tribal/transmat.txt",
         stateprobs = "{dataset}/tribal/state_probs.txt",
         heatmap = "{dataset}/tribal/transmat.png",
-        statmape = "{dataset}/tribal/statemap.png",
+        propmap = "{dataset}/tribal/statemap.png",
         score = "{dataset}/tribal/fit_score.txt",
     log:
         std = "{dataset}/tribal/fit.log",
@@ -97,43 +97,9 @@ rule tribal_infer:
         "-r {params.root} -e {input.encoding} -s {params.seed} "
         "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
-        "--state_probs {output.stateprobs} --score {output.score}  "
+        "--state_probs {output.stateprobs} --score {output.score}  -j {params.jump_prob} "  
         "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
-        "--save_all_restarts {params.outpath} -j {params.jump_prob} "
-        "--heatmap {output.heatmap} > {log.std} 2> {log.err} "
-
-
-# rule state_pdf:
-#     input: 
-#         transmat =  "{dataset}/tribal/{jump_prob}/transmat.txt",
-#         encoding = "mouse_labels.txt",
-#     output: 
-#         heatmap ="heatmaps/{dataset}_{jump_prob}.pdf",
-#         state_heatmap="heatmaps/{dataset}_{jump_prob}_isotype_prop.pdf"
-#     shell:
-#         "python ../src/draw_state_diagram.py -t {input.transmat}  -e {input.encoding} "
-#         "--heatmap {output.heatmap} --statemap {output.state_heatmap} "
-
-# rule save_heatmap:
-#     input: 
-#         infer =  "{dataset}/tribal/0.25/transmat.txt",
-#         encoding = "mouse_isotype_encoding.txt",
-#     output: 
-#         heatmap ="heatmaps/{dataset}.pdf",
-#         png  ="heatmaps/{dataset}.png"
-#     run:
-#         import numpy as np 
-#         import sys 
-#         sys.path.insert(0, '/scratch/projects/tribal/src')
-#         from draw_state_diagram import DrawStateDiag
-
-#         infer = np.loadtxt(input.infer)
-#         ds = DrawStateDiag(infer)
-#         ds.heatmap(output.heatmap)
-#         ds.heatmap(output.png)
-
-
-
+        "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "
 
 
 
@@ -187,26 +153,27 @@ rule tribal_search:
     input: 
         alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
         isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
-        transmat =  "{dataset}/tribal/0.25/transmat.txt",
-        lin_forest = "{dataset}/tribal_refine/{clonotype}/0.75/forest.pickle",
+        transmat =  "{dataset}/tribal/transmat.txt",
+        lin_forest = "{dataset}/tribal_refine/{clonotype}/forest.pickle",
         encoding = "mouse_isotype_encoding.txt",
     output: 
-        tree= "{dataset}/tribal_search/{clonotype}/{alpha}/tree.txt",
-        lin_forest ="{dataset}/tribal_search/{clonotype}/{alpha}/forest.pickle",
-        seq= "{dataset}/tribal_search/{clonotype}/{alpha}/inferred_seq.csv",
-        fasta= "{dataset}/tribal_search/{clonotype}/{alpha}/inferred_seq.fasta",
-        isotypes= "{dataset}/tribal_search/{clonotype}/{alpha}/isotypes.csv",
-        score= "{dataset}/tribal_search/{clonotype}/{alpha}/score.csv",
-        png = "{dataset}/tribal_search/{clonotype}/{alpha}/search_tree.png",
+        tree= "{dataset}/tribal_search/{clonotype}/tree.txt",
+        lin_forest ="{dataset}/tribal_search/{clonotype}/forest.pickle",
+        seq= "{dataset}/tribal_search/{clonotype}/inferred_seq.csv",
+        fasta= "{dataset}/tribal_search/{clonotype}/inferred_seq.fasta",
+        isotypes= "{dataset}/tribal_search/{clonotype}/isotypes.csv",
+        score= "{dataset}/tribal_search/{clonotype}/score.csv",
+        png = "{dataset}/tribal_search/{clonotype}/search_tree.png",
     params:
         root = "naive",
         timeout = config["search_timeout"],
         ntrees = config["ntrees"],
+        lamb = config['lamb']
     threads: config["nworkers"]
     log: 
-        run= "{dataset}/tribal_search/{clonotype}/{alpha}/search.log",
-        err ="{dataset}/tribal_search/{clonotype}/{alpha}/search.err.log"  
-    benchmark: "{dataset}/tribal_search/{clonotype}/{alpha}/search.benchmark.log" 
+        run= "{dataset}/tribal_search/{clonotype}/search.log",
+        err ="{dataset}/tribal_search/{clonotype}/search.err.log"  
+    benchmark: "{dataset}/tribal_search/{clonotype}/search.benchmark.log" 
     shell:
         "python ../src/tribal_sub.py "
         " -r {params.root} "
@@ -216,7 +183,7 @@ rule tribal_search:
         "-i {input.isotypes} "
         "-l {input.lin_forest} "
         "--forest "
-        "--alpha {wildcards.alpha} "
+        "--alpha {params.lamb} "
         "--sequences {output.seq} "
         "--fasta {output.fasta} "
         "--score {output.score} "
