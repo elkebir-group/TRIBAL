@@ -20,7 +20,7 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
   - [Isotype Transition Probability Inference](#isotype-transition-probability-inference)
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
   - [Isotype transition probability inference](#isotype-transition-probability-inference-1)
-  - [SNV mode example](#snv-mode-example)
+  - [B cell lineage tree inference](#b-cell-lineage-tree-inference-1)
 
 <a name="install"></a>
 
@@ -221,21 +221,39 @@ The input files are located in the `experimental_data/GCB_NP_2`:
         --heatmap experimental_data/GCB_NP_2/transmat.png  \
         --propmap experimental_data/GCB_NP_2/proportions.png 
 
+### B cell lineage tree inference
 
+Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree for `B_12_1_5_24_1_5` for experimental data `GCB_NP_2`. The input files are located in the `experimental_data/GCB_NP_2/B_12_1_5_24_1_5`. First, we narrow down candidate trees to the top 10 by ranking them after tree refinment.
 
+    $   python src/tribal_tree.py \
+        -r naive \
+        -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
+       -t experimental_data/GCB_NP_2/transmat.txt \
+       -e experimental_data/mouse_isotype_encoding.txt \
+       -i experimental_data/GCB_NP_2/B_12_1_5_24_1_5/isotype.fasta \
+       --candidates experimental_data/GCB_NP_2/dnapars/B_12_1_5_24_1_5/outtree \
+       --alpha 0.75 \
+       --mode refine \
+        --ntrees 10 \
+       --nworkers 5 \
+       -o example/forest.pickle
 
+Then, we perform a greedy hill climbing search starting from each of the top canidates using an isotype aware SPR tree move.
 
-<!-- <a name="snv-mode-example"></a>
-### SNV mode example
-
-Here we show an example of how to run `Phertilizer` in SNV Mode.
-The input files are located in the `example/input` directory.
-
-
-    $ phertilizer snv_mode/run_phertilizer.py -f example/input/variant_counts.tsv \
-    --bin_count_data example/input/binned_read_counts.csv  --min_cells 100 --min_snvs 100 -d 14 \
-    --tree example snv_mode_output/tree.png -n example/snv_mode_output /cell_clusters.csv \
-    -m example/snv_mode_output/SNV_clusters.csv 
-
-This command generates output files `tree.png`, `cell_clusters.csv`, and `SNV_clsuters.csv` in directory `example\snv_mode_output`.
+    $   python src/tribal_tree.py \
+        -r naive \
+        -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
+       -t experimental_data/GCB_NP_2/transmat.txt \
+       -e experimental_data/mouse_isotype_encoding.txt \
+       -i experimental_data/GCB_NP_2/B_12_1_5_24_1_5/isotype.fasta \
+       -l example/forest.pickle
+       --forest 
+       --alpha 0.75 \
+       --fasta example/seq.fasta \
+       --score example/score.csv \
+       --iso_infer example/isotypes.csv \
+       --png example/tree.png \
+       --mode search \
+       --nworkers 5 \
+       --tree example/tree.txt 
 
