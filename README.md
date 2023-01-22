@@ -29,7 +29,9 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
    1. Clone the repository
       ```bash
             $ git clone https://github.com/elkebir-group/tribal.git
-   2. Install dependencies
+       ```
+       <a name="pre-requisites"></a> 
+   2. Install dependencies 
       + python3 >=3.9
       + [numpy](https://numpy.org/doc/)
       + [ete3](http://etetoolkit.org) >=3.1.2
