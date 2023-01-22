@@ -1,0 +1,252 @@
+
+DNA parsimony algorithm, version 3.697
+
+
+One most parsimonious tree found:
+
+
+  +seq5      
+  |  
+  1-seq4      
+  |  
+  +seq3      
+  |  
+  +seq2      
+  |  
+  +seq1      
+  |  
+  +naive     
+
+
+requires a total of      8.000
+
+  between      and       length
+  -------      ---       ------
+     1      seq5         0.000000
+     1      seq4         0.000000
+     1      seq3         0.000000
+     1      seq2         0.000000
+     1      seq1         0.000000
+     1      naive        0.011561
+
+steps in each site:
+         0   1   2   3   4   5   6   7   8   9
+     *-----------------------------------------
+    0|       0   0   0   0   0   0   0   0   0
+   10|   0   0   0   0   0   0   0   0   0   0
+   20|   0   0   0   0   0   0   0   0   0   0
+   30|   1   0   0   0   0   0   0   0   0   0
+   40|   0   0   0   0   0   0   0   0   0   0
+   50|   0   0   0   0   0   0   0   0   0   0
+   60|   0   0   0   0   0   0   0   0   0   0
+   70|   0   0   0   0   0   0   0   0   0   0
+   80|   0   0   0   0   0   0   0   0   0   0
+   90|   0   0   0   0   0   0   0   0   0   0
+  100|   0   0   1   0   0   0   0   0   0   0
+  110|   0   0   0   0   0   0   0   0   0   0
+  120|   0   0   0   0   0   0   0   0   0   0
+  130|   0   0   0   0   0   0   0   0   0   0
+  140|   0   0   0   0   0   0   0   0   0   0
+  150|   0   0   0   0   0   0   0   0   0   0
+  160|   0   0   0   0   0   0   0   0   0   0
+  170|   0   0   0   0   0   0   1   1   0   0
+  180|   0   0   0   0   0   0   0   0   0   0
+  190|   0   0   0   0   0   0   0   0   0   0
+  200|   0   0   0   0   0   0   0   0   0   0
+  210|   0   0   0   0   0   0   1   0   0   0
+  220|   0   0   0   0   0   0   0   0   0   0
+  230|   0   0   0   0   0   0   0   0   0   0
+  240|   0   0   0   0   0   0   0   0   0   0
+  250|   0   0   0   0   0   0   0   0   0   0
+  260|   0   0   0   0   0   0   0   0   0   0
+  270|   0   0   0   0   0   0   0   0   0   0
+  280|   0   0   0   0   0   0   0   0   0   0
+  290|   0   0   0   0   0   0   0   0   0   0
+  300|   0   0   0   0   0   0   0   0   0   0
+  310|   0   0   0   0   0   0   0   0   0   0
+  320|   0   0   0   0   0   0   0   0   0   0
+  330|   0   0   0   0   0   0   0   0   0   0
+  340|   0   0   0   0   0   0   0   0   0   0
+  350|   0   0   0   0   0   0   0   0   0   0
+  360|   0   0   0   0   0   0   0   0   0   0
+  370|   0   0   0   0   0   0   0   0   0   0
+  380|   0   0   0   0   0   0   0   0   0   0
+  390|   0   0   0   0   0   0   0   0   0   0
+  400|   0   0   0   0   0   0   0   0   0   0
+  410|   0   0   0   0   0   0   0   0   0   0
+  420|   0   0   0   0   0   0   0   0   0   0
+  430|   0   0   0   0   0   0   0   0   0   0
+  440|   0   0   0   0   0   0   0   0   0   0
+  450|   0   0   0   0   0   0   0   0   0   0
+  460|   0   0   0   0   0   0   0   0   0   0
+  470|   0   0   0   0   0   0   0   0   0   0
+  480|   0   0   0   0   0   0   0   0   0   0
+  490|   0   0   0   0   0   0   0   0   0   0
+  500|   0   0   0   0   0   0   0   0   0   0
+  510|   0   0   0   0   0   0   0   0   0   0
+  520|   0   0   0   0   0   0   0   0   0   0
+  530|   0   0   0   1   0   0   0   0   1   0
+  540|   0   0   0   0   0   0   0   0   0   0
+  550|   0   0   0   0   0   0   0   0   0   0
+  560|   0   0   0   0   0   0   0   0   0   0
+  570|   0   0   0   0   0   0   0   0   0   0
+  580|   0   0   0   0   0   0   0   0   0   0
+  590|   0   0   0   0   0   0   0   0   0   0
+  600|   0   0   0   0   0   0   0   0   0   0
+  610|   0   0   0   0   0   0   0   0   0   0
+  620|   0   0   0   0   0   0   0   0   0   0
+  630|   0   0   0   0   0   1   0   0   0   0
+  640|   0   0   0   0   0   0   0   0   0   0
+  650|   0   0   0   0   0   0   0   0   0   0
+  660|   0   0   0   0   0   0   0   0   0   0
+  670|   0   0   0   0   0   0   0   0   0   0
+  680|   0   0   0   0   0   0   0   0   0   0
+  690|   0   0   0                            
+
+From    To     Any Steps?    State at upper node
+                            
+root      1                CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   seq5         no     CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   seq4         no     CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   seq3         no     CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   seq2         no     CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   seq1         no     CAGGTCCAAC TGCAGCAGCC TGGGGCTGAC CTTGTGAAGC 
+   1   naive        yes    CAGGTCCAAC TGCAGCAGCC TGGGGCTGAG CTTGTGAAGC 
+
+root      1                CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   seq5         no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   seq4         no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   seq3         no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   seq2         no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   seq1         no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+   1   naive        no     CTGGGGCTTC AGTGAAGCTG TCCTGCAAGG CTTCTGGCTA 
+
+root      1                CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   seq5         no     CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   seq4         no     CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   seq3         no     CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   seq2         no     CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   seq1         no     CACCTTCACC AGCTACTGGA TACACTGGGT GAAGCAGAGG 
+   1   naive        yes    CACCTTCACC AGCTACTGGA TGCACTGGGT GAAGCAGAGG 
+
+root      1                CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   seq5         no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   seq4         no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   seq3         no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   seq2         no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   seq1         no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+   1   naive        no     CCTGGACGAG GCCTTGAGTG GATTGGAAGG ATTGATCCTA 
+
+root      1                ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   seq5         no     ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   seq4         no     ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   seq3         no     ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   seq2         no     ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   seq1         no     ATAGTGGTGG TACTAGATAC AATGAGAAGT TCAAGAGCAA 
+   1   naive        yes    ATAGTGGTGG TACTAAGTAC AATGAGAAGT TCAAGAGCAA 
+
+root      1                GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   seq5         no     GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   seq4         no     GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   seq3         no     GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   seq2         no     GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   seq1         no     GGCCACACTG ACTGTGGACA AACCCTCCAG CACAGCCTAC 
+   1   naive        yes    GGCCACACTG ACTGTAGACA AACCCTCCAG CACAGCCTAC 
+
+root      1                ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   seq5         no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   seq4         no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   seq3         no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   seq2         no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   seq1         no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+   1   naive        no     ATGCAGCTCA GCAGCCTGAC ATCTGAGGAC TCTGCGGTCT 
+
+root      1                ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   seq5         no     ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   seq4         no     ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   seq3         no     ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   seq2         no     ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   seq1         no     ATTATTGTGC AAGAGGGCAA TCTATCTACT ATGGTAACCA 
+   1   naive       maybe   ATTATTGTGC AAGANNNNNN NNNNTCTACT ATGGTAACNN 
+
+root      1                TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   seq5         no     TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   seq4         no     TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   seq3         no     TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   seq2         no     TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   seq1         no     TTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+   1   naive       maybe   NTTTGCTTAC TGGGGCCAAG GGACTCTGGT CACTGTCTCT 
+
+root      1                GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   seq5         no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   seq4         no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   seq3         no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   seq2         no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   seq1         no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+   1   naive        no     GCAGCAGGCT GTTGTGACTC AGGAATCTGC ACTCACCACA 
+
+root      1                TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   seq5         no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   seq4         no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   seq3         no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   seq2         no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   seq1         no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+   1   naive        no     TCACCTGGTG AAACAGTCAC ACTCACTTGT CGCTCAAGTA 
+
+root      1                CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   seq5         no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   seq4         no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   seq3         no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   seq2         no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   seq1         no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+   1   naive        no     CTGGGGCTGT TACAACTAGT AACTATGCCA ACTGGGTCCA 
+
+root      1                AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   seq5         no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   seq4         no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   seq3         no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   seq2         no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   seq1         no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+   1   naive        no     AGAAAAACCA GATCATTTAT TCACTGGTCT AATAGGTGGT 
+
+root      1                ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   seq5         no     ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   seq4         no     ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   seq3         no     ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   seq2         no     ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   seq1         no     ACCAACAACC GAACTCCGGG TGTTCCTGCC AGATTCTCAG 
+   1   naive        yes    ACCAACAACC GAGCTCCAGG TGTTCCTGCC AGATTCTCAG 
+
+root      1                GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   seq5         no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   seq4         no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   seq3         no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   seq2         no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   seq1         no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+   1   naive        no     GCTCCCTGAT TGGAGACAAG GCTGCCCTCA CCATCACAGG 
+
+root      1                GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   seq5         no     GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   seq4         no     GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   seq3         no     GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   seq2         no     GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   seq1         no     GGCACAGACT GAGGATGAGG CAATATATTT CTGTACTCTA 
+   1   naive        yes    GGCACAGACT GAGGATGAGG CAATATATTT CTGTGCTCTA 
+
+root      1                TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   seq5         no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   seq4         no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   seq3         no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   seq2         no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   seq1         no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+   1   naive        no     TGGTACAGCA ACCATTGGGT GTTCGGTGGA GGAACCAAAC 
+
+root      1                TGACTGTCCT AG
+   1   seq5         no     TGACTGTCCT AG
+   1   seq4         no     TGACTGTCCT AG
+   1   seq3         no     TGACTGTCCT AG
+   1   seq2         no     TGACTGTCCT AG
+   1   seq1         no     TGACTGTCCT AG
+   1   naive        no     TGACTGTCCT AG
+
+
