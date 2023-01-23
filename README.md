@@ -9,8 +9,6 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 
 
 ## Contents
-
-- [TRIBAL: Tree inference of B cell clonal lineages](#tribal-tree-inference-of-b-cell-clonal-lineages)
 - [Contents](#contents)
 - [Installation](#installation)
   - [Using github](#using-github)
