@@ -229,12 +229,12 @@ The input files are located in the `experimental_data/GCB_NP_2`:
 
 Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree for `B_12_1_5_24_1_5` for experimental data `GCB_NP_2`. The input files are located in the `experimental_data/GCB_NP_2/B_12_1_5_24_1_5`. First, we narrow down candidate trees to the top 10 by ranking them after tree refinment.
 
-    $   python src/tribal_tree.py \
+    python src/tribal_tree.py \
         -r naive \
         -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
        -t experimental_data/GCB_NP_2/transmat.txt \
        -e experimental_data/mouse_isotype_encoding.txt \
-       -i experimental_data/GCB_NP_2/B_12_1_5_24_1_5/isotype.fasta \
+       -i experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/isotype.fasta \
        --candidates experimental_data/GCB_NP_2/dnapars/B_12_1_5_24_1_5/outtree \
        --alpha 0.75 \
        --mode refine \
@@ -244,7 +244,7 @@ Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree fo
 
 Then, we perform a greedy hill climbing search starting from each of the top canidates using an isotype aware SPR tree move.
 
-    $   python src/tribal_tree.py \
+    python src/tribal_tree.py \
         -r naive \
         -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
        -t experimental_data/GCB_NP_2/transmat.txt \
