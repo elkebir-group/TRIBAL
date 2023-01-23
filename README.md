@@ -239,7 +239,7 @@ Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree fo
        --nworkers 5 \
        -o experimental_data/GCB_NP_2/example/forest.pickle
 
-Then, we perform a greedy hill climbing search starting from each of the top canidates using an isotype aware SPR tree move.
+Then, we perform a greedy hill climbing search starting from each of the top candidates using an isotype aware SPR tree move.
 
     python src/tribal_tree.py \
         -r naive \
