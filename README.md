@@ -249,9 +249,9 @@ Then, we perform a greedy hill climbing search starting from each of the top can
         -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
        -t experimental_data/GCB_NP_2/transmat.txt \
        -e experimental_data/mouse_isotype_encoding.txt \
-       -i experimental_data/GCB_NP_2/B_12_1_5_24_1_5/isotype.fasta \
-       -l experimental_data/GCB_NP_2/example/forest.pickle
-       --forest 
+       -i experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/isotype.fasta \
+       -l experimental_data/GCB_NP_2/example/forest.pickle \
+       --forest \
        --alpha 0.75 \
        --fasta experimental_data/GCB_NP_2/example/seq.fasta \
        --score experimental_data/GCB_NP_2/example/score.csv \
