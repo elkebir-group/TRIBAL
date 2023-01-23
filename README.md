@@ -9,6 +9,8 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 
 
 ## Contents
+- [TRIBAL: Tree inference of B cell clonal lineages](#tribal-tree-inference-of-b-cell-clonal-lineages)
+- [Contents](#contents)
 - [Installation](#installation)
   - [Using github](#using-github)
 - [Phases](#phases)
@@ -16,8 +18,8 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 - [Usage](#usage)
   - [Isotype Transition Probability Inference](#isotype-transition-probability-inference)
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
-  - [Isotype transition probability inference](#isotype-transition-probability-inference-1)
-  - [B cell lineage tree inference](#b-cell-lineage-tree-inference-1)
+  - [Isotype transition probability inference example](#isotype-transition-probability-inference-example)
+  - [B cell lineage tree inference example](#b-cell-lineage-tree-inference-example)
 - [Snakemake](#snakemake)
 
 <a name="install"></a>
@@ -202,7 +204,7 @@ See `example/output` for examples of all output files
         --seed SEED           random seed for picking a single best tree among all tied trees
 
 
-### Isotype transition probability inference
+### Isotype transition probability inference example
 
 
 Here we show an example of how to run `TRIBAL` to infer isotype transition probabilities. We will use experimental dataset GCB_NP_2.  To run TRIBAL for different datasets, replace `GCB_NP_2` with either `day_14` or `GCB_NP_1`.
@@ -222,7 +224,7 @@ The input files are located in the `experimental_data/GCB_NP_2`:
         --heatmap experimental_data/GCB_NP_2/transmat.png  \
         --propmap experimental_data/GCB_NP_2/proportions.png 
 
-### B cell lineage tree inference
+### B cell lineage tree inference example
 
 Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree for `B_12_1_5_24_1_5` for experimental data `GCB_NP_2`. The input files are located in the `experimental_data/GCB_NP_2/B_12_1_5_24_1_5`. First, we narrow down candidate trees to the top 10 by ranking them after tree refinment.
 
