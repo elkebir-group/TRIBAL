@@ -9,7 +9,6 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 
 
 ## Contents
-- [Contents](#contents)
 - [Installation](#installation)
   - [Using github](#using-github)
 - [Phases](#phases)
