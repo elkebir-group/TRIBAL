@@ -58,12 +58,6 @@ TRIBAL is run in two phases.
 ## IO Formats
 
  
- See `example/input` for examples of all input files.  
-
-
-See `example/output` for examples of all output files
-
-
 1. *Isotype transition probability inference:* 
     + **Input**:  
         - A text file containing a list of clonotype subdirectory names (see example below) which are to be included in the inference
