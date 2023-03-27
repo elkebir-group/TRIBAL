@@ -9,8 +9,6 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
 
 
 ## Contents
-- [TRIBAL: Tree inference of B cell clonal lineages](#tribal-tree-inference-of-b-cell-clonal-lineages)
-- [Contents](#contents)
 - [Installation](#installation)
   - [Using github](#using-github)
 - [Phases](#phases)
@@ -47,7 +45,7 @@ TRIBAL is a method to infer isotype transition probabilities, isotype proportion
          + [snakemake](https://snakemake.readthedocs.io/en/stable/)
          + [phylip](https://anaconda.org/bioconda/phylip) >3.697
       
-      A conda environment named `tribal` with required dependencies can also be created from the provided `tribal_env.yml` files as follows:  
+      A conda environment named `tribal` with required dependencies can also be created from the provided `tribal_env.yml` file as follows:  
         ``` $ conda env -f tribal_env.yml```
 <a name="phases"></a>
 ## Phases
@@ -60,12 +58,6 @@ TRIBAL is run in two phases.
 ## IO Formats
 
  
- See `example/input` for examples of all input files.  
-
-
-See `example/output` for examples of all output files
-
-
 1. *Isotype transition probability inference:* 
     + **Input**:  
         - A text file containing a list of clonotype subdirectory names (see example below) which are to be included in the inference
@@ -241,7 +233,7 @@ Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree fo
        --nworkers 5 \
        -o experimental_data/GCB_NP_2/example/forest.pickle
 
-Then, we perform a greedy hill climbing search starting from each of the top canidates using an isotype aware SPR tree move.
+Then, we perform a greedy hill climbing search starting from each of the top candidates using an isotype aware SPR tree move.
 
     python src/tribal_tree.py \
         -r naive \
