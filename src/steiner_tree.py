@@ -20,6 +20,7 @@ import networkx as nx
 from lineage_tree import LineageTree
 from utils import hamming_distance
 from collections import Counter
+from dataclasses import dataclass 
 
 
 class SteinerTree:
@@ -74,8 +75,11 @@ class SteinerTree:
                 
             for i,j in self.edges:
                 if solution[i,j] > 0:
-                        #    print(f"edge {i} -> {j}")
-                           T.add_edge(i,j)
+                    for t in self.terminals:
+                        if flow[t,i,j] > 0:
+                #    print(f"edge {i} -> {j}")
+                            T.add_edge(i,j)
+                            break
 
             
             # for t in self.terminals:
@@ -135,9 +139,11 @@ class SteinerTree:
 
 
 
-def name_node(tree, node, label,  is_poly=False): 
-        # lab = str(tree) + "_" + str(node) + "_" + str(label)
+def name_node(tree, node, label,  is_poly=False, is_leaf=False): 
+
         lab = str(node) + "_" + str(label)
+        if not is_leaf:
+            lab = str(tree) + "_" + lab
         if is_poly:
              lab += "_p"
         return  lab
@@ -147,58 +153,61 @@ def name_node(tree, node, label,  is_poly=False):
 
 #takes in a tree and constructs a network 
 class ConstructGraph:
-    def __init__(self, LinTree, iso_costs, sequence, isotypes) -> None:
-          
-        self.G = nx.DiGraph()
-        self.T = LinTree.T
-        self.root = LinTree.root
-        self.id = LinTree.id
-   
-     
+    def __init__(self, iso_costs, isotypes, root_identifier="root") -> None:
+        
+        self.Graphs = []
         self.iso_costs = iso_costs
-        self.seq_weights = {}
-        self.iso_weights= {}
-        self.seq_labs = sequence 
         self.iso_labs = isotypes
+        self.root_identifier = root_identifier
 
 
-    def build(self):
+    def build(self, LinTree, seq_labs ):
+        T = LinTree.T
+        root = LinTree.root
+        id = LinTree.id
+        G = nx.DiGraph()
+        seq_weights = {}
+        iso_weights = {}
         min_state = {}
         nodes_to_states = {}
-        postorder =  list(nx.dfs_postorder_nodes(self.T, source=self.root))
+        postorder =  list(nx.dfs_postorder_nodes(T, source=root))
         for n in postorder:
-            if self.T.out_degree[n] ==0:
+            if T.out_degree[n] ==0:
                 iso = self.iso_labs[n]
-                new_node = name_node(self.id,n,iso)
-                self.G.add_node(new_node)
+                new_node = name_node(id,n,iso, is_leaf=T)
+                G.add_node(new_node)
                 min_state[n] = self.iso_labs[n]
                 nodes_to_states[n] = [self.iso_labs[n]]
                   
-            elif self.T.out_degree[n] > 0: 
+            elif T.out_degree[n] > 0: 
                 poly_nodes_added = []
-                degree = self.T.out_degree[n]
-                min_state[n] = min([min_state[v] for v in self.T.neighbors(n)])
+                degree = T.out_degree[n]
+                min_state[n] = min([min_state[v] for v in T.neighbors(n)])
                 nodes_to_states[n] =[]
                 for i in range(0, min_state[n]+1):
                     if i > 0 and n in self.iso_labs:
                          break
-                    new_node = name_node(self.id,n,i)
+                    if self.root_identifier == n:
+                         new_node = self.root_identifier
+                    else:
+                        new_node = name_node(id,n,i)
                     nodes_to_states[n].append(i)
 
             
-                    self.G.add_node( new_node)
-                    for v in self.T.neighbors(n):
+                    G.add_node( new_node)
+                    for v in T.neighbors(n):
+                        is_leaf=T.out_degree[v]==0
                         for j in nodes_to_states[v]:
                         
-                            self.G.add_edge(new_node, name_node(self.id,v,j))
-                            self.seq_weights[new_node,name_node(self.id,v,j)] = hamming_distance(self.seq_labs[n], self.seq_labs[v])
-                            self.iso_weights[new_node, name_node(self.id,v,j)] = self.iso_costs[i,j]
+                            G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
+                            seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                            iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
                 
                 #insert polytomy nodes and add edges to Graph
                 if degree > 2:
                    
                     poly_node_states = []
-                    for v in self.T.neighbors(n):
+                    for v in T.neighbors(n):
                          poly_node_states = poly_node_states + nodes_to_states[v]
                     max_node = max(poly_node_states)
                     node_counts = Counter(poly_node_states)
@@ -206,23 +215,46 @@ class ConstructGraph:
                     
                     for j in range(1, max_node+1):
                             if node_counts[j] > 1 and node_counts[j] < degree:
-                                poly_nodes_added.append(name_node(self.id,n,j,True))
+                                poly_nodes_added.append(name_node(id,n,j,True))
                                 for i in nodes_to_states[n]:
                                     if i < j:
-                                        self.G.add_edge(name_node(self.id,n,i), name_node(self.id,n,j,True))
-                                        self.seq_weights[name_node(self.id,n,i), name_node(self.id,n,j,True)] = 0
-                                        self.iso_weights[name_node(self.id,n,i), name_node(self.id,n,j,True)] = self.iso_costs[i,j]
+                                        G.add_edge(name_node(id,n,i), name_node(id,n,j,True))
+                                        seq_weights[name_node(id,n,i), name_node(id,n,j,True)] = 0
+                                        iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
                                 
-                                for v in self.T.neighbors(n):
+                                for v in T.neighbors(n):
+                                        is_leaf=T.out_degree[v]==0
                                         if j in nodes_to_states[v]:
                             
-                                            self.G.add_edge(name_node(self.id,n,j,True), name_node(self.id,v,j))
-                                            self.seq_weights[name_node(self.id,n,j,True),name_node(self.id,v,j)] = hamming_distance(self.seq_labs[n], self.seq_labs[v])
-                                            self.iso_weights[name_node(self.id,n,j,True), name_node(self.id,v,j)] = self.iso_costs[j,j]
-        return self.G, self.seq_weights, self.iso_weights
-                                 
+                                            G.add_edge(name_node(id,n,j,True), name_node(id,v,j, is_leaf=is_leaf))
+                                            seq_weights[name_node(id,n,j,True),name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                                            iso_weights[name_node(id,n,j,True), name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[j,j]
+        fg = FlowGraph(id, G, seq_weights, iso_weights)
+        self.Graphs.append(fg)
+        return fg
+    
+    def combineGraphs(self):
+         graphs = [fg.G for fg in self.Graphs]
+         combined_graph = nx.compose_all(graphs)
+         seq_weights = {}
+         iso_weights = {}
+         for fg in self.Graphs:
+              seq_weights.update(fg.seq_weights)
+              iso_weights.update(fg.iso_weights)
+        
+         return FlowGraph(0, combined_graph, seq_weights, iso_weights)
+        
 
-                      
+
+
+@dataclass
+class FlowGraph:
+     id: int 
+     G: nx.DiGraph
+     seq_weights: dict 
+     iso_weights: dict
+
+                         
                      
 T = nx.DiGraph()
 # T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
@@ -234,32 +266,26 @@ sequences = {'root': ['a', 'a'], 'r': ['a', 'a'], 'a': ['a', 'a'], 'b': ['a', 'a
 
 
 isotypes  = {'root': 0, 'a': 2, 'b':2, 'c': 2, 'd': 3, 'f':3, 'e': 3, 'g': 1}
-lt =LineageTree(T,'root', 0)
+lt1 =LineageTree(T,'root', 0)
+lt2 =LineageTree(T,'root', 1)
  
-G, s_weights, i_weights = ConstructGraph( lt, iso_costs, sequences, isotypes).build() 
+cg = ConstructGraph(iso_costs, isotypes, root_identifier="root")
 
-print(list(G.nodes))
-print(list(G.edges))
+_ = cg.build(lt1, sequences) 
+_ = cg.build(lt2, sequences)
+fg = cg.combineGraphs()
 
-score, T = SteinerTree(G,s_weights, i_weights, root='root_0', lamb=0).run()
+# print(list(fg.G.nodes))
+# print(list(fg.G.edges))
+
+
+
+score, T = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, root='root', lamb=0).run()
 print(score)
 print(list(T.edges))
 
                     
-            # else:
-            #      min_state[n] = min(min_state[v] for v in self.T.neighbors[n])
-            #      for i in range(0, min_state[n]+1):
-            #          new_node = name_node(n,i)
-            #          nodes_to_states.append(i)
-            #        for i in range(1, min_state[n] + 1):
-            #             new_poly = name_poly(n,i)
-            #             for v in self.T.neighbors[n]:
-            #                  if i in node_states[v]:
-            #                     self.G.add_edge(new_poly, name_node(v,i))
-            #                     self.seq_weights[new_node,name_node[v,i]] = hamming_distance(self.seq_labs[n], self.seq_labs[v])
-            #                     self.iso_weights[new_node, name_node(v,i)] = self.iso_costs[i,i]
-
-                        
+             
 
 
                 
