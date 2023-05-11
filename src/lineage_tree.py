@@ -6,6 +6,9 @@ from draw_tree import DrawTree
 from utils import save_dict
 import os 
 import pickle 
+import pygraphviz as pgv
+
+
 
 @dataclass
 class LineageTree:
@@ -59,10 +62,43 @@ class LineageTree:
     def set_tree(self, tree):
         self.T= tree
     
+    @staticmethod
+    def find_leaf_descendants(node, graph):
+        leaf_descendants = set()
+
+        # Helper function to traverse the graph
+        def dfs(current_node):
+            nonlocal leaf_descendants
+            # If the current node is a leaf, add it to the set
+            if graph.out_degree(current_node) == 0:
+                leaf_descendants.add(current_node)
+            else:
+                # Traverse all child nodes recursively
+                for child_node in graph.successors(current_node):
+                    dfs(child_node)
+
+        # Start the depth-first search from the specified node
+        dfs(node)
+        return leaf_descendants
+
+    def rf_distance(self, lintree):
+        if type(lintree) == LineageTree:
+            t1 = self.get_clade_set(self.T)
+            t2 = self.get_clade_set(lintree.T)
+            return (0.5*len(t1.symmetric_difference(t2)))
+
+
+
+    def get_clade_set(self, tree):
+        clade_set = []
+        for node in tree:
+            clade_set.append(self.find_leaf_descendants(node, tree))
+    
+        return(set(map(frozenset, clade_set)))
 
     def sequence_parismony(self, alignment, alphabet=None, cost_function=None):
 
-     
+        
 
         sp = SmallParsimony(self.T, 
                             self.root,
@@ -180,3 +216,5 @@ class LineageForest:
             fname = f"{clono_path}/fit_tree.pickle"
             with open(fname, 'wb') as file:
                 pickle.dump(tree, file)
+
+

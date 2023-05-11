@@ -21,11 +21,13 @@ from lineage_tree import LineageTree
 from utils import hamming_distance
 from collections import Counter
 from dataclasses import dataclass 
+import numpy as np
 
 
 class SteinerTree:
-    def __init__(self, G, seq_weights, iso_weights, root=0, lamb=0.5) -> None:
+    def __init__(self, G, seq_weights, iso_weights, root=0, lamb=0.9, threads=3) -> None:
         self.m = gp.Model('steiner')
+        self.m.setParam(GRB.Param.Threads, threads)
         self.terminals = [v for v in G if G.out_degree[v]==0]
         self.nodes = list(G.nodes)
         self.root= root
@@ -66,20 +68,20 @@ class SteinerTree:
                 solution = self.m.getAttr('X', self.x)
                 flow = self.m.getAttr('X', self.f)
             
-            score = self.m.objVal
-            print(score)
+                score = self.m.objVal
+        
           
 
                 # for i,j in self.special_arcs:
                 #     print('%s -> %s: %g' % (i, j, polytomies[ i, j]))
                 
-            for i,j in self.edges:
-                if solution[i,j] > 0:
-                    for t in self.terminals:
-                        if flow[t,i,j] > 0:
-                #    print(f"edge {i} -> {j}")
-                            T.add_edge(i,j)
-                            break
+                for i,j in self.edges:
+                    if solution[i,j] > 0:
+                        for t in self.terminals:
+                            if flow[t,i,j] > 0:
+                    #    print(f"edge {i} -> {j}")
+                                T.add_edge(i,j)
+                                break
 
             
             # for t in self.terminals:
@@ -89,6 +91,7 @@ class SteinerTree:
                       
             
             return score, T
+    
 
                 # print(states)
        
@@ -138,7 +141,7 @@ class SteinerTree:
 # print(score)
 
 
-
+#treeid_nodeid_isotype_polytomy
 def name_node(tree, node, label,  is_poly=False, is_leaf=False): 
 
         lab = str(node) + "_" + str(label)
@@ -148,7 +151,19 @@ def name_node(tree, node, label,  is_poly=False, is_leaf=False):
              lab += "_p"
         return  lab
 
+def decode_node(node, is_leaf=False):
+        codes =node.split("_")
 
+        if is_leaf:
+             name = codes[0]
+        else:
+             name = node
+
+        if codes[-1] == "p":
+             isotype = codes[-2]
+        else:
+             isotype = codes[-1]
+        return int(isotype), name  
 
 
 #takes in a tree and constructs a network 
@@ -172,6 +187,7 @@ class ConstructGraph:
         nodes_to_states = {}
         postorder =  list(nx.dfs_postorder_nodes(T, source=root))
         for n in postorder:
+
             if T.out_degree[n] ==0:
                 iso = self.iso_labs[n]
                 new_node = name_node(id,n,iso, is_leaf=T)
@@ -198,10 +214,12 @@ class ConstructGraph:
                     for v in T.neighbors(n):
                         is_leaf=T.out_degree[v]==0
                         for j in nodes_to_states[v]:
-                        
-                            G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
-                            seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
-                            iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
+                            if i <= j:
+                                G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
+                                seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                                if self.iso_costs[i,j] == np.Inf:
+                                        print("warning, impossible edge")
+                                iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
                 
                 #insert polytomy nodes and add edges to Graph
                 if degree > 2:
@@ -217,9 +235,11 @@ class ConstructGraph:
                             if node_counts[j] > 1 and node_counts[j] < degree:
                                 poly_nodes_added.append(name_node(id,n,j,True))
                                 for i in nodes_to_states[n]:
-                                    if i < j:
+                                    if i <= j:
                                         G.add_edge(name_node(id,n,i), name_node(id,n,j,True))
                                         seq_weights[name_node(id,n,i), name_node(id,n,j,True)] = 0
+                                        if self.iso_costs[i,j] == np.Inf:
+                                             print("warning, impossible edge")
                                         iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
                                 
                                 for v in T.neighbors(n):
@@ -244,7 +264,24 @@ class ConstructGraph:
         
          return FlowGraph(0, combined_graph, seq_weights, iso_weights)
         
-
+    def decodeTree(self, tree, root_id="naive"):
+         isotypes = {}
+         #old as keys, new names as values
+         relabeling = {}
+         for n in tree.nodes:
+            if n == root_id:
+                name = root_id 
+                iso = 0
+        
+            else:
+                is_leaf = tree.out_degree[n]==0
+                iso, name = decode_node(n, is_leaf)
+            relabeling[n] = name
+            isotypes[name] = iso
+         tree= nx.relabel_nodes(tree, relabeling)
+         return tree, isotypes
+              
+         
 
 
 @dataclass
@@ -256,33 +293,33 @@ class FlowGraph:
 
                          
                      
-T = nx.DiGraph()
-# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
+# T = nx.DiGraph()
+# # T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
 
-T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd'), ('r', 'e'), ('r', 'f'), ('r', 'g')])
+# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd'), ('r', 'e'), ('r', 'f'), ('r', 'g')])
 
-iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
-sequences = {'root': ['a', 'a'], 'r': ['a', 'a'], 'a': ['a', 'a'], 'b': ['a', 'a'], 'c': ['a', 'a'] , 'd': ['a','a'], 'e': ['a','a'], 'f': ['a','a'], 'g': ['a','a']}
+# iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
+# sequences = {'root': ['a', 'a'], 'r': ['a', 'a'], 'a': ['a', 'a'], 'b': ['a', 'a'], 'c': ['a', 'a'] , 'd': ['a','a'], 'e': ['a','a'], 'f': ['a','a'], 'g': ['a','a']}
 
 
-isotypes  = {'root': 0, 'a': 2, 'b':2, 'c': 2, 'd': 3, 'f':3, 'e': 3, 'g': 1}
-lt1 =LineageTree(T,'root', 0)
-lt2 =LineageTree(T,'root', 1)
+# isotypes  = {'root': 0, 'a': 2, 'b':2, 'c': 2, 'd': 3, 'f':3, 'e': 3, 'g': 1}
+# lt1 =LineageTree(T,'root', 0)
+# lt2 =LineageTree(T,'root', 1)
  
-cg = ConstructGraph(iso_costs, isotypes, root_identifier="root")
+# cg = ConstructGraph(iso_costs, isotypes, root_identifier="root")
 
-_ = cg.build(lt1, sequences) 
-_ = cg.build(lt2, sequences)
-fg = cg.combineGraphs()
+# _ = cg.build(lt1, sequences) 
+# _ = cg.build(lt2, sequences)
+# fg = cg.combineGraphs()
 
-# print(list(fg.G.nodes))
-# print(list(fg.G.edges))
+# # print(list(fg.G.nodes))
+# # print(list(fg.G.edges))
 
 
 
-score, T = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, root='root', lamb=0).run()
-print(score)
-print(list(T.edges))
+# score, T = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, root='root', lamb=0).run()
+# print(score)
+# print(list(T.edges))
 
                     
              
