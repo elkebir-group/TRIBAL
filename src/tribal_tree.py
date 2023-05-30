@@ -18,9 +18,15 @@ from steiner_tree import ConstructGraph, SteinerTree
 
 
 class TribalSub:
-    def __init__(self, isotype_weights=None, alpha=0.9, n_isotypes=7,
+    def __init__(self, 
+                isotype_weights=None, 
+                alpha=0.9, 
+                n_isotypes=7,
                 cost_function=None, 
-                alphabet= ("A", "C", "G", "T","N", "-"), timeout=2, nworkers=1, root_id="naive" ):
+                alphabet= ("A", "C", "G", "T","N", "-"), 
+                timeout=2, 
+                nworkers=1, 
+                root_id="naive" ):
 
         
         #abort search after timeout hours
@@ -208,7 +214,7 @@ class TribalSub:
 
     def forest_mode_loop(self, lin_forest, alignment=None, isotypes=None, mode="score"):
             
-            best_results = []
+            # best_results = []
             # best_result = None 
             # best_tree = None
 
@@ -236,14 +242,14 @@ class TribalSub:
                 result = mode_func(lin_tree,alignment, isotype_labels)
                 all_results.append(  result)
             #scan through results and find the top ntrees results 
-            for result in all_results:
-                if len(best_results) ==0:
-                    best_results.append( result)
+            # for result in all_results:
+            #     if len(best_results) ==0:
+            #         best_results.append( result)
                   
-                    # print(best_result)
-                else:
-                    if result.improvement(best_results[-1]) or len(best_results) < ntrees:
-                        self.update_best_results(result, best_results, ntrees)
+            #         # print(best_result)
+            #     else:
+            #         if result.improvement(best_results[-1]) or len(best_results) < ntrees:
+            #             self.update_best_results(result, best_results, ntrees)
                        
                       
 

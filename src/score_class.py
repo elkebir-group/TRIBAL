@@ -13,9 +13,11 @@ class Score:
 
 
     def improvement(self, cand_score ):
+
         return self.objective < cand_score.objective
     
-
+    # def __lt__(self, cand_score):
+    #     return isinstance(cand_score, Score) and self.
     def __str__(self):
         return f"Objective: {self.objective} Sequence: {self.seq_obj} Isotype: {self.iso_obj}"
     

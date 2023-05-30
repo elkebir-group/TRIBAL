@@ -1,5 +1,9 @@
 #change to set the name of the dataset to be run
-dataset: GCB_NP_1
+dataset: day_14
+
+refine_modes:
+  - refine
+  - refine_ilp
 
 #TRIBAL parameters
 lamb: 0.75

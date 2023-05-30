@@ -1,19 +1,19 @@
-# pth <- "/scratch/projects/tribal/real_data/day_14"
-# table_fname <- "day_14_dandelion_table.tsv"
-# root_fname <- "day_14_root_sequences.csv"
+pth <- "/scratch/projects/tribal/experimental_data"
+table_fname <- "day_14_dandelion_table.tsv"
+root_fname <- "day_14_root_sequences.csv"
 # 
-# run_dir <- "GCB_OVA_1"
+run_dir <- "day_14"
 # 
-# run_path <- file.path("/scratch/projects/tribal/real_data", run_dir)
-# dat_fname = sprintf("%s/%s_dandelion_table.tsv",run_path, run_dir)
-# root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
+run_path <- file.path(pth, run_dir)
+dat_fname = sprintf("%s/%s_dandelion_table.tsv", run_path, run_dir)
+root_fname = sprintf("%s/%s_root_sequences.csv", run_path, run_dir)
 # 
 # min_size = 5
 # out_path = sprintf("/scratch/projects/tribal/real_data/%s/input", run_dir)
 # 
 #  outfile = sprintf("%s/clonotype_summary.csv",run_path)
 # id_mapping = sprintf("%s/barcode_id_mapping.csv", run_path)
-# min_size <- 5
+min_size <- 5
 library(tidyverse)
 ###########################
 dat_fname <- snakemake@input[['data_fname']]

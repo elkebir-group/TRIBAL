@@ -16,12 +16,22 @@ from tribal_tree import TribalSub
 from draw_state_diagram import DrawStateDiag
 
 class Tribal:
-    def __init__(self, clonotypes, transmat=None, alpha=0.9, 
+    def __init__(self, 
+                clonotypes,  # a dictionary of lineage forests (set of candidate trees, alignment, isotypes for observed cells)
+                transmat=None, 
+                alpha=0.9, 
                 alphabet= ("A", "C", "G", "T","N", "-"), 
-                isotype_encoding=None, seed= 1026, 
-                max_cand=50, niter=10,
-                threshold=0.1, restarts=5,
-                n_isotypes = 7, not_trans_prob=0.65, mu=0.07, sigma=0.05, mode="refine" ):
+                isotype_encoding=None, 
+                seed= 1026, 
+                max_cand=50, 
+                niter=10,
+                threshold=0.1, 
+                restarts=5,
+                n_isotypes = 7, 
+                not_trans_prob=0.65, 
+                mu=0.07, 
+                sigma=0.05, 
+                mode="refine_ilp" ):
         
         self.mode= mode
         self.clonotypes = clonotypes
@@ -29,13 +39,13 @@ class Tribal:
         self.alphabet = alphabet
         self.alpha = alpha
         self.not_trans_prob = not_trans_prob
-        print(self.not_trans_prob)
+
         if transmat is None:
             if isotype_encoding is not None:
                 self.n_isotypes = len(isotype_encoding)
             else:
                 self.n_isotypes = n_isotypes 
-            print(f"generating transitiom matrix with not jump prob {self.not_trans_prob}")
+            print(f"generating transitiom matrix with stay probability {self.not_trans_prob}")
             self.transmat = tm.gen_trans_mat(self.not_trans_prob, self.n_isotypes)
       
         else:
@@ -64,6 +74,10 @@ class Tribal:
     
 
     def intialize_candidates(self, best_tree_ids=None):
+        '''
+        randomly initialize a set of candidate trees up to max_cands 
+        for each clonotype, including the best trees found so far is dictionary
+        is given.'''
         candidates = {}
         for c in self.clonotypes:
             if self.clonotypes[c].size() > self.max_cand:
@@ -88,7 +102,8 @@ class Tribal:
             best_tree_ids = {}
             for i,c in enumerate(self.clonotypes):
                     ts = TribalSub( isotype_weights=transmat,alpha=self.alpha)
-                    best_score,_ = ts.forest_mode_loop(candidates[c], mode=self.mode)
+                    all_scores = ts.forest_mode_loop(candidates[c], mode=self.mode)
+                    
                     best_score = best_score[0]
                     best_tree = best_score.tree
                     total_likelihood += best_score.objective 
@@ -272,7 +287,8 @@ def create_isotype_encoding(fname):
     return iso_encoding, start_iso, counter
 
 
-def create_input( path,  tree_path, clonotype, root, seq_fasta_fname, trees_fname, iso_fasta_fname, iso_encoding=None, start_iso=None):
+def create_input( path,  tree_path, clonotype, root, seq_fasta_fname, 
+                 trees_fname, iso_fasta_fname, iso_encoding=None, start_iso=None):
 
     tree_fname =f"{tree_path}/{clonotype}/{trees_fname}"
     align_fname = f"{path}/{clonotype}/{seq_fasta_fname}"

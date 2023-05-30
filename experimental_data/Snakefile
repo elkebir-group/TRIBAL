@@ -11,48 +11,49 @@ def get_clonotypes():
 
 rule all:
     input: 
-        expand(  "{dataset}/tribal_search/{clonotype}/search_tree.png",
+        expand(  "{dataset}/{mode}/{clonotype}/tree.png",
             dataset=config["dataset"],
-            clonotypes = get_clonotypes(),
+            mode =  config["refine_modes"],
+            clonotype = get_clonotypes(),
         ),
               
 
-rule tribal_infer:
-    input: 
-        clonotypes = "{dataset}/clonotypes.txt",
-        encoding = "mouse_isotype_encoding.txt",
-    params:
-        inpath = "./{dataset}/input",
-        lamb = config["lamb"],
-        max_cand = config["max_cand"],
-        niter = config["niter"],
-        thresh = config["threshold"],
-        seed =  config["seed"],
-        root = "naive",
-        outpath = "./{dataset}/tribal",
-        tree_path = "./{dataset}/dnapars",
-        nworkers = config['nworkers'],
-        restarts = config["nrestarts"],
-        mu = config["mu"],
-        sigma = config["sigma"],
-        jump_prob = config["jump_prob"]
-    output:
-        transmat = "{dataset}/tribal/transmat.txt",
-        stateprobs = "{dataset}/tribal/state_probs.txt",
-        heatmap = "{dataset}/tribal/transmat.png",
-        propmap = "{dataset}/tribal/statemap.png",
-        score = "{dataset}/tribal/fit_score.txt",
-    log:
-        std = "{dataset}/tribal/fit.log",
-        err = "{dataset}/tribal/fit.err.log"
-    shell:
-        "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
-        "-r {params.root} -e {input.encoding} -s {params.seed} "
-        "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
-        "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
-        "--state_probs {output.stateprobs} --score {output.score}  -j {params.jump_prob} "  
-        "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
-        "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "
+# rule tribal_infer:
+#     input: 
+#         clonotypes = "{dataset}/clonotypes.txt",
+#         encoding = "mouse_isotype_encoding.txt",
+#     params:
+#         inpath = "./{dataset}/input",
+#         lamb = config["lamb"],
+#         max_cand = config["max_cand"],
+#         niter = config["niter"],
+#         thresh = config["threshold"],
+#         seed =  config["seed"],
+#         root = "naive",
+#         outpath = "./{dataset}/tribal",
+#         tree_path = "./{dataset}/dnapars",
+#         nworkers = config['nworkers'],
+#         restarts = config["nrestarts"],
+#         mu = config["mu"],
+#         sigma = config["sigma"],
+#         jump_prob = config["jump_prob"]
+#     output:
+#         transmat = "{dataset}/tribal/transmat.txt",
+#         stateprobs = "{dataset}/tribal/state_probs.txt",
+#         heatmap = "{dataset}/tribal/transmat.png",
+#         propmap = "{dataset}/tribal/statemap.png",
+#         score = "{dataset}/tribal/fit_score.txt",
+#     log:
+#         std = "{dataset}/tribal/fit.log",
+#         err = "{dataset}/tribal/fit.err.log"
+#     shell:
+#         "python ../src/tribal.py -c {input.clonotypes} -p {params.inpath} "
+#         "-r {params.root} -e {input.encoding} -s {params.seed} "
+#         "-o {params.outpath} --alpha {params.alpha} --niter {params.niter} "
+#         "--thresh {params.thresh} --transmat_infer {output.transmat}  --tree_path {params.tree_path}  "
+#         "--state_probs {output.stateprobs} --score {output.score}  -j {params.jump_prob} "  
+#         "--nworkers {params.nworkers} --restarts {params.restarts} --mu {params.mu} --sigma {params.sigma} "
+#         "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "
 
 
 
@@ -64,23 +65,24 @@ rule tribal_refine:
         candidates ="{dataset}/dnapars/{clonotype}/outtree",
         encoding = "mouse_isotype_encoding.txt",
     output: 
-        forest="{dataset}/tribal_refine/{clonotype}/forest.pickle",
-        tree= "{dataset}/tribal_refine/{clonotype}/tree.txt",
-        seq= "{dataset}/tribal_refine/{clonotype}/inferred_seq.csv",
-        fasta= "{dataset}/tribal_refine/{clonotype}/inferred_seq.fasta",
-        isotypes= "{dataset}/tribal_refine/{clonotype}/isotypes.csv",
-        score= "{dataset}/tribal_refine/{clonotype}/score.csv",
-        png = "{dataset}/tribal_refine/{clonotype}/tree.png",
+        forest="{dataset}/{mode}/{clonotype}/forest.pickle",
+        tree= "{dataset}/{mode}/{clonotype}/tree.txt",
+        seq= "{dataset}/{mode}/{clonotype}/inferred_seq.csv",
+        fasta= "{dataset}/{mode}/{clonotype}/inferred_seq.fasta",
+        isotypes= "{dataset}/{mode}/{clonotype}/isotypes.csv",
+        score= "{dataset}/{mode}/{clonotype}/scores.csv",
+        png = "{dataset}/{mode}/{clonotype}/tree.png",
+        opts = directory("{dataset}/{mode}/{clonotype}/opt_trees"),
+        rf_dist="{dataset}/{mode}/{clonotype}/best_rf_dist.csv",
     params:
         root = "naive",
-        mode = "refine",
         ntrees = config["ntrees"],
         lamb = config["lamb"],
     threads: config['nworkers']
     log: 
-        run= "{dataset}/tribal_refine/{clonotype}/refine.log",
-        err ="{dataset}/tribal_refine/{clonotype}/refine.err.log"  
-    benchmark: "{dataset}/tribal_refine/{clonotype}/refine.benchmark.log" 
+        run= "{dataset}/{mode}/{clonotype}/refine.log",
+        err ="{dataset}/{mode}/{clonotype}/refine.err.log"  
+    benchmark: "{dataset}/{mode}/{clonotype}/refine.benchmark.log" 
     shell:
         "python ../src/tribal_tree.py "
         " -r {params.root} "
@@ -89,63 +91,65 @@ rule tribal_refine:
         "-e {input.encoding} "
         "-i {input.isotypes} "
         "--candidates {input.candidates} "
-        "--alpha {params.alpha} "
-        "--sequences {output.seq} "
-        "--fasta {output.fasta} "
-        "--score {output.score} "
-        "--iso_infer {output.isotypes} "
-        "--png {output.png} "
-        "--mode {params.mode} "
-        "--ntrees {params.ntrees} "
-        "--nworkers {threads} "
-        "--tree {output.tree} "
-        "-o {output.forest} > {log.run} 2> {log.err} "  
-
-   
-rule tribal_search:
-    input: 
-        alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
-        isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
-        transmat =  "{dataset}/tribal/transmat.txt",
-        lin_forest = "{dataset}/tribal_refine/{clonotype}/forest.pickle",
-        encoding = "mouse_isotype_encoding.txt",
-    output: 
-        tree= "{dataset}/tribal_search/{clonotype}/tree.txt",
-        lin_forest ="{dataset}/tribal_search/{clonotype}/forest.pickle",
-        seq= "{dataset}/tribal_search/{clonotype}/inferred_seq.csv",
-        fasta= "{dataset}/tribal_search/{clonotype}/inferred_seq.fasta",
-        isotypes= "{dataset}/tribal_search/{clonotype}/isotypes.csv",
-        score= "{dataset}/tribal_search/{clonotype}/score.csv",
-        png = "{dataset}/tribal_search/{clonotype}/search_tree.png",
-    params:
-        root = "naive",
-        timeout = config["search_timeout"],
-        ntrees = config["ntrees"],
-        lamb = config['lamb']
-    threads: config["nworkers"]
-    log: 
-        run= "{dataset}/tribal_search/{clonotype}/search.log",
-        err ="{dataset}/tribal_search/{clonotype}/search.err.log"  
-    benchmark: "{dataset}/tribal_search/{clonotype}/search.benchmark.log" 
-    shell:
-        "python ../src/tribal_sub.py "
-        " -r {params.root} "
-        " -a {input.alignment} "
-        "-t {input.transmat} "
-        "-e {input.encoding} "
-        "-i {input.isotypes} "
-        "-l {input.lin_forest} "
-        "--forest "
         "--alpha {params.lamb} "
         "--sequences {output.seq} "
         "--fasta {output.fasta} "
         "--score {output.score} "
         "--iso_infer {output.isotypes} "
         "--png {output.png} "
-        "--nworkers {threads} "
+        "--mode {wildcards.mode} "
         "--ntrees {params.ntrees} "
+        "--all_optimal_sol {output.opts} "
+        "--best_tree_diff {output.rf_dist} "
+        "--nworkers {threads} "
         "--tree {output.tree} "
-        "-o {output.lin_forest} > {log.run} 2> {log.err} "  
+        "-o {output.forest} > {log.run} 2> {log.err} "  
+
+   
+# rule tribal_search:
+#     input: 
+#         alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
+#         isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
+#         transmat =  "{dataset}/tribal/transmat.txt",
+#         lin_forest = "{dataset}/tribal_refine/{clonotype}/forest.pickle",
+#         encoding = "mouse_isotype_encoding.txt",
+#     output: 
+#         tree= "{dataset}/tribal_search/{clonotype}/tree.txt",
+#         lin_forest ="{dataset}/tribal_search/{clonotype}/forest.pickle",
+#         seq= "{dataset}/tribal_search/{clonotype}/inferred_seq.csv",
+#         fasta= "{dataset}/tribal_search/{clonotype}/inferred_seq.fasta",
+#         isotypes= "{dataset}/tribal_search/{clonotype}/isotypes.csv",
+#         score= "{dataset}/tribal_search/{clonotype}/score.csv",
+#         png = "{dataset}/tribal_search/{clonotype}/search_tree.png",
+#     params:
+#         root = "naive",
+#         timeout = config["search_timeout"],
+#         ntrees = config["ntrees"],
+#         lamb = config['lamb']
+#     threads: config["nworkers"]
+#     log: 
+#         run= "{dataset}/tribal_search/{clonotype}/search.log",
+#         err ="{dataset}/tribal_search/{clonotype}/search.err.log"  
+#     benchmark: "{dataset}/tribal_search/{clonotype}/search.benchmark.log" 
+#     shell:
+#         "python ../src/tribal_sub.py "
+#         " -r {params.root} "
+#         " -a {input.alignment} "
+#         "-t {input.transmat} "
+#         "-e {input.encoding} "
+#         "-i {input.isotypes} "
+#         "-l {input.lin_forest} "
+#         "--forest "
+#         "--alpha {params.lamb} "
+#         "--sequences {output.seq} "
+#         "--fasta {output.fasta} "
+#         "--score {output.score} "
+#         "--iso_infer {output.isotypes} "
+#         "--png {output.png} "
+#         "--nworkers {threads} "
+#         "--ntrees {params.ntrees} "
+#         "--tree {output.tree} "
+#         "-o {output.lin_forest} > {log.run} 2> {log.err} "  
 
 
 

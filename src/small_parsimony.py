@@ -8,12 +8,15 @@ from copy import deepcopy
 np.seterr(all="ignore")
 
 class SmallParsimony:
-    def __init__(self, T,  root,  alphabet=["A", "C", "G", "T", "N", "-"], cost=None):
+    def __init__(self, T,  root,  alphabet=None, cost=None):
         
         self.T = T
         self.root = root
         self.cost = cost
-        self.alphabet = alphabet
+        if alphabet is None:
+            self.alphabet = ["A", "C", "G", "T", "N", "-"]
+        else:
+            self.alphabet = alphabet
 
         if self.cost is None:
             self.cost= {}

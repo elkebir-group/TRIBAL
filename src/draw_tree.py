@@ -49,7 +49,10 @@ class DrawTree:
         total_trans = 0
         used_isotypes = []
         for p in self.parents:
-            iso = int(self.isotypes[p])
+            if p in self.isotypes:
+                iso = int(self.isotypes[p])
+            else:
+                iso = 0
             if iso not in used_isotypes:
                 used_isotypes.append(iso)
             col = self.color_encoding[iso]
@@ -58,10 +61,10 @@ class DrawTree:
         for key, val in self.parents.items():
             if val != "":
                 new_edge = pydot.Edge(dst=key, src=val, color="black")
-                iso_u = int(self.isotypes[val])
-                iso_v =int(self.isotypes[key])
-                iso_trans[iso_u,iso_v] += 1
-                total_trans += 1
+                # iso_u = int(self.isotypes[val])
+                # iso_v =int(self.isotypes[key])
+                # iso_trans[iso_u,iso_v] += 1
+                # total_trans += 1
               
                 self.graph.add_edge(new_edge)
         
