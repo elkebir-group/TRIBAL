@@ -161,7 +161,7 @@ class EMProbs:
         for s in self.states:
             for t in self.states:
                     if s <=t and new_tmat[s,t]==0:
-                        new_tmat[s,t] = 0.01
+                        new_tmat[s,t] = 0.001
         norm_term = new_tmat.sum( axis=1).reshape(-1,1)
 
         new_tmat = new_tmat/norm_term

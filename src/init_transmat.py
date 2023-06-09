@@ -36,7 +36,7 @@ def gen_seq_mat(alpha,n, eps ):
     # print(trans.sum(axis=1))
     return trans
 
-def add_noise(transmat, rng, mu=0.05, sigma=0.005, min_prob=0.01):
+def add_noise(transmat, rng, mu=0.05, sigma=0.005, min_prob=0.001):
 
         white_noise =rng.normal(mu, sigma, transmat.shape)
         tmat = transmat + white_noise 

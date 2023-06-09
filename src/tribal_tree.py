@@ -101,7 +101,7 @@ class TribalSub:
                 # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
             seq_score, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
-            st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights,root=self.root_id, lamb=self.alpha )
+            st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound,root=self.root_id,  lamb=self.alpha )
             obj, tree = st.run()
             out_tree, out_iso = cg.decodeTree(tree)
             
@@ -449,6 +449,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=1026, help="random seed for picking a single best tree among all tied trees")
     # parser.add_argument("--all_obj", type=str, help="comparison of ilp heuristic versus min heuristc")
     parser.add_argument("--best_tree_diff", type=str, help="best tree RF distances")
+    parser.add_argument("--pickle_best", type=str, help="filename to pickle the best results")
     # parser.add_argument("--combined_tree", type=str, help="png for combined tree")
     # parser.add_argument("--best_ilp", type=str, help="png for best ilp heuristic tree")
 
@@ -489,7 +490,7 @@ if __name__ == "__main__":
     # isotypes = f"{path}/input/{clonotype}/isotype.fasta"
     # encoding = "/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt"
     # transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"
-    # mode= "refine_ilp"
+    # mode= "refine"
     # args = parser.parse_args([
     #     "-a", alignment,
     #     "-i", isotypes,
@@ -498,7 +499,7 @@ if __name__ == "__main__":
     #     "--candidates" ,candidates,
     #     "-e", encoding,
     #     "--mode", mode,
-    #     "--all_obj", f"test/{mode}.csv",
+    #     # "--all_obj", f"test/{mode}.csv",
     #     "--png", f"test/{mode}.png",
     #     "--ntrees", "2",
     #     "--all_optimal_sol", "test/opt_tree",
@@ -621,6 +622,10 @@ if __name__ == "__main__":
             
             # lin.save_png(f"test/tree_{lin.id}.png", lin_forest.isotypes, isotype_encoding)
     all_results =  tr.forest_mode(lin_forest, mode =args.mode)
+
+    print(len(all_results))
+    for a in all_results:
+        print(a)
          #scan through results and find the top ntrees results 
     best_results = []
     top_ntrees = []
@@ -631,7 +636,7 @@ if __name__ == "__main__":
        
     
     for res in all_results:
-        if round(res.objective,4) == round(best_obj,4):
+        if round(res.objective,5) == round(best_obj,5):
             best_results.append(res)
 
         if len(top_ntrees) ==0:
@@ -761,4 +766,6 @@ if __name__ == "__main__":
             res.tree.save_tree(f"{pth}/tree_{res.tree.id}.txt")
             res.tree.save_png(f"{pth}/tree_{res.tree.id}.png", res.isotypes, isotype_encoding)
 
+    if args.pickle_best is not None:
+        ut.pickle_save(best_results, args.pickle_best)
     

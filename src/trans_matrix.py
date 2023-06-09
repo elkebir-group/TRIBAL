@@ -1,10 +1,11 @@
 
 import numpy as np
 class TransMat:
-    def __init__(self, rng=None, n_isotypes=7):
+    def __init__(self, rng=None, n_isotypes=7, min_prob= 0.001):
         
         self.n_isotypes = n_isotypes
         self.isotypes = np.arange(n_isotypes)
+        self.min_prob = min_prob
         
         if rng is None:
             self.rng =np.random.default_rng(1026)

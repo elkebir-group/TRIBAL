@@ -11,6 +11,7 @@ from ete3 import Tree
 from em_weight_matrix import EMProbs
 from lineage_tree import LineageForest
 import init_transmat as tm
+from alignment import Alignment
 
 from tribal_tree import TribalSub
 from draw_state_diagram import DrawStateDiag
@@ -39,6 +40,7 @@ class Tribal:
         self.alphabet = alphabet
         self.alpha = alpha
         self.not_trans_prob = not_trans_prob
+        self.min_iterations = min(7, niter)
 
         if transmat is None:
             if isotype_encoding is not None:
@@ -80,6 +82,7 @@ class Tribal:
         is given.'''
         candidates = {}
         for c in self.clonotypes:
+            print(f"clontoype {c}: size: {self.clonotypes[c].size()}")
             if self.clonotypes[c].size() > self.max_cand:
                 cand = self.rng.choice(self.clonotypes[c].size(), self.max_cand, replace=False).tolist()
             else:
@@ -89,32 +92,57 @@ class Tribal:
             for index in cand:
                 candidates[c].add(deepcopy(self.clonotypes[c][index]))
             if best_tree_ids is not None:
-                if best_tree_ids[c] not in cand:
-                    candidates[c].add(deepcopy(self.clonotypes[c][best_tree_ids[c]]))
+                for i in best_tree_ids[c]:
+                    if i not in cand:
+                        candidates[c].add(deepcopy(self.clonotypes[c][i]))
 
         return candidates 
     
+    @staticmethod
+    def find_best_scores(scores):
+        min_obj = np.Inf
+        best_trees = []
+        best_ids = []
+        for s in scores:
+            if s.objective < min_obj:
+                min_obj = s.objective
+                best_trees = [s.tree]
+                best_ids = [s.tree.id]
+            
+            elif round(min_obj, 5) == round(s.objective, 5):
+                best_trees.append(s.tree)
+                best_ids.append(s.tree.id)
+            else:
+                continue
+        return min_obj, best_trees, best_ids
 
-    def score_candidates(self, candidates, transmat=None):
+
+
+    def score_candidates(self, candidates, transmat=None, nproc=1):
           
             total_likelihood = 0
-            best_trees = []
+            all_best_trees = []
             best_tree_ids = {}
+            observed_data = {}
             for i,c in enumerate(self.clonotypes):
-                    ts = TribalSub( isotype_weights=transmat,alpha=self.alpha)
-                    all_scores = ts.forest_mode_loop(candidates[c], mode=self.mode)
-                    
-                    best_score = best_score[0]
-                    best_tree = best_score.tree
-                    total_likelihood += best_score.objective 
-                    best_tree_ids[c] = best_tree.id
-                    best_tree.set_name(c)
-                    best_trees.append(best_tree)
+                    ts = TribalSub( isotype_weights=transmat,alpha=self.alpha, nworkers=nproc)
+                    all_scores = ts.forest_mode(candidates[c], mode=self.mode)
+                    best_score, best_trees, best_ids = self.find_best_scores(all_scores)
+                
+           
+                    total_likelihood += best_score
+                    best_tree_ids[c] = best_ids
+                    for j,t in enumerate(best_trees):
+                        tree_name = f"{c}_{j}"
+                        observed_data[tree_name] = self.obs_states[c]
+                        t.set_name(tree_name)
+               
+                    all_best_trees += best_trees
                     
                     # print(f"{i}: {c} Best tree: {best_tree.id} Tree Score: {best_score} Total Score: {total_likelihood}")
             lin_forest = LineageForest()
-            lin_forest.generate_from_list(best_trees)
-            return total_likelihood, best_tree_ids, lin_forest
+            lin_forest.generate_from_list(all_best_trees)
+            return total_likelihood, best_tree_ids, lin_forest, observed_data
     
     @staticmethod
     def check_convergence(old, new, threshold):
@@ -127,42 +155,38 @@ class Tribal:
     def run(self, nproc=1):
 
         best_log_like_score = np.NINF
-        best_lin_forest = None
-        all_transmats ={}
-        all_state_probs = {}
+    
         best_trans =None
         best_states = None
         best_fit_scores = {}
         log_like_scores = {}
         init_mat_lists = [self.init_transmat.copy()]
         for i in range(self.restarts-1):
-            init_mat_lists.append(tm.add_noise(self.init_transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma, min_prob=0.01))
+            init_mat_lists.append(tm.add_noise(self.init_transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma))
 
-        with Pool(nproc) as p:
-            results = p.map(self.fit, init_mat_lists)
+        results = []
+        for t in init_mat_lists:
+            results.append(self.fit(t, nproc))
+
+        # with Pool(nproc) as p:
+        #     results = p.map(self.fit, init_mat_lists)
         restart=0
-        for fit_score, best_tree_ids, lin_forest, exp_log_like, tmat, state_probs in results:     
+        for fit_score, exp_log_like, tmat, state_probs in results:     
             print(f"\nFit Phase Complete for restart {restart}!\nFit Score: {fit_score} Exp Log Like {exp_log_like}")
             if exp_log_like > best_log_like_score:
                 best_log_like_score = exp_log_like
-
                 best_trans = tmat
                 best_states = state_probs
-                best_lin_forest = lin_forest
-                best_tree_id_pointer = best_tree_ids 
                 best_iter = restart
             best_fit_scores[restart] = fit_score
             log_like_scores[restart] = exp_log_like
-
-            all_transmats[restart] = tmat
-            all_state_probs[restart] = state_probs
             restart+= 1
 
 
-        return best_fit_scores[best_iter], best_lin_forest, best_trans,best_states, all_transmats, all_state_probs, log_like_scores
+        return best_fit_scores[best_iter], best_trans,best_states, log_like_scores
 
     
-    def fit(self, transmat):
+    def fit(self, transmat, nproc=1):
   
      
         ''' resolve the polytomys using a basic sankoff cost function
@@ -183,56 +207,56 @@ class Tribal:
 
             
             candidates = self.intialize_candidates(best_tree_ids)
-            current_score, best_tree_ids, lin_forest = self.score_candidates(candidates, transmat=transmat)
+            current_score, best_tree_ids, lin_forest, obs_data = self.score_candidates(candidates, transmat=transmat, nproc=nproc)
 
             print("\nFitting transition matrix...")
-            cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(self.obs_states)
+            cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
 
 
          
             print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score} Curr EM Log Like: {cur_log_like}")
             
-            if i > min(7, self.niterations):
 
-                if self.check_convergence( old_score, current_score, self.threshold):
-                  break
+
+            if i > self.min_iterations and self.check_convergence( old_score, current_score, self.threshold):
+                break
                    
             old_score = current_score 
-        return  current_score, best_tree_ids, lin_forest, cur_log_like, transmat, state_probs
+        return  current_score, cur_log_like, transmat, state_probs
                
 
         
 
-    def search(self, lin_forest):
+    # def search(self, lin_forest):
 
-        ''' resolve the polytomys using a basic sankoff cost function
-            then generate a max likelihood estimate of the transition matrix from EM algorithm
-            do until convergence of transition matrix and best trees:
-                then for each clonotype,
-                    run tribal polytomy search with the updated transition matrix
-                    select all best trees
-                refit the transition matrix   
-            return a single best tree for each clonotype
+    #     ''' resolve the polytomys using a basic sankoff cost function
+    #         then generate a max likelihood estimate of the transition matrix from EM algorithm
+    #         do until convergence of transition matrix and best trees:
+    #             then for each clonotype,
+    #                 run tribal polytomy search with the updated transition matrix
+    #                 select all best trees
+    #             refit the transition matrix   
+    #         return a single best tree for each clonotype
 
-        '''
+    #     '''
 
-        total_likelihood = 0
-        best_lin_trees = {}
-        for i,tree in enumerate(lin_forest.get_trees()):
-                clono = tree.name
-                alignment= self.clonotypes[clono].alignment
-                isotypes = self.clonotypes[clono].isotypes
+    #     total_likelihood = 0
+    #     best_lin_trees = {}
+    #     for i,tree in enumerate(lin_forest.get_trees()):
+    #             clono = tree.name
+    #             alignment= self.clonotypes[clono].alignment
+    #             isotypes = self.clonotypes[clono].isotypes
         
     
-                best_score, best_lin_tree, best_labels, best_iso = TribalPoly( n_isotypes=self.n_isotypes,transmat=transmat,
-                                                    alpha=self.alpha).greedy_hill_climbing(tree, alignment, isotypes)
-                best_lin_trees[clono] = {'tree': best_lin_tree, 'labels': best_labels, 'isotypes':best_iso}
-                total_likelihood += best_score 
+    #             best_score, best_lin_tree, best_labels, best_iso = TribalPoly( n_isotypes=self.n_isotypes,transmat=transmat,
+    #                                                 alpha=self.alpha).greedy_hill_climbing(tree, alignment, isotypes)
+    #             best_lin_trees[clono] = {'tree': best_lin_tree, 'labels': best_labels, 'isotypes':best_iso}
+    #             total_likelihood += best_score 
               
                 
-                print(f"{i}: {tree.name}:  Tree Score: {best_score} Total Score: {total_likelihood}")
+    #             print(f"{i}: {tree.name}:  Tree Score: {best_score} Total Score: {total_likelihood}")
   
-        return total_likelihood, best_lin_trees
+    #     return total_likelihood, best_lin_trees
   
 
 
@@ -295,10 +319,10 @@ def create_input( path,  tree_path, clonotype, root, seq_fasta_fname,
     iso_fname =f"{path}/{clonotype}/{iso_fasta_fname}"
     tree_list = create_trees(tree_fname)
 
-     
-
-    alignment = ut.read_fasta(align_fname)
-    alignment = {key: list(value.strip()) for key,value in alignment.items()}
+    #simplified alignment 
+    alignment = Alignment(align_fname,root=args.root).simplify()
+    # alignment = ut.read_fasta(align_fname)
+    # alignment = {key: list(value.strip()) for key,value in alignment.items()}
 
 
     #only treat isotype file as a fasta file if .fasta is in the name, otherwise, we assume it is a csv file dictionary
@@ -411,18 +435,31 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--seed", type=int, default=1026)
     parser.add_argument("--alpha", type=float, default=0.9)
     parser.add_argument("--restarts",  type=int, default=1, help="number of restarts")
-    parser.add_argument("--mode", choices=["score", "refine", "search"], default="score")
-    parser.add_argument( "-o", "--outpath", type=str, help="path to directory where output files should be saved")
+    parser.add_argument("--mode", choices=["score", "refine", "refine_ilp", "search"], default="score")
+    # parser.add_argument( "-o", "--outpath", type=str, help="path to directory where output files should be saved")
     parser.add_argument("--score", type=str, help="filename where the score file should be saved")
     parser.add_argument("--transmat_infer", type=str, help="filename where the inferred transition matrix should be saved")
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
     parser.add_argument("--heatmap", type=str, help="filename where the {png,pdf} of transition matrix should be saved")
     parser.add_argument("--propmap", type=str, help="filename where the {pdf,png} of isotype proportions should be saved")
 
-    parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
+    # parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
-
+    # fpath = "/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/tmat_inf/direct/cells35/size75/rep1/2.0/0.365"
+    # args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes75.txt", 
+    #     "--encoding", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
+    #     "--alpha", "0.8",
+    #     "-p", fpath,
+    #     "--max_cand", "50",
+    #     "--niter" , "20",
+    #     "--root", "naive",
+    #     "--tree_path", fpath,
+    #     "--nworkers", "7",
+    #     "--fasta", "GCsim_dedup.fasta",
+    #     "--isotypes", "GCsim.isotypes",
+    #     "--candidates", "dnapars/outtree",
+    #     "--mode", "refine_ilp"])
 
     if args.encoding is not None:
         iso_encoding, start_iso, n_isotypes = create_isotype_encoding(args.encoding)
@@ -475,7 +512,7 @@ if __name__ == "__main__":
     
 
   
-    obj_score, lin_forest, transmat, state_probs, all_transmats, all_state_probs, all_log_like = tr.run(args.nworkers)
+    obj_score, transmat, state_probs,  all_log_like = tr.run(args.nworkers)
 
 
     print("\nTRIBAL Complete!, saving results...")
@@ -496,20 +533,20 @@ if __name__ == "__main__":
         DrawStateDiag(transmat, state_probs, rev_encoding).state_heatmap(args.propmap)
 
 
-    if args.outpath is not None:
-        lin_forest.save_trees(args.outpath)
+    # if args.outpath is not None:
+    #     lin_forest.save_trees(args.outpath)
  
   
 
  
-    if args.save_all_restarts is not None:
-        with open(f"{args.save_all_restarts}/expectation_log_like.csv", "w+") as file:
-            file.write("restart,max_exp_log_like\n")
-            for i in all_transmats:
-                np.savetxt( f"{args.save_all_restarts}/transmat_restart{i}.txt",all_transmats[i])
-                np.savetxt(f"{args.save_all_restarts}/state_probs_restart{i}.txt",all_state_probs[i])
-                DrawStateDiag(all_transmats[i], all_state_probs[i], rev_encoding).save(f"{args.save_all_restarts}/state_diagram_restart{i}.png")
-                file.write(f"{i},{all_log_like[i]}\n")
+    # if args.save_all_restarts is not None:
+    #     with open(f"{args.save_all_restarts}/expectation_log_like.csv", "w+") as file:
+    #         file.write("restart,max_exp_log_like\n")
+    #         for i in all_transmats:
+    #             np.savetxt( f"{args.save_all_restarts}/transmat_restart{i}.txt",all_transmats[i])
+    #             np.savetxt(f"{args.save_all_restarts}/state_probs_restart{i}.txt",all_state_probs[i])
+    #             DrawStateDiag(all_transmats[i], all_state_probs[i], rev_encoding).save(f"{args.save_all_restarts}/state_diagram_restart{i}.png")
+    #             file.write(f"{i},{all_log_like[i]}\n")
 
 
 
