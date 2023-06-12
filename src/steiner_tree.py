@@ -48,8 +48,12 @@ class SteinerTree:
             
                 self.out_nodes[i].append(j)
 
-        self.m.setObjective(lamb* sum(self.seq_weights[i,j]*self.x[i,j] for i,j in self.edges) + 
-                            (1-lamb)* sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
+        # self.m.setObjective(lamb* sum(self.seq_weights[i,j]*self.x[i,j] for i,j in self.edges) + 
+        #                     (1-lamb)* sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
+
+        self.m.setObjective( sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
+
+
 
         #ensure only 1 node is selected when multiple candidate isotypes exist
         for node_list in mut_exc_list:
@@ -65,6 +69,9 @@ class SteinerTree:
 
         for n,val in outdegree_bound.items():
                 self.m.addConstr(sum(self.x[n,j] for j in self.out_nodes[n]) <= val -1)
+        
+        # for i in self.internal_nodes:
+        #      self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) - sum(self.x[j,i] for j in self.in_nodes[i]) >=1)
 
         #if edge is selected, then there must be flow to at least on terminal through that edge
         for i,j in self.edges:
@@ -205,7 +212,10 @@ class ConstructGraph:
     def build(self, LinTree, seq_labs ):
         T = LinTree.T
         root = LinTree.root
+        
         id = LinTree.id
+        # if id ==8:
+        #      print('here')
         G = nx.DiGraph()
         seq_weights = {}
         iso_weights = {}
@@ -256,7 +266,7 @@ class ConstructGraph:
                                 seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
                                 if self.iso_costs[i,j] == np.Inf:
                                         print("warning, impossible edge")
-                                iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
+                                # iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
                 
                 #insert polytomy nodes and add edges to Graph
                 if degree > 2:
@@ -269,29 +279,62 @@ class ConstructGraph:
 
                     
                     for j in range(1, max_node+1):
-                            if node_counts[j] > 1 and node_counts[j] <= degree:
-                                max_outdegree[name_node(id,n,j,True)] = degree
-                                self.node_isotypes[name_node(id,n,j,True)] = j
-                                poly_nodes_added.append(name_node(id,n,j,True))
+                            # if node_counts[j] > 1:
+                                p_node = name_node(id,n,j,True)
+                                max_outdegree[p_node] = degree
+                                self.node_isotypes[p_node] = j
+                                G.add_node(p_node)
+                                poly_nodes_added.append(p_node)
                                 for i in nodes_to_states[n]:
                                     if i < j:
                                         G.add_edge(name_node(id,n,i), name_node(id,n,j,True))
                                         seq_weights[name_node(id,n,i), name_node(id,n,j,True)] = 0
                                         if self.iso_costs[i,j] == np.Inf:
                                              print("warning, impossible edge")
-                                        iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
+                                        # iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
+                                
+                                for k in range(1, j):
+                                     if name_node(id,n,k,True) in G.nodes:
+                                          G.add_edge(name_node(id,n,k,True), p_node)
+                                          seq_weights[name_node(id,n,k,True),p_node] = 0
+
                                 
                                 for v in T.neighbors(n):
                                         is_leaf=T.out_degree[v]==0
-                                        if j in nodes_to_states[v]:
-                            
-                                            G.add_edge(name_node(id,n,j,True), name_node(id,v,j, is_leaf=is_leaf))
-                                            seq_weights[name_node(id,n,j,True),name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
-                                            iso_weights[name_node(id,n,j,True), name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[j,j]
+                                        for s in nodes_to_states[v]:
+                                             if j <= s:
+                                                G.add_edge(name_node(id,n,j,True), name_node(id,v,s, is_leaf=is_leaf))
+                                                seq_weights[name_node(id,n,j,True),name_node(id,v,s,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                                                # iso_weights[name_node(id,n,j,True), name_node(id,v,s,is_leaf=is_leaf)] = self.iso_costs[j,j]
+
+                                        # if j in nodes_to_states[v]:                           
+                                        #     G.add_edge(name_node(id,n,j,True), name_node(id,v,j, is_leaf=is_leaf))
+                                        #     seq_weights[name_node(id,n,j,True),name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                                        #     # iso_weights[name_node(id,n,j,True), name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[j,j]
 
             if len(node_exc_list) >0:
                  mut_exc_list.append(node_exc_list)   
-
+        bad_nodes = []
+        while True:
+            for n in G.nodes:
+            
+                if n == self.root_identifier:
+                    continue
+                if len(list(G.neighbors(n))) == 1:
+                    bad_nodes.append(n)
+            if len(bad_nodes) ==0:
+                 break
+            for b in bad_nodes:
+                G.remove_node(b)
+                del self.node_isotypes[b]
+                del max_outdegree[b]
+            bad_nodes =[]
+          
+        for u,v in G.edges:
+            s = self.node_isotypes[u]
+            t =  self.node_isotypes[v]
+            iso_weights[u,v] = self.iso_costs[int(s),int(t)]
+        
         fg = FlowGraph(id, G, seq_weights, iso_weights, max_outdegree, self.node_isotypes, mut_exc_list)
         self.Graphs.append(fg)
         return fg
@@ -377,13 +420,40 @@ class FlowGraph:
                          
                      
 # T = nx.DiGraph()
-# # T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
 
-# # T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd'), ('r', 'e'), ('r', 'f'), ('r', 'g')])
+# T.add_edges_from([ ('naive', 'r') ,('r', 'a') , ('r','b'), ('r', 'c'), ('r', 'd'), ('r','e')])
+# #iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
+# sequences = {n: ['a,a'] for n in T.nodes}
+# iso_costs = {(0,0): 0.55, (0,1): 0.44, (0,2): 0.005, (0,3): 0.005,
+#               (1,1): 0.55, (1,2):  0.44, (1,3): 0.05, 
+#               (2,2): 0.55, (2,3): 0.44, 
+#               (3,3): 1  }
+# iso_costs_log = {}
+# for key in iso_costs:
+#      iso_costs[key] = -1*np.log(iso_costs[key])
+
+
+# isotypes  = {'naive': 0, 'a': 1, 'b':1, 'c': 2, 'd':3, 'e':3}
+
+# lt1 =LineageTree(T,'naive', 0)
+# # # lt2 =LineageTree(T,'root', 1)
+# lt1.save_png("test/start_tree.png", isotypes)
+# cg = ConstructGraph(iso_costs, isotypes, root_identifier="naive")
+
+# fg = cg.build(lt1, sequences) 
+# fg.save_graph("test/G1.png")
+# score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list, root="naive").run()
+
+# lt2 = LineageTree(T2, "naive", 0)
+# print(f"score: {score}")
+# lt2.save_png("test/out_tree3.png", fg.isotypes)
+
+# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
+
+# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd'), ('r', 'e'), ('r', 'f'), ('r', 'g')])
 # T.add_edges_from([ ('naive', 'r') ,('r', 'a') , ('r','b'), ('r', 'c'), ('c', 'd'), ('c', 'e'), ('c', 'f')])
 
-# iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
-# sequences = {n: ['a,a'] for n in T.nodes}
+
 
 # iso_costs = {}
 # for i in range(10):
@@ -396,17 +466,7 @@ class FlowGraph:
 
 
 # isotypes  = {'naive': 0, 'a': 2, 'b':2, 'd': 3, 'f':2, 'e': 3}
-# lt1 =LineageTree(T,'naive', 0)
-# # lt2 =LineageTree(T,'root', 1)
-# lt1.save_png("test/start_tree.png", isotypes)
-# cg = ConstructGraph(iso_costs, isotypes, root_identifier="naive")
 
-# fg = cg.build(lt1, sequences) 
-# fg.save_graph("test/G1.png")
-# score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list, root="naive").run()
-
-# lt2 = LineageTree(T2, "naive", 0)
-# lt2.save_png("test/out_tree.png", fg.isotypes)
 
 
 

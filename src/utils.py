@@ -123,5 +123,13 @@ def pickle_load(fname):
     return obj
    
 
+def check_triangle_inequality(distance_matrix):
+    n = distance_matrix.shape[0]
+    for i in range(n):
+        for j in range(n):
+            for k in range(n):
+                if distance_matrix[i, k] > distance_matrix[i, j] + distance_matrix[j, k]:
+                    return False
+    return True
 # tm = fit_dirichlet(2,6)
 # print(tm.sum(axis=1))

@@ -24,5 +24,20 @@ class Score:
     def save_score(self, fname, alpha):
          with open(fname, 'w+') as file:
             file.write(f"{alpha},{self.objective},{self.seq_obj},{self.iso_obj}\n")
+    
+    def check_score(self, weights):
+       
+        iso = self.isotypes
+        score = 0
+
+        nodes = self.tree.preorder_traversal()
+        for n in nodes:
+            t= iso[n]
+            for c in self.tree.children(n):
+                s = iso[c]
+                score += weights[t,s]
+        assert round(score,3) == round(self.iso_obj,3)
+        print(f"Score: {score} Iso Obj: {self.iso_obj}")
+        return score
 
 

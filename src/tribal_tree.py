@@ -96,21 +96,27 @@ class TribalSub:
         return Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
+            # if lin_tree.id ==11:
+            #     lin_tree.save_png(f"test/init_tree_{lin_tree.id}.png", isotype_labels)
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
        
                 # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
             seq_score, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
             st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound,root=self.root_id,  lamb=self.alpha )
-            obj, tree = st.run()
+            iso_score, tree = st.run()
+            # print(f"tree: {lin_tree.id} obj: {iso_score}")
             out_tree, out_iso = cg.decodeTree(tree)
             
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
             seq_score, seq_labels = out_lt.sequence_parismony(alignment)
-            iso_score = (obj - (self.alpha*seq_score))/(1-self.alpha)
+            obj = self.alpha*seq_score + ( 1- self.alpha)*iso_score
+            # iso_score = (obj - (self.alpha*seq_score))/(1-self.alpha)
+            sc = Score(obj, seq_score, iso_score, seq_labels, out_iso, out_lt)
+            sc.check_score(self.iso_weights)
 
-            return Score(obj, seq_score, iso_score, seq_labels, out_iso, out_lt)
+            return sc 
 
       
     
@@ -490,23 +496,26 @@ if __name__ == "__main__":
     # isotypes = f"{path}/input/{clonotype}/isotype.fasta"
     # encoding = "/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt"
     # transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"
-    # mode= "refine"
+    # # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
+    # mode= "refine_ilp"
     # args = parser.parse_args([
     #     "-a", alignment,
     #     "-i", isotypes,
     #     "-t", transmat,
+    #     "--nworkers", "10",
     #     "-r", "naive",
     #     "--candidates" ,candidates,
     #     "-e", encoding,
     #     "--mode", mode,
     #     # "--all_obj", f"test/{mode}.csv",
-    #     "--png", f"test/{mode}.png",
+    #     "--png", f"test/{mode}3.png",
     #     "--ntrees", "2",
     #     "--all_optimal_sol", "test/opt_tree",
     #      "--tree", f"test/{mode}.txt",
     #     "--sequences", f"test/{mode}_seq.csv",
     #     "--iso_infer", f"test/{mode}_iso.csv",
-    #     "--best_tree_diff", f"test/best_tree_rf.csv"
+    #     "--best_tree_diff", f"test/best_tree_rf.csv",
+    #     "--pickle_best", f"test/{mode}3.pickle"
     # ])
   
 
@@ -553,8 +562,9 @@ if __name__ == "__main__":
     
     isotype_weights= None 
     if args.transmat is not None:
-       isotype_weights, states = ut.convert_transmat_to_weights(np.loadtxt(args.transmat))
 
+        isotype_weights, states = ut.convert_transmat_to_weights(np.loadtxt(args.transmat))
+   
 
 
     if args.candidates is not None:
@@ -697,6 +707,8 @@ if __name__ == "__main__":
 
     if args.output is not None:
         lin_forest_out.save_forest(args.output)
+    
+
     
     if args.png is not None:
         best_tree.save_png(args.png, best_result.isotypes, isotype_encoding)
