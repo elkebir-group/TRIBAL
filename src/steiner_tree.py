@@ -28,7 +28,8 @@ class SteinerTree:
     def __init__(self, G, seq_weights, iso_weights, outdegree_bound, mut_exc_list=[], root=0, lamb=0.9, threads=3) -> None:
         self.m = gp.Model('steiner')
         self.m.Params.LogToConsole = 0
-        self.m.setParam(GRB.Param.Threads, threads)
+        self.m.Params.Threads = 3
+        
         self.terminals = [v for v in G if G.out_degree[v]==0]
         self.nodes = list(G.nodes)
         self.root= root
@@ -38,6 +39,7 @@ class SteinerTree:
         #create a tuple of terminals and edges 
         self.f = self.m.addVars(self.flow_dest, name='flow', lb=0.0)
         self.x = self.m.addVars(self.edges, vtype=GRB.BINARY, name="edges")
+        self.z = self.m.addVars(self.internal_nodes, vtype=GRB.BINARY, name="node use")
         self.iso_weights = iso_weights
         self.seq_weights = seq_weights
 
@@ -54,14 +56,18 @@ class SteinerTree:
         self.m.setObjective( sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
 
 
+        for i in self.internal_nodes:
+            self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) >= 2*self.z[i])
+        
+            self.m.addConstr(1e5*self.z[i] >= sum(self.x[i,j] for j in self.out_nodes[i]))
 
         #ensure only 1 node is selected when multiple candidate isotypes exist
         for node_list in mut_exc_list:
             cand_edges_in = []
             for n in node_list:
-                successors = G.predecessors(n)
-                for s in successors:
-                     cand_edges_in.append((s,n))
+                predeccessors = G.predecessors(n)
+                for p in predeccessors:
+                     cand_edges_in.append((p,n))
 
                      
             self.m.addConstr(sum(self.x[i,j] for i,j in cand_edges_in )<=1)
@@ -113,7 +119,7 @@ class SteinerTree:
                     #    break
 
             else:
-                 print("Warning mdoel infeasible")
+                 print("Warning model infeasible")
                  score = np.Inf
     
             # for t in self.terminals:
@@ -305,7 +311,7 @@ class ConstructGraph:
                                              if j <= s:
                                                 G.add_edge(name_node(id,n,j,True), name_node(id,v,s, is_leaf=is_leaf))
                                                 seq_weights[name_node(id,n,j,True),name_node(id,v,s,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
-                                                # iso_weights[name_node(id,n,j,True), name_node(id,v,s,is_leaf=is_leaf)] = self.iso_costs[j,j]
+                                                iso_weights[name_node(id,n,j,True), name_node(id,v,s,is_leaf=is_leaf)] = self.iso_costs[j,j]
 
                                         # if j in nodes_to_states[v]:                           
                                         #     G.add_edge(name_node(id,n,j,True), name_node(id,v,j, is_leaf=is_leaf))
@@ -314,6 +320,9 @@ class ConstructGraph:
 
             if len(node_exc_list) >0:
                  mut_exc_list.append(node_exc_list)   
+        
+        #turn back on
+        #post-process graph to remove potential unifurcations
         bad_nodes = []
         while True:
             for n in G.nodes:

@@ -36,7 +36,7 @@ class TribalSub:
 
         if isotype_weights is None:
          
-
+            print("isotype weights is none, using standard cost function")
             #use unweighted sankoff cost function
             self.states = [i for i in range(n_isotypes)]
             self.iso_weights = {}
@@ -59,8 +59,7 @@ class TribalSub:
                 self.iso_weights = isotype_weights
                 self.states = list(set([s for s,t in self.iso_weights]))
 
-  
-    
+
         self.alpha=alpha
         self.alphabet = alphabet
 
@@ -98,12 +97,14 @@ class TribalSub:
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
             # if lin_tree.id ==11:
             #     lin_tree.save_png(f"test/init_tree_{lin_tree.id}.png", isotype_labels)
+  
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
        
                 # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
             seq_score, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
-            st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound,root=self.root_id,  lamb=self.alpha )
+            # fg.save_graph(f"test/graphs/G{lin_tree.id}.png")
+            st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list,root=self.root_id,  lamb=self.alpha )
             iso_score, tree = st.run()
             # print(f"tree: {lin_tree.id} obj: {iso_score}")
             out_tree, out_iso = cg.decodeTree(tree)
@@ -463,30 +464,39 @@ if __name__ == "__main__":
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
     # path = "/scratch/projects/tribal/benchmark_pipeline"
-    # n = 65
-    # k = 75
+    # n = 35
+    # k = 25
     # r = 1
-    # ttype = "direct"
-    # clonotype = 12
+    # ttype = "seq"
+    # clonotype = 4
     # alignment= f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta"
     # isotypes = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes"
     # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
     # candidates = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree"
     # encoding = f"{path}/sim_encoding.txt"
+    # mode= "refine_ilp"
     
     # args = parser.parse_args([
     #     "-a", alignment,
     #     "-i", isotypes,
     #     "-t", transmat,
+    #     "--nworkers", "10",
     #     "-r", "naive",
     #     "--candidates" ,candidates,
     #     "-e", encoding,
-    #     "--mode", "refine",
-    #     "--all_obj", "test/temp.txt",
-    #     "--png", "test/heuristic.png",
-    #     "--combined_tree", "test/combined_tree.png",
-    #     "--best_ilp", "test/best_ilp_heuristic.png"
+    #     "--mode", mode,
+    #     # "--all_obj", f"test/{mode}.csv",
+    #     "--png", f"test/{mode}.png",
+    #     "--ntrees", "1",
+    #     "--all_optimal_sol", "test/opt_tree",
+    #      "--tree", f"test/{mode}.txt",
+    #     "--sequences", f"test/{mode}_seq.csv",
+    #     "--iso_infer", f"test/{mode}_iso.csv",
+    #     "--best_tree_diff", f"test/best_tree_rf.csv",
+    #     "--pickle_best", f"test/{mode}.pickle",
+    #     "--score", f"test/{mode}.scores.csv"
     # ])
+
    
 
     # path = "/scratch/projects/tribal/experimental_data/day_14"
@@ -682,13 +692,13 @@ if __name__ == "__main__":
             for res in all_results:
                 file.write(f"{res.tree.id},{args.alpha},{res.objective},{res.seq_obj},{res.iso_obj}\n")
     #randomly pick the best result if there are multiple trees with the same optimal objective
-    top_score = best_results[0].objective
-    tied_trees = []
-    for res in best_results:
-        if res.objective ==top_score:
-            tied_trees.append(res)
-    rng = np.random.default_rng(args.seed)
-    best_result = rng.choice(tied_trees, 1)[0]
+    # top_score = best_results[0].objective
+    # tied_trees = []
+    # for res in best_results:
+    #     if res.objective ==top_score:
+    #         tied_trees.append(res)
+    # rng = np.random.default_rng(args.seed)
+    # best_result = rng.choice(tied_trees, 1)[0]
     best_result = best_results[0]
     
     best_tree= best_result.tree
