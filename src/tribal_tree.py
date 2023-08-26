@@ -26,7 +26,8 @@ class TribalSub:
                 alphabet= ("A", "C", "G", "T","N", "-"), 
                 timeout=2, 
                 nworkers=1, 
-                root_id="naive" ):
+                root_id="naive",
+                reversible=False ):
 
         
         #abort search after timeout hours
@@ -35,16 +36,22 @@ class TribalSub:
 
 
         if isotype_weights is None:
+
+            if not reversible:
+                rev_val = np.Inf
+            else:
+                rev_val = 0
+
          
             print("isotype weights is none, using standard cost function")
-            #use unweighted sankoff cost function
+                #use unweighted sankoff cost function
             self.states = [i for i in range(n_isotypes)]
             self.iso_weights = {}
 
             for s in range(n_isotypes):
                 for t in range(n_isotypes):
                     if s > t:
-                        self.iso_weights[s,t] = np.Inf
+                        self.iso_weights[s,t] = rev_val
                     elif s < t:
                         self.iso_weights[s,t] = 1
                     else:
@@ -145,7 +152,7 @@ class TribalSub:
                     cand_tribal.set_tree(t)            
                     count += 1
             
-                    current_result = self.refine(cand_tribal, alignment, isotype_labels)
+                    current_result = self.refine_ilp(cand_tribal, alignment, isotype_labels)
 
                  
                     if current_result.improvement(best_result):
@@ -446,6 +453,8 @@ if __name__ == "__main__":
     parser.add_argument( "--all_pngs", action="store_true")
     parser.add_argument( "--sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
     parser.add_argument("--score",  type=str, help="filename of the objective function value objective function value")
+    parser.add_argument("--reversible",  action="store_true", 
+                        help="a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized and irreversiblility is ignored)")
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
     # parser.add_argument( "--ilp_sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
     # parser.add_argument("--ilp_tree",  type=str, help="outputfile of best tree")
@@ -467,33 +476,36 @@ if __name__ == "__main__":
     # n = 35
     # k = 25
     # r = 1
-    # ttype = "seq"
-    # clonotype = 4
+    # ttype = "direct"
+    # clonotype = 20
     # alignment= f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta"
     # isotypes = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes"
     # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
     # candidates = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree"
+    # lf =  f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine_ilp/20/forest.pickle"
     # encoding = f"{path}/sim_encoding.txt"
-    # mode= "refine_ilp"
+    # mode= "search"
     
     # args = parser.parse_args([
     #     "-a", alignment,
     #     "-i", isotypes,
     #     "-t", transmat,
-    #     "--nworkers", "10",
+    #     "--nworkers", "1",
     #     "-r", "naive",
-    #     "--candidates" ,candidates,
+    #     # "--candidates" ,candidates,
+    #     "-l", lf,
+    #     "--forest",
     #     "-e", encoding,
     #     "--mode", mode,
     #     # "--all_obj", f"test/{mode}.csv",
     #     "--png", f"test/{mode}.png",
     #     "--ntrees", "1",
-    #     "--all_optimal_sol", "test/opt_tree",
+    #     # "--all_optimal_sol", "test/opt_tree",
     #      "--tree", f"test/{mode}.txt",
     #     "--sequences", f"test/{mode}_seq.csv",
     #     "--iso_infer", f"test/{mode}_iso.csv",
-    #     "--best_tree_diff", f"test/best_tree_rf.csv",
-    #     "--pickle_best", f"test/{mode}.pickle",
+    #     # "--best_tree_diff", f"test/best_tree_rf.csv",
+    #     # "--pickle_best", f"test/{mode}.pickle",
     #     "--score", f"test/{mode}.scores.csv"
     # ])
 
@@ -599,7 +611,7 @@ if __name__ == "__main__":
               
 
 
-    tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root)
+    tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
     ncells = len(lin_forest.alignment)
     print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 

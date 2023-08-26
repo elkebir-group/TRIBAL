@@ -7,6 +7,9 @@ from utils import save_dict
 import os 
 import pickle 
 import pygraphviz as pgv
+from pandas import DataFrame
+from utils import hamming_distance
+from collections import Counter
 
 
 
@@ -27,9 +30,12 @@ class LineageTree:
         return list(nx.dfs_preorder_nodes(self.T, source=self.root))
 
     def parent(self,n):
-        if n == self.root:
+        preds = list(self.T.predecessors(n))
+        if len(preds) ==0:
             return None
-        return list(self.T.predecessors(n))[0]
+    
+        
+        return preds[0]
     
     def children(self,n):
         return list(self.T.neighbors(n))
@@ -62,6 +68,21 @@ class LineageTree:
     def set_tree(self, tree):
         self.T= tree
     
+    def root_to_tip(self):
+        kids = self.children(self.root)
+  
+        if len(kids) ==1:
+            new_root = "root_0"
+            for k in kids:
+                self.T.add_edge(new_root, k)
+                self.T.remove_edge(self.root, k)
+            self.T.add_edge(new_root, self.root)
+
+    def root_outgroup(self, outgroup):
+        self.T.remove_node(outgroup)
+        self.T.add_edge(outgroup, self.root)
+        self.root = outgroup
+    
     @staticmethod
     def find_leaf_descendants(node, graph):
         leaf_descendants = set()
@@ -88,6 +109,22 @@ class LineageTree:
             return (0.5*len(t1.symmetric_difference(t2)))
 
 
+    def get_state_changes(self, node, labels, nisotypes):
+        counts =np.zeros(shape=(nisotypes, nisotypes))
+        path = nx.shortest_path(self.T, source=self.root, target=node)
+        for i,n in enumerate(path):
+            if i ==len(path)-1:
+                break
+            iso_par = labels[n]    
+            iso_child = labels[path[i+1]] 
+            counts[iso_par, iso_child] += (iso_child != iso_par)
+        return counts 
+
+
+
+    def pickle_tree(self, fname):
+        with open(fname, 'wb') as file:
+                pickle.dump(self, file)
 
     def get_clade_set(self, tree):
         clade_set = []
@@ -118,8 +155,16 @@ class LineageTree:
     
         return seq_score, iso_score, anc_labels, iso_labels
 
+    def number_of_changes(self, labels):
 
-    
+        nodes = set(self.T.nodes) 
+        keys = set(labels.keys())
+        #check that every node has a label
+        if nodes <= keys:
+            return sum([hamming_distance(labels[u], labels[v]) for u,v in self.T.edges])
+        else:
+            print("Warning: labels were not provided for all nodes!")
+            return np.NAN
     # @staticmethod
     # def convert_transmat_to_weights(transmat):
 
@@ -160,6 +205,90 @@ class LineageTree:
     
         parents = self.get_parents()
         save_dict( parents, fname)
+    
+    def save_edges(self, fname):
+        with open(fname, "w+") as file:
+            for u,v in self.T.edges:
+                file.write(f"{u},{v}\n")
+    
+    def get_edge_df(self):
+        
+        u_list =[u for u,v in self.T.edges]
+        v_list = [v for u,v in self.T.edges]
+        return DataFrame({'parent': u_list, 'child': v_list})
+    
+    @staticmethod
+    def compute_purity(labels):
+        label_counts = Counter(labels)
+        majority_label = label_counts.most_common(1)[0][0]
+        total_samples = len(labels)
+        purity = label_counts[majority_label] / total_samples
+        return purity
+
+    @staticmethod
+    def compute_entropy(labels):
+        label_counts = Counter(labels)
+        total_samples = len(labels)
+        probabilities = np.array(list(label_counts.values())) / total_samples
+        entropy = -np.sum(probabilities * np.log2(probabilities))
+        return entropy
+
+
+    def get_clade_nodes(self, node):
+        clade_nodes = [node]  # Start with the provided node
+
+        successors = list(self.T.successors(node))
+        while successors:
+            clade_nodes.extend(successors)
+            successors = [child for successor in successors for child in self.T.successors(successor)]
+
+        return clade_nodes
+    
+    def avg_node_score(self, func,labels):
+        node_score =[]
+
+        for n in self.T:
+            #skip the germline unifurication
+            if n == self.root and self.T.out_degree[n]==1:
+                continue
+            # nodes = self.get_clade_nodes(n)
+            nodes = self.find_leaf_descendants(n, self.T)
+            clade_labels = [labels[n] for n in nodes]
+            purity = func(clade_labels)
+ 
+            node_score.append(purity)
+        
+        return np.mean(node_score)
+    
+    def avg_purity(self, labels):
+        return self.avg_node_score(self.compute_purity, labels)
+
+    def avg_entropy(self, labels):
+        return self.avg_node_score(self.compute_entropy, labels)
+
+    
+    def collapse(self, labels, ignore=[]):
+        leaves = [n for n in self.T if self.T.out_degree[n]==0]
+        ignore = ignore + leaves
+        if set(self.T.nodes) <= set(labels.keys()):
+
+            nodes = self.preorder_traversal()
+            for n in nodes:
+                if n==self.root or n in ignore:
+                    continue
+                children = list(self.T.neighbors(n))
+                
+                dist = sum([hamming_distance(labels[n], labels[c]) for c  in children])
+          
+                if dist ==0:
+                    print(f"collapsing node {n}")
+                    gp= list(self.T.predecessors(n))[0]
+                    self.T.remove_node(n)
+                    for c in children:
+              
+                        self.T.add_edge(gp, c)
+
+          
     
 
 

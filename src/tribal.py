@@ -125,6 +125,7 @@ class Tribal:
             best_tree_ids = {}
             observed_data = {}
             for i,c in enumerate(self.clonotypes):
+                    print(f'clonotype {c}')
                     ts = TribalSub( isotype_weights=transmat,alpha=self.alpha, nworkers=nproc)
                     all_scores = ts.forest_mode(candidates[c], mode=self.mode)
                     best_score, best_trees, best_ids = self.find_best_scores(all_scores)
@@ -167,6 +168,7 @@ class Tribal:
         results = []
         for t in init_mat_lists:
             results.append(self.fit(t, nproc))
+
 
         # with Pool(nproc) as p:
         #     results = p.map(self.fit, init_mat_lists)
@@ -212,7 +214,7 @@ class Tribal:
             print("\nFitting transition matrix...")
             cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
 
-
+            DrawStateDiag(transmat).heatmap(f"/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2/tribal/refine_ilp/temp/transmat_{i}.png")
          
             print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score} Curr EM Log Like: {cur_log_like}")
             

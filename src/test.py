@@ -1,4 +1,3 @@
-
 import numpy as np
 from utils import pickle_load
 tmat_fname = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"

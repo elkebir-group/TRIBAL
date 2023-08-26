@@ -92,7 +92,7 @@ class SteinerTree:
             self.m.addConstr(sum(self.f[t,i,t] for i in self.in_nodes[t])==1)
             self.m.addConstr(sum(self.f[t,t,j] for j in self.out_nodes[t])==0)
             self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
-        print("model initialized..")
+ 
     
     
     def run(self):
@@ -210,16 +210,26 @@ class ConstructGraph:
         
         self.Graphs = []
         self.iso_costs = iso_costs
+
         self.iso_labs = isotypes
         self.root_identifier = root_identifier
         self.node_isotypes = {}
 
+        for i,j in self.iso_costs:
+             if j >= i:
+                  if np.isinf(self.iso_costs[i,j]):
+                       print(self.iso_costs[i,j])
+                       print(self.iso_costs)
+                  assert(not np.isinf(self.iso_costs[i,j]))
+                  
 
     def build(self, LinTree, seq_labs ):
+
         T = LinTree.T
         root = LinTree.root
         
         id = LinTree.id
+        # print(f"Building graph for tree {id}....")
         # if id ==8:
         #      print('here')
         G = nx.DiGraph()
@@ -271,7 +281,8 @@ class ConstructGraph:
                                 G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
                                 seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
                                 if self.iso_costs[i,j] == np.Inf:
-                                        print("warning, impossible edge")
+                                        
+                                        print(f"warning, impossible edge i: {i} j: {j} cost: {self.iso_costs[i,j]}")
                                 # iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
                 
                 #insert polytomy nodes and add edges to Graph
@@ -296,7 +307,8 @@ class ConstructGraph:
                                         G.add_edge(name_node(id,n,i), name_node(id,n,j,True))
                                         seq_weights[name_node(id,n,i), name_node(id,n,j,True)] = 0
                                         if self.iso_costs[i,j] == np.Inf:
-                                             print("warning, impossible edge")
+                                                print(f"warning, impossible edge i: {i} j: {j} cost: {self.iso_costs[i,j]}")
+
                                         # iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
                                 
                                 for k in range(1, j):
@@ -327,7 +339,7 @@ class ConstructGraph:
         while True:
             for n in G.nodes:
             
-                if n == self.root_identifier:
+                if n == self.root_identifier or "Germline" in n:
                     continue
                 if len(list(G.neighbors(n))) == 1:
                     bad_nodes.append(n)
