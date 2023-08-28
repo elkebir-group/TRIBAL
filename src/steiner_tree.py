@@ -64,7 +64,8 @@ class SteinerTree:
             
             #flow conversvation on the internal nodes
             for v in self.internal_nodes:
-                self.m.addConstr(sum(self.f[t,i,v] for i in self.in_nodes[v])== sum(self.f[t,v,j] for j in self.out_nodes[v]), "flow conservation") #flow conservation
+                self.m.addConstr(sum(self.f[t,i,v] for i in self.in_nodes[v])==  \
+                                 sum(self.f[t,v,j] for j in self.out_nodes[v]), "flow conservation") 
             
             #ensures 1 unit of flow reaches each termminal
             self.m.addConstr(sum(self.f[t,i,t] for i in self.in_nodes[t])==1)
