@@ -102,25 +102,32 @@ class TribalSub:
         return Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
-            # if lin_tree.id ==11:
-            #     lin_tree.save_png(f"test/init_tree_{lin_tree.id}.png", isotype_labels)
+          
+            # lin_tree.save_png(f"test/init_tree{lin_tree.id}.png", isotype_labels)
   
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
        
                 # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
-            seq_score, seq_labels = lin_tree.sequence_parismony(alignment)
+            seq_score_prior, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
+            # fg.save_graph("test/flow_graph.png")
             # fg.save_graph(f"test/graphs/G{lin_tree.id}.png")
-            st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list,root=self.root_id,  lamb=self.alpha )
-            iso_score, tree = st.run()
+            st = SteinerTree(fg.G, fg.find_terminals(), fg.seq_weights, fg.iso_weights,root=self.root_id, lamb=self.alpha, threads=1 )
+            obj, tree = st.run()
             # print(f"tree: {lin_tree.id} obj: {iso_score}")
             out_tree, out_iso = cg.decodeTree(tree)
             
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
+            # out_lt.save_png(f"test/out_tree{lin_tree.id}.png", out_iso)
+
+            #TODO: Speed up by not recomputing the sequences 
+
             seq_score, seq_labels = out_lt.sequence_parismony(alignment)
-            obj = self.alpha*seq_score + ( 1- self.alpha)*iso_score
-            # iso_score = (obj - (self.alpha*seq_score))/(1-self.alpha)
+            assert seq_score_prior ==seq_score
+
+            iso_score =(obj - self.alpha*seq_score)/ (1-self.alpha)
+
             sc = Score(obj, seq_score, iso_score, seq_labels, out_iso, out_lt)
             sc.check_score(self.iso_weights)
 
@@ -476,15 +483,15 @@ if __name__ == "__main__":
     # n = 35
     # k = 25
     # r = 1
-    # ttype = "direct"
-    # clonotype = 20
+    # ttype = "seq"
+    # clonotype = 15
     # alignment= f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta"
     # isotypes = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes"
     # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
     # candidates = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree"
     # lf =  f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine_ilp/20/forest.pickle"
     # encoding = f"{path}/sim_encoding.txt"
-    # mode= "search"
+    # mode= "refine_ilp"
     
     # args = parser.parse_args([
     #     "-a", alignment,
@@ -492,9 +499,9 @@ if __name__ == "__main__":
     #     "-t", transmat,
     #     "--nworkers", "1",
     #     "-r", "naive",
-    #     # "--candidates" ,candidates,
-    #     "-l", lf,
-    #     "--forest",
+    #     "--candidates" ,candidates,
+    #     # "-l", lf,
+    #     # "--forest",
     #     "-e", encoding,
     #     "--mode", mode,
     #     # "--all_obj", f"test/{mode}.csv",
@@ -504,7 +511,7 @@ if __name__ == "__main__":
     #      "--tree", f"test/{mode}.txt",
     #     "--sequences", f"test/{mode}_seq.csv",
     #     "--iso_infer", f"test/{mode}_iso.csv",
-    #     # "--best_tree_diff", f"test/best_tree_rf.csv",
+    #     "--best_tree_diff", f"test/best_tree_rf.csv",
     #     # "--pickle_best", f"test/{mode}.pickle",
     #     "--score", f"test/{mode}.scores.csv"
     # ])
@@ -653,7 +660,7 @@ if __name__ == "__main__":
       
             
             # lin.save_png(f"test/tree_{lin.id}.png", lin_forest.isotypes, isotype_encoding)
-    all_results =  tr.forest_mode(lin_forest, mode =args.mode)
+    all_results =  tr.forest_mode_loop(lin_forest, mode =args.mode)
 
     print(len(all_results))
     for a in all_results:
@@ -679,16 +686,16 @@ if __name__ == "__main__":
             if res.improvement(top_ntrees[-1]) or len(top_ntrees) < args.ntrees:
                 update_best_results(res, top_ntrees, args.ntrees)
 
-             
-    with open(args.best_tree_diff, "w+") as outfile:
-        outfile.write("tree1,tree2,rf\n")
-        for i,res1 in enumerate(best_results):
-            
+    if args.best_tree_diff is not None:       
+        with open(args.best_tree_diff, "w+") as outfile:
+            outfile.write("tree1,tree2,rf\n")
+            for i,res1 in enumerate(best_results):
+                
 
-            for j, res2 in enumerate(best_results):
-                if i < j:
-                    rf = res1.tree.rf_distance(res2.tree)
-                    outfile.write(f"{res1.tree.id},{res2.tree.id},{rf}\n")
+                for j, res2 in enumerate(best_results):
+                    if i < j:
+                        rf = res1.tree.rf_distance(res2.tree)
+                        outfile.write(f"{res1.tree.id},{res2.tree.id},{rf}\n")
     
 
 

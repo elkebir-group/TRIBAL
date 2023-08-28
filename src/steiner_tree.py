@@ -1,97 +1,114 @@
-
-
-
-#!/usr/bin/env python3.7
-
-# Copyright 2022, Gurobi Optimization, LLC
-
-# Solve a multi-commodity flow problem.  Two products ('Pencils' and 'Pens')
-# are produced in 2 cities ('Detroit' and 'Denver') and must be sent to
-# warehouses in 3 cities ('Boston', 'New York', and 'Seattle') to
-# satisfy supply/demand ('inflow[h,i]').
-#
-# Flows on the transportation network must respect arc capacity constraints
-# ('capacity[i,j]'). The objective is to minimize the sum of the arc
-# transportation costs ('cost[i,j]').
-
 import gurobipy as gp
 from gurobipy import GRB
 import networkx as nx
-from lineage_tree import LineageTree
 from utils import hamming_distance
-from collections import Counter
+from lineage_tree import LineageTree
 from dataclasses import dataclass 
 import numpy as np
-import matplotlib.pyplot as plt
+from itertools import combinations
 
 class SteinerTree:
-    def __init__(self, G, seq_weights, iso_weights, outdegree_bound, mut_exc_list=[], root=0, lamb=0.9, threads=3) -> None:
+    '''
+    Given an instance of the Steiner Minimal Tree Problem (G,S,c ) where G=(V,E), S is a subset of V and 
+    c is an edge weight mapping, finds a Steiner Tree in G where the sum of the edge weights is minimum
+    '''
+    def __init__(self, G, S, seq_weights, iso_weights, root=0, lamb=0.9, threads=3) -> None:
+        
+        #set solve parameters 
         self.m = gp.Model('steiner')
         self.m.Params.LogToConsole = 0
-        self.m.Params.Threads = 3
-        
-        self.terminals = [v for v in G if G.out_degree[v]==0]
-        self.nodes = list(G.nodes)
-        self.root= root
-        self.internal_nodes = [n for n in self.nodes if n not in self.terminals and n!= self.root ]
-        self.edges = list(G.edges)
-        self.flow_dest = [(t,i,j) for i,j in self.edges for t in self.terminals]
-        #create a tuple of terminals and edges 
-        self.f = self.m.addVars(self.flow_dest, name='flow', lb=0.0)
-        self.x = self.m.addVars(self.edges, vtype=GRB.BINARY, name="edges")
-        self.z = self.m.addVars(self.internal_nodes, vtype=GRB.BINARY, name="node use")
-        self.iso_weights = iso_weights
-        self.seq_weights = seq_weights
+        self.m.Params.Threads = threads
 
+
+        self.terminals = S
+        self.root= root
+        self.nodes = list(G.nodes)
+        self.edges = list(G.edges)
+        
+        self.internal_nodes = [n for n in self.nodes if n not in self.terminals and n!= self.root ]
         self.in_nodes = {j : [] for j in self.nodes}
         self.out_nodes = {j : [] for j in self.nodes}
         for i,j in self.edges:
                 self.in_nodes[j].append(i)
             
                 self.out_nodes[i].append(j)
-
-        # self.m.setObjective(lamb* sum(self.seq_weights[i,j]*self.x[i,j] for i,j in self.edges) + 
-        #                     (1-lamb)* sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
-
-        self.m.setObjective( sum(self.iso_weights[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
-
-
-        for i in self.internal_nodes:
-            self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) >= 2*self.z[i])
         
-            self.m.addConstr(1e5*self.z[i] >= sum(self.x[i,j] for j in self.out_nodes[i]))
+        #compute edge weights from the sequence and isotype weights 
+        self.c = {e:lamb* seq_weights[e] + (1-lamb) *iso_weights[e]for e in self.edges}
+
+        #create a tuple of terminals and edges 
+        self.flow_dest = [(t,i,j) for i,j in self.edges for t in self.terminals]
+        
+        #add a continuous flow variable 
+        self.f = self.m.addVars(self.flow_dest, name='flow', lb=0.0)
+
+        #add a binary variable indicating if edge i,j is included in the Steiner tree 
+        self.x = self.m.addVars(self.edges, vtype=GRB.BINARY, name="edges")
+
+        #we need this variable if we want to prevent unifurcations 
+        # self.z = self.m.addVars(self.internal_nodes, vtype=GRB.BINARY, name="node use")  
+
+         #minimize the sum of the edge weights of the Steiner Tree in G
+        self.m.setObjective( sum(self.c[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
+
+
+        #enforce that there is a single MRCA child of the root node 
+        self.m.addConstr(sum(self.x[self.root,j] for j in self.out_nodes[self.root] ) <= 1)
+        
+        # need to send 1 unit of flow from the root to each terminal
+        for t in self.terminals:
+
+            #enforce that a node only has flow if edge i,j is included in the minimal Steiner tree
+            self.m.addConstrs(
+                (self.f[t, i, j] <= self.x[i,j] for i,j in self.edges), "flow upper bound")
+            
+            #flow conversvation on the internal nodes
+            for v in self.internal_nodes:
+                self.m.addConstr(sum(self.f[t,i,v] for i in self.in_nodes[v])== sum(self.f[t,v,j] for j in self.out_nodes[v]), "flow conservation") #flow conservation
+            
+            #ensures 1 unit of flow reaches each termminal
+            self.m.addConstr(sum(self.f[t,i,t] for i in self.in_nodes[t])==1)
+            
+            # self.m.addConstr(sum(self.f[t,t,j] for j in self.out_nodes[t])==0)
+            
+            #ensure 1 unit of flow designated for each terminal leaves the root
+            self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
+
+
+        # for i in self.internal_nodes:
+        #     self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) >= 2*self.z[i])
+        
+        #     self.m.addConstr(1e5*self.z[i] >= sum(self.x[i,j] for j in self.out_nodes[i]))
+        
+        # for i in self.internal_nodes:
+        #     self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
+        
+        #     self.m.addConstr(1e5*self.z[i] >= sum(sum(self.x[i,j] for j in self.out_nodes[i])for t in self.terminals))
+
+        # for n,val in degree_max.items():
+        #         if len(self.out_nodes[n]) > 0:
+        #             self.m.addConstr(sum(self.x[n,j] for j in self.out_nodes[n]) <= val)
 
         #ensure only 1 node is selected when multiple candidate isotypes exist
-        for node_list in mut_exc_list:
-            cand_edges_in = []
-            for n in node_list:
-                predeccessors = G.predecessors(n)
-                for p in predeccessors:
-                     cand_edges_in.append((p,n))
-
-                     
-            self.m.addConstr(sum(self.x[i,j] for i,j in cand_edges_in )<=1)
+        # for node_list in mut_exc_list:
+        #     cand_edges_in = []
+        #     for n in node_list:
+        #         predeccessors = G.predecessors(n)
+        #         for p in predeccessors:
+        #              cand_edges_in.append((p,n))     
+            # self.m.addConstr(sum(self.x[i,j] for i,j in cand_edges_in )<=1)
     
 
-        for n,val in outdegree_bound.items():
-                self.m.addConstr(sum(self.x[n,j] for j in self.out_nodes[n]) <= val -1)
+                # if n in self.internal_nodes:
+                #      self.m.addConstr(sum(self.f[n,j,t] for j in self.out_nodes[n] for t in self.terminals) > 1)
         
         # for i in self.internal_nodes:
         #      self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) - sum(self.x[j,i] for j in self.in_nodes[i]) >=1)
 
         #if edge is selected, then there must be flow to at least on terminal through that edge
-        for i,j in self.edges:
-            self.m.addConstr(sum(self.f[t,i,j] for t in self.terminals) >= self.x[i,j])
-
-        for t in self.terminals:
-
-            self.m.addConstrs(
-                (self.f[t, i, j] <= self.x[i,j] for i,j in self.edges), "flow upper bound")
-            for v in self.internal_nodes:
-                self.m.addConstr(sum(self.f[t,i,v] for i in self.in_nodes[v])== sum(self.f[t,v,j] for j in self.out_nodes[v]), "flow conservation") #flow conservation
-            self.m.addConstr(sum(self.f[t,i,t] for i in self.in_nodes[t])==1)
-            self.m.addConstr(sum(self.f[t,t,j] for j in self.out_nodes[t])==0)
-            self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
+        # for i,j in self.edges:
+        #     self.m.addConstr(sum(self.f[t,i,j] for t in self.terminals) >= self.x[i,j])
+        
  
     
     
@@ -101,20 +118,15 @@ class SteinerTree:
             if self.m.Status == GRB.OPTIMAL:
                 solution = self.m.getAttr('X', self.x)
                 flow = self.m.getAttr('X', self.f)
-            
                 score = self.m.objVal
-        
-          
-
-                # for i,j in self.special_arcs:
-                #     print('%s -> %s: %g' % (i, j, polytomies[ i, j]))
-                
+   
                 for i,j in self.edges:
-                    if solution[i,j] > 0:
+               
+                    if solution[i,j] > 0.5:
                         T.add_edge(i,j)
                         # for t in self.terminals:
-                        #     if flow[t,i,j] > 0:
-                    #    print(f"edge {i} -> {j}")
+                        #     if flow[t,i,j] > 0.0:
+                        #        print(f"{t}:  edge {i} -> {j}")
             
                     #    break
 
@@ -122,62 +134,9 @@ class SteinerTree:
                  print("Warning model infeasible")
                  score = np.Inf
     
-            # for t in self.terminals:
-            #      for i,j in self.edges:
-            #           if flow[t,i,j] > 0:
-            #                print(f"terminal: {t} flow {i} -> {j}: {flow[t,i,j]}")
-                      
             
             return score, T
     
-
-                # print(states)
-       
-                # print("used edges in network")
-                # for i, j in self.all_arcs:
-                #         if solution[ i, j] > 0:
-                #             print('%s -> %s: %g' % (i, j, solution[ i, j]))
-                
-                # print("polytomies used")
-            #     for i,j in self.special_arcs:
-            #         if polytomies[i,j] > 0:
-            #             # print('%s -> %s' % (i, j))
-            #             t= int(i.split("_")[1])
-                        
-            #             for k in self.in_nodes[i]:
-            #                 if solution[k,i] > 0:
-                              
-            #                     child =k.split("_")[0]
-            #                     if t in poly_map:
-            #                         poly_map[t].append(child)
-            #                     else:
-            #                         poly_map[t] = [child]
-                                         
-            # return score, states, poly_map
-
-        
-
-        
-# G = nx.DiGraph()       
-# G.add_nodes_from(['r', 'd', 'e', 'f', 'g', 'a', 'b', 'c'])
-# G.add_edges_from([('r', 'd'), ('r', 'e'), ('d', 'a'), ('d','b'), ('d', 'c'), ('d','g'), ('g', 'a'), ('g', 'b'), ('e','a'), ('e', 'b'), ('e', 'c'), ('r','f') ])
-# labels = {'r': 0, 'f': 2, 'a': 1, 'b': 1, 'c': 2, 'd': 0, 'e': 1, 'g': 1 }
-# iso_weights = {}
-# seq_weights = {}
-
-# costs = {(0,0): 0.2, (0,1): 1, (0,2): 50, (1,1): 0.01, (1,2):  0.1 }
-# for i,j in G.edges:
-#     if labels[i] ==labels[j]:
-#         iso_weights[i,j] =1
-#     else:
-#         iso_weights[i,j]=2
-# # for i,j in G.edges:
-# #     iso_weights[i,j] =costs[(labels[i],labels[j])]
-#     seq_weights[i,j]=0
-# print(iso_weights)
-# score = SteinerTree(G,seq_weights, iso_weights, root='r', lamb=0).run()
-# print(score)
-
 
 #treeid_nodeid_isotype_polytomy
 def name_node(tree, node, label,  is_poly=False, is_leaf=False): 
@@ -227,40 +186,38 @@ class ConstructGraph:
 
         T = LinTree.T
         root = LinTree.root
-        
         id = LinTree.id
-        # print(f"Building graph for tree {id}....")
-        # if id ==8:
-        #      print('here')
+
         G = nx.DiGraph()
         seq_weights = {}
         iso_weights = {}
-        max_outdegree = {}
-        min_state = {}
+
         nodes_to_states = {}
         postorder =  list(nx.dfs_postorder_nodes(T, source=root))
-        mut_exc_list =[]
+    
+        out_degree_max = {}
+        leafset = []
         for n in postorder:
-            # if n == self.root_identifier:
-            #      print('here')
-            node_exc_list = []
+            
+           
+            node_extensions= []
+
             if T.out_degree[n] ==0:
                 iso = self.iso_labs[n]
 
                 new_node = name_node(id,n,iso, is_leaf=T)
                 G.add_node(new_node)
+                out_degree_max[new_node] = T.out_degree[n]
+                leafset.append(new_node)
                 self.node_isotypes[new_node] = iso
-                min_state[n] = self.iso_labs[n]
+   
                 nodes_to_states[n] = [self.iso_labs[n]]
                   
             elif T.out_degree[n] > 0: 
-                poly_nodes_added = []
-                degree = T.out_degree[n]
-                min_state[n] = min([min_state[v] for v in T.neighbors(n)])
+                desc = LinTree.find_leaf_descendants(n,T)
+                upper_bound = max(self.iso_labs[d] for d in desc)
                 nodes_to_states[n] =[]
-
-                for i in range(0, min_state[n]+1):
-              
+                for i in range(0, upper_bound+1):
                     if i > 0 and n in self.iso_labs:
                          break
                     if self.root_identifier == n:
@@ -271,7 +228,8 @@ class ConstructGraph:
 
             
                     G.add_node( new_node)
-                    node_exc_list.append(new_node)
+                    out_degree_max[new_node] = T.out_degree[n]
+                    node_extensions.append(new_node)
 
                     self.node_isotypes[new_node] = i
                     for v in T.neighbors(n):
@@ -283,93 +241,38 @@ class ConstructGraph:
                                 if self.iso_costs[i,j] == np.Inf:
                                         
                                         print(f"warning, impossible edge i: {i} j: {j} cost: {self.iso_costs[i,j]}")
-                                # iso_weights[new_node, name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[i,j]
-                
-                #insert polytomy nodes and add edges to Graph
-                if degree > 2:
-                   
-                    poly_node_states = []
-                    for v in T.neighbors(n):
-                         poly_node_states = poly_node_states + nodes_to_states[v]
-                    max_node = max(poly_node_states)
-                    node_counts = Counter(poly_node_states)
-
-                    
-                    for j in range(1, max_node+1):
-                            # if node_counts[j] > 1:
-                                p_node = name_node(id,n,j,True)
-                                max_outdegree[p_node] = degree
-                                self.node_isotypes[p_node] = j
-                                G.add_node(p_node)
-                                poly_nodes_added.append(p_node)
-                                for i in nodes_to_states[n]:
-                                    if i < j:
-                                        G.add_edge(name_node(id,n,i), name_node(id,n,j,True))
-                                        seq_weights[name_node(id,n,i), name_node(id,n,j,True)] = 0
-                                        if self.iso_costs[i,j] == np.Inf:
-                                                print(f"warning, impossible edge i: {i} j: {j} cost: {self.iso_costs[i,j]}")
-
-                                        # iso_weights[name_node(id,n,i), name_node(id,n,j,True)] = self.iso_costs[i,j]
-                                
-                                for k in range(1, j):
-                                     if name_node(id,n,k,True) in G.nodes:
-                                          G.add_edge(name_node(id,n,k,True), p_node)
-                                          seq_weights[name_node(id,n,k,True),p_node] = 0
-
-                                
-                                for v in T.neighbors(n):
-                                        is_leaf=T.out_degree[v]==0
-                                        for s in nodes_to_states[v]:
-                                             if j <= s:
-                                                G.add_edge(name_node(id,n,j,True), name_node(id,v,s, is_leaf=is_leaf))
-                                                seq_weights[name_node(id,n,j,True),name_node(id,v,s,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
-                                                iso_weights[name_node(id,n,j,True), name_node(id,v,s,is_leaf=is_leaf)] = self.iso_costs[j,j]
-
-                                        # if j in nodes_to_states[v]:                           
-                                        #     G.add_edge(name_node(id,n,j,True), name_node(id,v,j, is_leaf=is_leaf))
-                                        #     seq_weights[name_node(id,n,j,True),name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
-                                        #     # iso_weights[name_node(id,n,j,True), name_node(id,v,j,is_leaf=is_leaf)] = self.iso_costs[j,j]
-
-            if len(node_exc_list) >0:
-                 mut_exc_list.append(node_exc_list)   
-        
-        #turn back on
-        #post-process graph to remove potential unifurcations
-        bad_nodes = []
-        while True:
-            for n in G.nodes:
+                         
+                #sequence weights are always 0 because it's the name sequence
+            # if n != self.root_identifier and list(T.predecessors(n))[0] != self.root_identifier:
+                for u,v in combinations(node_extensions, 2):
+                        if self.node_isotypes[u] < self.node_isotypes[v]:
+                            G.add_edge(u,v)
+                            seq_weights[u,v] = 0
+                        elif self.node_isotypes[v] < self.node_isotypes[u]:
+                            G.add_edge(v,u)
+                            seq_weights[v,u] = 0
             
-                if n == self.root_identifier or "Germline" in n:
-                    continue
-                if len(list(G.neighbors(n))) == 1:
-                    bad_nodes.append(n)
-            if len(bad_nodes) ==0:
-                 break
-            for b in bad_nodes:
-                G.remove_node(b)
-                del self.node_isotypes[b]
-                del max_outdegree[b]
-            bad_nodes =[]
-          
+
         for u,v in G.edges:
             s = self.node_isotypes[u]
             t =  self.node_isotypes[v]
             iso_weights[u,v] = self.iso_costs[int(s),int(t)]
+
         
-        fg = FlowGraph(id, G, seq_weights, iso_weights, max_outdegree, self.node_isotypes, mut_exc_list)
+        fg = FlowGraph(id, G, seq_weights, iso_weights, self.node_isotypes)
         self.Graphs.append(fg)
         return fg
     
-    def combineGraphs(self):
-         graphs = [fg.G for fg in self.Graphs]
-         combined_graph = nx.compose_all(graphs)
-         seq_weights = {}
-         iso_weights = {}
-         for fg in self.Graphs:
-              seq_weights.update(fg.seq_weights)
-              iso_weights.update(fg.iso_weights)
+    # def combineGraphs(self):
+    #      graphs = [fg.G for fg in self.Graphs]
+    #      combined_graph = nx.compose_all(graphs)
+    #      seq_weights = {}
+    #      iso_weights = {}
+    #      for fg in self.Graphs:
+    #           seq_weights.update(fg.seq_weights)
+    #           iso_weights.update(fg.iso_weights)
         
-         return FlowGraph(0, combined_graph, seq_weights, iso_weights)
+    #      return FlowGraph(0, combined_graph, seq_weights, iso_weights)
         
     def decodeTree(self, tree, root_id="naive"):
          isotypes = {}
@@ -397,11 +300,12 @@ class FlowGraph:
      G: nx.DiGraph
      seq_weights: dict 
      iso_weights: dict
-     degree_bound: dict
      isotypes: dict
-     mut_exclusive_list: list
 
 
+     def find_terminals(self):
+          return  [v for v in self.G if self.G.out_degree[v]==0]
+     
      def save_graph(self, fname):
         color_encoding =  {
                 0 : "#f0f0f0",
@@ -429,22 +333,80 @@ class FlowGraph:
         node_colors = {n: color_encoding[val] for n,val in self.isotypes.items()}
 
         for node in pgv_graph.nodes():
-           
+            
             pgv_graph.get_node(node).attr["fillcolor"] = node_colors[node]
             pgv_graph.get_node(node).attr["style"] = "filled"
-    # Draw pygraphviz graph and save as PDF
+            if node != "naive":
+                pgv_graph.get_node(node).attr["label"] =  node.split("_")[0]
+            else:
+                pgv_graph.get_node(node).attr["label"] = "r"
+
         pgv_graph.draw(fname, prog="dot", format=ext)
 
-        # Save as PDF
-        # plt.savefig(fname)
-
+ 
                          
                      
 # T = nx.DiGraph()
+# T.add_edges_from([(0, 8), (8,7), (7,1), (7,2), (7,3), (7,10), (4,5), (4,6), (8,4),(8,9)])
+# isotypes  = {0: 0,  1:3, 2:0, 3:1, 5:2, 6:0, 9:3, 10:3}
+
+# # T.add_edges_from([('naive', 'w'), ('w','x'), ('w','y'), ('w','z')]) # (0,5)
+# # T= nx.relabel_nodes(T, {1:"f", 2:"b", 3:"c", 4:"d", 5:"e"})
+# # isotypes  = {'naive': 0,  'x':3, 'y':1, 'z':1, 5:3}
+
+
+# # T.add_edges_from([('naive', 0), (0,1), (1,2), (1,3), (1,4),(1,6), (0,5)])  # (0,5)
+# # isotypes  = {'naive': 0, "b":1, "c":3, "d":1, "e":2}  #5:2
+# iso_costs = {}
+# for u in range(4):
+#      for v in range(4):
+#           if u > v:
+#                continue
+#           elif u == v:
+#                 iso_costs[(u,v)] = 1
+#           elif v == u + 1:
+#                iso_costs[(u,v)] = 2
+#                 # iso_costs[(u,v)] = 0
+#           else:
+#                iso_costs[(u,v)] = 3
+#             #    iso_costs[(u,v)] = 10
+#             #    iso_costs[(u,v)] = 0   
+
+# # for key, val in iso_costs.items():
+# #      iso_costs[key] = -1*np.log(val)
+# # for key, val in iso_costs.items():
+# #      print(f"{key}: {val}")
+# ext = "png"
+# sequences = {n: ['a,c'] for n in T.nodes}
+# sequences = {5: ['T', 'T', 'A'], 6: ['T', 'T', 'T'], 1: ['C','C','G'], 10: ['C','C','G'], 2: ['C', 'C', 'G'], 3:['G', 'C', 'C'], 0: ['A', 'T', 'T'], 9:['G','T','T']}
+
+# lt =LineageTree(T,0)
+# lt.save_png(f"test/start_tree.{ext}", isotypes)
+# pars_score, seq_labels =lt.sequence_parismony(sequences)
+
+# cg = ConstructGraph(iso_costs, isotypes, root_identifier="naive")
+# fg = cg.build(lt, seq_labels) 
+# fg.save_graph(f"test/flow_graph.{ext}")
+
+# score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, root="0_0", degree_max=fg.degree_max).run()
+# lt2 = LineageTree(T2, "naive", 0)
+# print(f"score: {score}")
+# lt2.save_png(f"test/out_tree.{ext}", fg.isotypes, show_legend=False)
+# print("DONE!")
+
+
+
+
+
+
+# lt2 = LineageTree(T2, "naive", 0)
+# print(f"score: {score}")
+# lt2.save_png("test/out_tree3.png", fg.isotypes)
+
 
 # T.add_edges_from([ ('naive', 'r') ,('r', 'a') , ('r','b'), ('r', 'c'), ('r', 'd'), ('r','e')])
 # #iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
-# sequences = {n: ['a,a'] for n in T.nodes}
+
 # iso_costs = {(0,0): 0.55, (0,1): 0.44, (0,2): 0.005, (0,3): 0.005,
 #               (1,1): 0.55, (1,2):  0.44, (1,3): 0.05, 
 #               (2,2): 0.55, (2,3): 0.44, 
@@ -456,18 +418,15 @@ class FlowGraph:
 
 # isotypes  = {'naive': 0, 'a': 1, 'b':1, 'c': 2, 'd':3, 'e':3}
 
-# lt1 =LineageTree(T,'naive', 0)
-# # # lt2 =LineageTree(T,'root', 1)
-# lt1.save_png("test/start_tree.png", isotypes)
-# cg = ConstructGraph(iso_costs, isotypes, root_identifier="naive")
 
-# fg = cg.build(lt1, sequences) 
-# fg.save_graph("test/G1.png")
+# # # lt2 =LineageTree(T,'root', 1)
+
+
+
+
 # score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list, root="naive").run()
 
-# lt2 = LineageTree(T2, "naive", 0)
-# print(f"score: {score}")
-# lt2.save_png("test/out_tree3.png", fg.isotypes)
+
 
 # T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
 
@@ -524,197 +483,3 @@ class FlowGraph:
           
 
 
-# class PolytomyResolver:
-#     def __init__(self, tree_nodes, weights, scores, states, candidate_state):
-#         # Create optimization model
-#         self.m = gp.Model('netflow')
-#         self.tree_nodes = tree_nodes
-#         self.nodes = ['source', 'sink'] + [n for n in tree_nodes]
-#         self.states = [str(s) for s in states] 
-#         self.score_nodes = []
-#         self.capacity_upper = {}
-#         self.capacity_lower = {}
-#         self.fixed_costs = {}
-#         self.costs = {}
-#         for n in tree_nodes:
-#             self.capacity_upper[("source", n )] = 1
-#             self.capacity_lower[("source", n )] = 0
-#             self.costs[("source", n)] = 0
-#             for state in scores[n]:
-#                 node_name = f"{n}_{state}"
-#                 self.score_nodes.append(node_name)
-#                 self.nodes.append(node_name)
-       
-        
-#                 self.capacity_upper[(n,node_name)] =1
-#                 self.capacity_lower[(n,node_name)] =0
-#                 self.costs[(n,node_name)] = scores[n][state]
-
-        
-#                 self.capacity_upper[(node_name,"sink")] = 1
-#                 self.capacity_lower[(node_name,"sink")] = 0
-#                 self.costs[(node_name, "sink")] = weights[candidate_state, int(state)]
-#                 for s in self.states:
-#                     if int(s) <= state and int(s) != candidate_state:
-                 
-#                         self.capacity_upper[(node_name,f"state_{s}")] = 1
-#                         self.capacity_lower[(node_name,f"state_{s}")] = 0
-             
-#                         self.costs[(node_name,f"state_{s}")] = weights[int(s), int(state)]
-                
-#         self.special_arcs = []
-#         #TODO: need to add n-1 layers of states
-#         for s in self.states:
-#             if int(s) >= candidate_state:
-#                 node_name = f"state_{s}"
-#                 self.special_arcs.append((node_name, "sink"))
-       
-#                 self.nodes.append(node_name)
-#                 self.capacity_upper[(node_name,"sink")] = len(tree_nodes)-1
-#                 self.capacity_lower[(node_name,"sink")] =  2 #0
-#                 self.fixed_costs[(node_name, "sink")] = weights[candidate_state, int(s)]
-        
-   
-#         self.all_arcs, self.cap_upper = gp.multidict(self.capacity_upper)
-
-#         # self.inflow = {a: 0 for a in self.all_arcs}
-#         # self.inflow[('edges','sink')] = len(tree_nodes)
-#         # self.inflow['edge','source'] = -1*len(tree_nodes)
-
-#         self.normal_arcs = [i for i in self.all_arcs if i not in self.special_arcs]
-
-#         # self.flow = self.m.addVars(self.all_arcs, lb=self.capacity_lower, ub=self.capacity_upper, vtype=GRB.INTEGER, name='flow')
-#         self.flow = self.m.addVars(self.all_arcs, vtype=GRB.INTEGER, name='flow')
-
-#         self.polytomy = self.m.addVars(self.special_arcs, vtype=GRB.BINARY, name='polytomy')
-
-
-
-#         # Arc-capacity constraints
-#         self.m.addConstrs(
-#             (self.flow[ i, j] <= self.capacity_upper[i, j] for i, j in self.normal_arcs), "cap_upper")
-
-#         self.m.addConstrs(
-#             (self.flow[ i, j] >= self.capacity_lower[i, j] for i, j in self.normal_arcs), "cap_lower")
-        
-#         #polytomy is opened only if flow is greater than lower bound of capacity
-#         self.m.addConstrs(
-#             (self.flow[ i, j]>= self.capacity_lower[i, j]*self.polytomy[i,j] for i, j in self.special_arcs), "cap_special_lower")
-        
-#         self.m.addConstrs(
-#             (self.flow[ i, j] <= self.capacity_upper[i, j]*self.polytomy[i,j] for i, j in self.special_arcs), "cap_special_upper")
-        
-#         #Flow conservation 
-#         # m.addConstr(quicksum(x[i,j] for j in (set(V) - set(S))) >= 2)
-#         self.in_nodes = {j : [] for j in self.nodes}
-#         self.out_nodes = {j : [] for j in self.nodes}
-#         for j in self.nodes:
-#             for (i,k) in self.all_arcs:
-#                 if k==j:
-#                     self.in_nodes[j].append(i)
-#                 if i == j:
-#                     self.out_nodes[j].append(k)
-        
-#         self.m.addConstr(sum(self.flow['source',j] for j in self.out_nodes['source']) == len(tree_nodes))
-
-
-#         #flow leaving the source cannot exceed the number of tree nodes 
-#         self.m.addConstr(sum(self.flow[j, 'sink'] for j in self.in_nodes['sink']) == len(tree_nodes))
-#         for  j in self.nodes:
-#             if j not in ['source', 'sink']:
-#                 self.m.addConstr(sum(self.flow[i, j]  for i in self.in_nodes[j]) == sum(self.flow.sum(j, i) for i in self.out_nodes[j]))
-        
-#         #flow leaving the source cannot exceed the number of tree nodes 
-   
-
-#         self.m.setObjective(sum(self.costs[i,j]*self.flow[i,j] for i,j in self.normal_arcs) + 
-#                         sum(self.fixed_costs[i,j]*self.polytomy[i,j] for i,j in self.special_arcs)  , GRB.MINIMIZE)
-        
-
-#     def run(self):
-#             states = {}
-#             poly_map = {}
-#             score= None
-#             self.m.optimize()
-#             if self.m.Status == GRB.OPTIMAL:
-#                 solution = self.m.getAttr('X', self.flow)
-#                 polytomies = self.m.getAttr('X', self.polytomy)
-
-#                 # for i,j in self.special_arcs:
-#                 #     print('%s -> %s: %g' % (i, j, polytomies[ i, j]))
-                
-#                 for i in self.tree_nodes:
-#                     for j in self.out_nodes[i]:
-#                         if solution[i,j] > 0:
-#                             states[i] = int(j.split("_")[1])
-
-#                 # print(states)
-#                 score = self.m.objVal
-              
-#                 # print("used edges in network")
-#                 # for i, j in self.all_arcs:
-#                 #         if solution[ i, j] > 0:
-#                 #             print('%s -> %s: %g' % (i, j, solution[ i, j]))
-                
-#                 # print("polytomies used")
-#                 for i,j in self.special_arcs:
-#                     if polytomies[i,j] > 0:
-#                         # print('%s -> %s' % (i, j))
-#                         t= int(i.split("_")[1])
-                        
-#                         for k in self.in_nodes[i]:
-#                             if solution[k,i] > 0:
-                              
-#                                 child =k.split("_")[0]
-#                                 if t in poly_map:
-#                                     poly_map[t].append(child)
-#                                 else:
-#                                     poly_map[t] = [child]
-                                         
-#             return score, states, poly_map
-
-
-
-
-        
-    
-            
-            
-
-
-# tree_nodes = ['a', 'b', 'c']
-# states = [0,1]
-# weights = {(0, 0): 0, (0, 1): 1, (1,0): 0, (1,1): 0}
-# scores= {'a': {0: 3, 1: 4}, 'b': {0: 2, 1: 5}, 'c': {0: 2, 1: 11}}
-# candidate_state = states[0]
-
-
-# tree = nx.DiGraph()
-
-# tree.add_edges_from([(0,1), (0,2), (0,3), (1,4), (1,5), (2,6), (2,7), (3,8), (3,9)])
-
-# tree_nodes = [1,2,3]
-# candidate_state = 0
-# scores = {1: {0: 2, 1: 1}, 2: {0:2, 1:0}, 3: {0: 2, 1: 2, 2: 0}}
-
-# states = [0,1,2]
-# # isotypes = {4:1, 5:2, 6:1, 7:2, 8:1, 9:2}
-
-# weights = {}
-# for s in states:
-#     for t in states:
-#         if s > t:
-#             weights[s,t] = 1000000
-#         elif s==t:
-#             weights[s,t] =0
-#         else:
-#             weights[s,t] =1
-
-
-
-
-# pr = PolytomyResolver(tree_nodes, weights, scores, states, candidate_state)
-# pr.run()
-
-       
-        

@@ -195,10 +195,10 @@ class LineageTree:
         return iso_score, labels 
     
 
-    def save_png(self,fname, isotypes, iso_encoding=None):
+    def save_png(self,fname, isotypes, iso_encoding=None, show_legend=False):
     
         parents = self.get_parents()
-        dt = DrawTree(parents, isotypes, show_legend=False, isotype_encoding=iso_encoding)
+        dt = DrawTree(parents, isotypes, show_legend=show_legend, isotype_encoding=iso_encoding)
         dt.save(fname)
 
     def save_tree(self,fname):

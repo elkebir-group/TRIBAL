@@ -1,17 +1,17 @@
 import networkx as nx
-import pydot 
+import pygraphviz as pgv
 from utils import read_dict 
 import argparse 
 
 class DrawTree:
-    def __init__(self, parents, isotypes, color_encoding=None, show_legend=False, isotype_encoding=None) -> None:
-        
+    def __init__(self, parents, isotypes, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None) -> None:
         self.parents = parents
         self.isotypes = isotypes
+        self.root= root
 
         if color_encoding is None:
-                # if color_encoding is None:
             self.color_encoding =  {
+                -1: "#FFFFFF",
                 0 : "#f0f0f0",
                 1 : "#FFEDA0",
                 2 : "#FD8D3C",
@@ -23,57 +23,49 @@ class DrawTree:
                 8 : "darkgoldenrod",
                 9 : "thistle1"
             }
-            # self.color_encoding =  {
-            #     0 : "antiquewhite",
-            #     1 : "turquoise1",
-            #     2 : "darkcyan",
-            #     3 : "cornflowerblue",
-            #     4 : "darksalmon",
-            #     5 : "mediumseagreen",
-            #     6 : "orangered",
-            #     7 : "orchid",
-            #     8 : "darkgoldenrod",
-            #     9 : "thistle1"
-            # }
         else:
             self.color_encoding = color_encoding
 
-        self.graph = pydot.Dot("tribal_tree", graph_type="digraph", bgcolor="white")
-
-        # Add nodes
-        iso_trans = {}
-        for u in self.color_encoding:
-            for v in self.color_encoding:
-                iso_trans[u,v] =0 
-       
-        total_trans = 0
-        used_isotypes = []
-        for p in self.parents:
+        self.graph = pgv.AGraph(directed=True, bgcolor="white")
+        def add_node(p):
             if p in self.isotypes:
                 iso = int(self.isotypes[p])
             else:
-                iso = 0
+                iso = -1
             if iso not in used_isotypes:
                 used_isotypes.append(iso)
-            col = self.color_encoding[iso]
-            self.graph.add_node(pydot.Node(str(p), shape="circle", color=col, style='filled'))
+            fill_color = self.color_encoding[iso]
+            outline_color = "black"  # Set outline color here
+            lab = str(p)
+            if p == self.root:
+                lab = "r"
+       
+            if "_" in lab:
+                    lab =lab.split("_")[0]
+       
+
+            self.graph.add_node(str(p), label=lab, shape="circle", style='filled', penwidth="1", fillcolor=fill_color, color=outline_color)
+
+
+        used_isotypes = []
+        for p in self.parents:
+            add_node(p)
         
         for key, val in self.parents.items():
             if val != "":
-                new_edge = pydot.Edge(dst=key, src=val, color="black")
-                # iso_u = int(self.isotypes[val])
-                # iso_v =int(self.isotypes[key])
-                # iso_trans[iso_u,iso_v] += 1
-                # total_trans += 1
-              
-                self.graph.add_edge(new_edge)
+                if val == self.root:
+                    add_node(val)
+                new_edge = (val, key)
+                self.graph.add_edge(*new_edge, color="black")
         
-        # if show_legend:
-        #     used_isotypes.sort()
-        #     if isotype_encoding is not None:
-        #         for u in used_isotypes:
-        #             iso_name = isotype_encoding[u]
-        #             self.graph.add_node(pydot.Node(iso_name, shape="circle", color=self.color_encoding[u], style='filled'))
+        if show_legend:
+            used_isotypes.sort()
+            # if isotype_encoding is not None:
+            for u in used_isotypes:
+                    if u < 0:
+                        continue
+                    # iso_name = self.color_encoding[u]
+                    self.graph.add_node(f"i_{u}", label=str(u), shape="circle", fillcolor=self.color_encoding[u], style='filled', color='black')
                 
         #         for u,v in iso_trans:
         #             if iso_trans[u,v] > 0:
@@ -85,13 +77,13 @@ class DrawTree:
 
     
     def save(self, fname):
-        self.graph.write_png(fname)
+        self.graph.draw(fname, prog="dot")
     
 
     def save_pdf(self, fname):
 
 
-        self.graph.write_pdf(fname) 
+         self.graph.draw(fname, prog="dot") 
 # Or, save it as a DOT-file:
 # graph.write_raw("output_raw.dot")
 
