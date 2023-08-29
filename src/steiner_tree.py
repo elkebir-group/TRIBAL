@@ -11,8 +11,9 @@ class SteinerTree:
     '''
     Given an instance of the Steiner Minimal Tree Problem (G,S,c ) where G=(V,E), S is a subset of V and 
     c is an edge weight mapping, finds a Steiner Tree in G where the sum of the edge weights is minimum
+    c = lambda* seq_weights + (1-lambda)*iso_weights 
     '''
-    def __init__(self, G, S, seq_weights, iso_weights, root=0, lamb=0.9, threads=3) -> None:
+    def __init__(self, G, S, seq_weights, iso_weights,node_mapping, tree_to_graph, tree_out_degree, root=0, lamb=0.9, threads=3) -> None:
         
         #set solve parameters 
         self.m = gp.Model('steiner')
@@ -36,6 +37,7 @@ class SteinerTree:
         #compute edge weights from the sequence and isotype weights 
         self.c = {e:lamb* seq_weights[e] + (1-lamb) *iso_weights[e]for e in self.edges}
 
+
         #create a tuple of terminals and edges 
         self.flow_dest = [(t,i,j) for i,j in self.edges for t in self.terminals]
         
@@ -54,6 +56,15 @@ class SteinerTree:
 
         #enforce that there is a single MRCA child of the root node 
         self.m.addConstr(sum(self.x[self.root,j] for j in self.out_nodes[self.root] ) <= 1)
+
+        for n, deg in tree_out_degree.items():
+             nodes = tree_to_graph[n]
+             if deg ==1:
+                  continue
+             self.m.addConstr(sum(self.x[i,j] for i in nodes for j in self.out_nodes[i]) \
+                               - sum(self.x[i,j] for j in nodes for i in self.in_nodes[j]) <= deg -1)
+             
+
         
         # need to send 1 unit of flow from the root to each terminal
         for t in self.terminals:
@@ -75,16 +86,10 @@ class SteinerTree:
             #ensure 1 unit of flow designated for each terminal leaves the root
             self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
 
-
+        ## constraint to prevent unifurcations in internal nodes 
         # for i in self.internal_nodes:
-        #     self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) >= 2*self.z[i])
-        
-        #     self.m.addConstr(1e5*self.z[i] >= sum(self.x[i,j] for j in self.out_nodes[i]))
-        
-        # for i in self.internal_nodes:
-        #     self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
-        
-        #     self.m.addConstr(1e5*self.z[i] >= sum(sum(self.x[i,j] for j in self.out_nodes[i])for t in self.terminals))
+        # self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
+        # self.m.addConstr(1e5*self.z[i] >= sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals))
 
         # for n,val in degree_max.items():
         #         if len(self.out_nodes[n]) > 0:
@@ -100,15 +105,8 @@ class SteinerTree:
             # self.m.addConstr(sum(self.x[i,j] for i,j in cand_edges_in )<=1)
     
 
-                # if n in self.internal_nodes:
-                #      self.m.addConstr(sum(self.f[n,j,t] for j in self.out_nodes[n] for t in self.terminals) > 1)
         
-        # for i in self.internal_nodes:
-        #      self.m.addConstr(sum(self.x[i,j] for j in self.out_nodes[i]) - sum(self.x[j,i] for j in self.in_nodes[i]) >=1)
 
-        #if edge is selected, then there must be flow to at least on terminal through that edge
-        # for i,j in self.edges:
-        #     self.m.addConstr(sum(self.f[t,i,j] for t in self.terminals) >= self.x[i,j])
         
  
     
@@ -125,9 +123,11 @@ class SteinerTree:
                
                     if solution[i,j] > 0.5:
                         T.add_edge(i,j)
-                        # for t in self.terminals:
-                        #     if flow[t,i,j] > 0.0:
-                        #        print(f"{t}:  edge {i} -> {j}")
+                    # else:
+                         
+                    #     for t in self.terminals:
+                    #         if flow[t,i,j] > 0.0:
+                    #            print(f"{t}:  edge {i} -> {j}")
             
                     #    break
 
@@ -198,8 +198,11 @@ class ConstructGraph:
     
         out_degree_max = {}
         leafset = []
+        node_mapping ={}
+        tree_to_graph = {n: [] for n in T.nodes}
+        node_out_degree = {n: 0 for n in T.nodes}
         for n in postorder:
-            
+            node_out_degree[n] =T.out_degree[n]
            
             node_extensions= []
 
@@ -208,7 +211,12 @@ class ConstructGraph:
 
                 new_node = name_node(id,n,iso, is_leaf=T)
                 G.add_node(new_node)
+                node_mapping[new_node] = n
+                tree_to_graph[n].append(new_node)
+              
+
                 out_degree_max[new_node] = T.out_degree[n]
+                node_out_degree
                 leafset.append(new_node)
                 self.node_isotypes[new_node] = iso
    
@@ -229,6 +237,9 @@ class ConstructGraph:
 
             
                     G.add_node( new_node)
+                    node_mapping[new_node] = n
+                    tree_to_graph[n].append(new_node)
+                    
                     out_degree_max[new_node] = T.out_degree[n]
                     node_extensions.append(new_node)
 
@@ -260,7 +271,7 @@ class ConstructGraph:
             iso_weights[u,v] = self.iso_costs[int(s),int(t)]
 
         
-        fg = FlowGraph(id, G, seq_weights, iso_weights, self.node_isotypes)
+        fg = FlowGraph(id, G, seq_weights, iso_weights, self.node_isotypes, node_mapping, tree_to_graph, node_out_degree)
         self.Graphs.append(fg)
         return fg
     
@@ -302,6 +313,10 @@ class FlowGraph:
      seq_weights: dict 
      iso_weights: dict
      isotypes: dict
+     node_mapping: dict 
+     tree_to_graph: dict 
+     node_out_degree: dict 
+
 
 
      def find_terminals(self):

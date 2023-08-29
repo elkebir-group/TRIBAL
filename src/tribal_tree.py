@@ -102,8 +102,9 @@ class TribalSub:
         return Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
-          
-            # lin_tree.save_png(f"test/init_tree{lin_tree.id}.png", isotype_labels)
+            print(f"refining tree {lin_tree.id}")
+            # print(lin_tree.T.out_degree["7"])
+            # lin_tree.save_png(f"/scratch/projects/tribal/test/init_tree{lin_tree.id}.png", isotype_labels)
   
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
        
@@ -112,14 +113,20 @@ class TribalSub:
             fg = cg.build(lin_tree, seq_labels)
             # fg.save_graph("test/flow_graph.png")
             # fg.save_graph(f"test/graphs/G{lin_tree.id}.png")
-            st = SteinerTree(fg.G, fg.find_terminals(), fg.seq_weights, fg.iso_weights,root=self.root_id, lamb=self.alpha, threads=1 )
+            st = SteinerTree(fg.G, fg.find_terminals(), fg.seq_weights, fg.iso_weights,fg.node_mapping, fg.tree_to_graph, fg.node_out_degree, root=self.root_id, lamb=self.alpha, threads=1 )
             obj, tree = st.run()
             # print(f"tree: {lin_tree.id} obj: {iso_score}")
             out_tree, out_iso = cg.decodeTree(tree)
             
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
-            # out_lt.save_png(f"test/out_tree{lin_tree.id}.png", out_iso)
+            # total_out = sum([out_lt.T.out_degree[n] for n in out_lt.T.nodes if "7_" in n])
+            # total_in = sum([out_lt.T.in_degree[n] for n in out_lt.T.nodes if "7_" in n])
+            # print(total_out - total_in + 1)
+      
+
+
+            # out_lt.save_png(f"/scratch/projects/tribal/test/out_tree{lin_tree.id}.png", out_iso)
 
             #TODO: Speed up by not recomputing the sequences 
 
@@ -479,19 +486,25 @@ if __name__ == "__main__":
 
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
+        # -r naive -t ../sim_data/tmat_inf/seq/transmats/transmat3.txt --candidates ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/dnapars/outtree  -a ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/GCsim_dedup.fasta -e ../sim_encoding.txt -i ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/GCsim.isotypes --alpha 0.75 --sequences ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/inferred_seq.csv --fasta ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/inferred_seq.fasta --score ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/score.csv --iso_infer ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/isotypes.csv --png ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/tree.png --mode refine_ilp --nworkers 1 --ntrees 3 --pickle_best ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/best_results_gt.pickle --best_tree_diff ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/rf_dist.csv --seed 16 -o ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/forest.pickle --tree ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/tree.txt > ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/refine_ilp.log 2> ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/refine_ilp.err.log 
+
+    # /sim_data/tmat_inf/seq/cells35/size25/rep1/2.0/0.365/tribal_refine_ilp_gt_old/24
+
     # path = "/scratch/projects/tribal/benchmark_pipeline"
     # n = 35
-    # k = 25
-    # r = 1
+    # k = 75
+    # r = 3
     # ttype = "seq"
-    # clonotype = 15
+    # clonotype = 16
     # alignment= f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta"
     # isotypes = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes"
-    # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
+    # # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
+    # transmat =f"{path}/sim_data/tmat_inf/{ttype}/transmats/transmat{r}.txt"
     # candidates = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree"
     # lf =  f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine_ilp/20/forest.pickle"
     # encoding = f"{path}/sim_encoding.txt"
     # mode= "refine_ilp"
+    # alpha = 0.75
     
     # args = parser.parse_args([
     #     "-a", alignment,
@@ -502,6 +515,7 @@ if __name__ == "__main__":
     #     "--candidates" ,candidates,
     #     # "-l", lf,
     #     # "--forest",
+    #     "--alpha", str(alpha),
     #     "-e", encoding,
     #     "--mode", mode,
     #     # "--all_obj", f"test/{mode}.csv",
