@@ -4,7 +4,7 @@ from utils import read_dict
 import argparse 
 
 class DrawTree:
-    def __init__(self, parents, isotypes, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None) -> None:
+    def __init__(self, parents, isotypes, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None, show_labels=True) -> None:
         self.parents = parents
         self.isotypes = isotypes
         self.root= root
@@ -43,7 +43,8 @@ class DrawTree:
             if "_" in lab:
                     lab =lab.split("_")[0]
        
-
+            if not show_labels:
+                lab = ""
             self.graph.add_node(str(p), label=lab, shape="circle", style='filled', penwidth="1", fillcolor=fill_color, color=outline_color)
 
 
@@ -56,7 +57,11 @@ class DrawTree:
                 if val == self.root:
                     add_node(val)
                 new_edge = (val, key)
-                self.graph.add_edge(*new_edge, color="black")
+                if self.isotypes[val] == self.isotypes[key]:
+
+                    self.graph.add_edge(*new_edge, color="black")
+                else:
+                    self.graph.add_edge(*new_edge, color="black", style="dashed")
         
         if show_legend:
             used_isotypes.sort()

@@ -249,7 +249,9 @@ class ConstructGraph:
                         for j in nodes_to_states[v]:
                             if i <= j:
                                 G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
-                                seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
+                                seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = 0
+
+                                # seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = hamming_distance(seq_labs[n], seq_labs[v])
                                 if self.iso_costs[i,j] == np.Inf:
                                         
                                         print(f"warning, impossible edge i: {i} j: {j} cost: {self.iso_costs[i,j]}")

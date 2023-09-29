@@ -74,6 +74,22 @@ class Score:
         assert round(score,3) == round(self.iso_obj,3)
         # print(f"Score: {score} Iso Obj: {self.iso_obj}")
         return score
+    
+    def compute_score(self, weights):
+       
+        iso = self.isotypes
+        score = 0
+
+        nodes = self.tree.preorder_traversal()
+        for n in nodes:
+            t= iso[n]
+            for c in self.tree.children(n):
+                s = iso[c]
+                score += weights[t,s]
+        
+    
+        return score
+    
 
 
 class ScoreList(list):
@@ -95,4 +111,24 @@ class ScoreList(list):
             for score in self:
             
                 file.write(f"{score.tree.id}{sep}{score.objective}{sep}{score.seq_score}{sep}{score.iso_score}{sep}\n")
+    
+    def find_best_scores(self):
+        min_score = min(self, key=lambda x: x.iso_obj).iso_obj
+
+        # Filter objects with the minimum score
+        min_score_object = [obj for obj in self if round(obj.iso_obj, 5) == round(min_score,5)][0]
+        return min_score, [min_score_object]
+    
+    def get_all_trees(self):
+
+        return [x.tree for x in self]
+    
+    def get_ids(self):
+        return [x.tree.id for x in self]
+    
+    def pickle_scores(self, fname):
+        with open(fname, 'wb') as file:
+            pickle.dump(self, file)
+    
+    
     

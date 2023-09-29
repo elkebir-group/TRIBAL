@@ -102,7 +102,7 @@ class TribalSub:
         return Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
-            print(f"refining tree {lin_tree.id}")
+            # print(f"refining tree {lin_tree.id}")
             # print(lin_tree.T.out_degree["7"])
             # lin_tree.save_png(f"/scratch/projects/tribal/test/init_tree{lin_tree.id}.png", isotype_labels)
   
@@ -480,6 +480,10 @@ if __name__ == "__main__":
     # parser.add_argument("--all_obj", type=str, help="comparison of ilp heuristic versus min heuristc")
     parser.add_argument("--best_tree_diff", type=str, help="best tree RF distances")
     parser.add_argument("--pickle_best", type=str, help="filename to pickle the best results")
+    parser.add_argument("--pickle_all", type=str, help="filename to pickle the best results")
+
+    parser.add_argument("--pars_degree", type=str, help="input parsimony node out degree")
+    parser.add_argument("--refine_degree", type=str, help="refinement node out degree")
     # parser.add_argument("--combined_tree", type=str, help="png for combined tree")
     # parser.add_argument("--best_ilp", type=str, help="png for best ilp heuristic tree")
 
@@ -561,7 +565,34 @@ if __name__ == "__main__":
     #     "--pickle_best", f"test/{mode}3.pickle"
     # ])
   
-
+    # path = "/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2"
+    # clonotype = "MouseHTO-2_1073"
+    # alignment= f"{path}/clones/{clonotype}/heavy.fasta"
+    # candidates = f"{path}/dnapars/{clonotype}/outtree" 
+    # isotypes = f"{path}/clones/{clonotype}/isotype.fasta"
+    # encoding = "/scratch/projects/tribal/experimental_data/hoehn_paper/isotype_encoding.txt"
+    # # transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"
+    # # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
+    # mode= "score"
+    # args = parser.parse_args([
+    #     "-a", alignment,
+    #     "-i", isotypes,
+    #     "--nworkers", "10",
+    #     "-r", "naive",
+    #     "--candidates" ,candidates,
+    #     "-e", encoding,
+    #     "--mode", mode,
+    #     # "--all_obj", f"test/{mode}.csv",
+    #     "--png", f"grant_example/{mode}.pdf",
+    #     # "--ntrees", "2",
+    #     "--all_optimal_sol", f"grant_example/opt_tree_{mode}",
+    #      "--tree", f"grant_example/{mode}.txt",
+    #     "--sequences", f"grant_example/{mode}_seq.csv",
+    #     "--iso_infer", f"grant_example/{mode}_iso.csv",
+    #     "--pickle_best", f"grant_example/{mode}.pickle",
+    #     "--score", f"grant_example/{mode}.scores.csv"
+    # ])
+  
   
 
     
@@ -630,10 +661,26 @@ if __name__ == "__main__":
             else:
                 lin_forest = LineageForest( alignment, isotypes_filt, [lin])
               
-
+ 
 
     tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
     ncells = len(lin_forest.alignment)
+    data_rows = []
+    import pandas as pd 
+    for lin_tree in lin_forest:
+        tree = lin_tree.T
+        id = lin_tree.id 
+        for n in tree:
+            data_rows.append([id, n, tree.out_degree[n]])
+    
+    node_degree = pd.DataFrame(data_rows, columns=['tree', 'n', 'out_degree'])
+
+    if args.pars_degree is not None:
+        node_degree.to_csv(args.pars_degree, index=False)
+
+
+    
+
     print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
     # flow_scores, combined_score,  combined_lt, seq_labels, all_isotypes, best_ilp_lt, best_iso_ilp = tr.forest_infer(lin_forest)
@@ -674,7 +721,7 @@ if __name__ == "__main__":
       
             
             # lin.save_png(f"test/tree_{lin.id}.png", lin_forest.isotypes, isotype_encoding)
-    all_results =  tr.forest_mode_loop(lin_forest, mode =args.mode)
+    all_results =  tr.forest_mode(lin_forest, mode =args.mode)
 
     print(len(all_results))
     for a in all_results:
@@ -682,11 +729,23 @@ if __name__ == "__main__":
          #scan through results and find the top ntrees results 
     best_results = []
     top_ntrees = []
+    data_rows = []
     best_obj = np.Inf
     for res in all_results:
+        tree  = res.tree.T
+        id = res.tree.id
+        for n in tree:
+            data_rows.append([id, n, tree.out_degree[n]])
+    
+
+
+
         if res.objective < best_obj:
             best_obj = res.objective
-       
+    
+    refine_degree = pd.DataFrame(data_rows, columns=['tree', 'n', 'out_degree'])
+    if args.refine_degree is not None:
+        refine_degree.to_csv(args.refine_degree, index=False)
     
     for res in all_results:
         if round(res.objective,5) == round(best_obj,5):
@@ -754,7 +813,7 @@ if __name__ == "__main__":
 
     
     if args.png is not None:
-        best_tree.save_png(args.png, best_result.isotypes, isotype_encoding)
+        best_tree.save_png(args.png, best_result.isotypes, isotype_encoding, show_labels=False)
     
 
     best_labels = ut.update_labels(best_result.labels)
@@ -823,4 +882,7 @@ if __name__ == "__main__":
 
     if args.pickle_best is not None:
         ut.pickle_save(best_results, args.pickle_best)
+    
+    if args.pickle_all is not None:
+        ut.pickle_save(all_results, args.pickle_all)
     

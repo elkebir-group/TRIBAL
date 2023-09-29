@@ -521,7 +521,7 @@ class SmallParsimony:
 
     def sankoff(self, sequences):
         self.att = sequences
-        if type(self.att[self.root]) != int:
+        if type(self.att[self.root]) not in [int, np.int64]:
             seq_length = len(self.att[self.root])
     
         else:

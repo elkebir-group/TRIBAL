@@ -46,6 +46,9 @@ class LineageTree:
     def is_leaf(self, node):
         return self.T.out_degree(node) ==0
     
+    def get_leafs(self):
+        return [n for n in self.T if self.is_leaf(n)]
+    
     def is_root(self, node):
         if type(node) == int:
             node =str(node)
@@ -82,6 +85,8 @@ class LineageTree:
         self.T.remove_node(outgroup)
         self.T.add_edge(outgroup, self.root)
         self.root = outgroup
+    
+    
     
     @staticmethod
     def find_leaf_descendants(node, graph):
@@ -134,15 +139,15 @@ class LineageTree:
         return(set(map(frozenset, clade_set)))
 
     def sequence_parismony(self, alignment, alphabet=None, cost_function=None):
-
+        return 0, alignment
         
 
-        sp = SmallParsimony(self.T, 
-                            self.root,
-                            alphabet= alphabet,
-                            cost = cost_function)
-        seq_score, labels = sp.sankoff(alignment)
-        return seq_score, labels
+        # sp = SmallParsimony(self.T, 
+        #                     self.root,
+        #                     alphabet= alphabet,
+        #                     cost = cost_function)
+        # seq_score, labels = sp.sankoff(alignment)
+        # return seq_score, labels
     
     
     def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None, convert=False):
@@ -195,10 +200,10 @@ class LineageTree:
         return iso_score, labels 
     
 
-    def save_png(self,fname, isotypes, iso_encoding=None, show_legend=False):
+    def save_png(self,fname, isotypes, iso_encoding=None, show_legend=False, show_labels=True):
     
         parents = self.get_parents()
-        dt = DrawTree(parents, isotypes, show_legend=show_legend, isotype_encoding=iso_encoding)
+        dt = DrawTree(parents, isotypes, show_legend=show_legend, isotype_encoding=iso_encoding, show_labels=show_labels)
         dt.save(fname)
 
     def save_tree(self,fname):

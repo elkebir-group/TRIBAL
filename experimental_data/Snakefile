@@ -61,7 +61,7 @@ rule tribal_refine:
     input: 
         alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
         isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
-        transmat =  "{dataset}/tribal/transmat.txt",
+        transmat =  "{dataset}/tribal/0.25/transmat.txt",
         candidates ="{dataset}/dnapars/{clonotype}/outtree",
         encoding = "mouse_isotype_encoding.txt",
     output: 
@@ -74,6 +74,8 @@ rule tribal_refine:
         png = "{dataset}/{mode}/{clonotype}/tree.png",
         opts = directory("{dataset}/{mode}/{clonotype}/opt_trees"),
         rf_dist="{dataset}/{mode}/{clonotype}/best_rf_dist.csv",
+        node_degree ="{dataset}/{mode}/{clonotype}/parsimony_node_degree.csv",
+        refine_degree ="{dataset}/{mode}/{clonotype}/refine_node_degree.csv",
     params:
         root = "naive",
         ntrees = config["ntrees"],
@@ -84,7 +86,7 @@ rule tribal_refine:
         err ="{dataset}/{mode}/{clonotype}/refine.err.log"  
     benchmark: "{dataset}/{mode}/{clonotype}/refine.benchmark.log" 
     shell:
-        "python ../src/tribal_tree.py "
+        "nice python ../src/tribal_tree.py "
         " -r {params.root} "
         " -a {input.alignment} "
         "-t {input.transmat} "
@@ -103,6 +105,8 @@ rule tribal_refine:
         "--best_tree_diff {output.rf_dist} "
         "--nworkers {threads} "
         "--tree {output.tree} "
+        "--pars_degree {output.node_degree} "
+        "--refine_degree {output.refine_degree} "
         "-o {output.forest} > {log.run} 2> {log.err} "  
 
    
