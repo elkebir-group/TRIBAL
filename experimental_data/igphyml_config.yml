@@ -1,0 +1,6 @@
+datasets:
+  - day_14
+  - GCB_NP_1
+  - GCB_NP_2
+
+ig_path: "/scratch/projects/tribal/igphyml/src/igphyml"
