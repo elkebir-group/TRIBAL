@@ -12,7 +12,7 @@ from em_weight_matrix import EMProbs
 from lineage_tree import LineageForest
 import init_transmat as tm
 from alignment import Alignment
-
+from score_class import ScoreList
 from tribal_tree import TribalSub
 from draw_state_diagram import DrawStateDiag
 
@@ -27,42 +27,54 @@ class Tribal:
                 max_cand=50, 
                 niter=10,
                 threshold=0.1, 
-                restarts=5,
+                restarts=10,
                 n_isotypes = 7, 
                 not_trans_prob=0.65, 
                 mu=0.07, 
                 sigma=0.05, 
                 mode="refine_ilp" ):
         
+        all_iso  = []
+        for c,lin in clonotypes.items():
+            all_iso +=   [val for key, val in lin.isotypes.items()]
+
+        from collections import Counter 
+        
+        counter= Counter(all_iso)
+        for element, count in counter.items():
+                print(f"{element}: {count}")
+
         self.mode= mode
         self.clonotypes = clonotypes
         self.isotype_encoding = isotype_encoding
         self.alphabet = alphabet
         self.alpha = alpha
         self.not_trans_prob = not_trans_prob
-        self.min_iterations = min(7, niter)
+        self.min_iterations = min(3, niter)
 
         if transmat is None:
             if isotype_encoding is not None:
                 self.n_isotypes = len(isotype_encoding)
             else:
                 self.n_isotypes = n_isotypes 
-            print(f"generating transitiom matrix with stay probability {self.not_trans_prob}")
-            self.transmat = tm.gen_trans_mat(self.not_trans_prob, self.n_isotypes)
+            # print(f"generating transition matrix with stay probability {self.not_trans_prob}")
+            # self.transmat = tm.gen_trans_mat(self.not_trans_prob, self.n_isotypes)
+
+            # self.transmat = np.loadtxt("/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/recomb/direct/transmats/transmat1.txt")
       
-        else:
-            self.transmat = transmat
+        # else:
+        #     self.transmat = transmat
         
-        self.init_transmat = self.transmat.copy()
+        # self.init_transmat = self.transmat.copy()
 
     
-        self.states = np.arange(self.transmat.shape[0])
-
+        # self.states = np.arange(self.transmat.shape[0])
+        self.states = np.arange(n_isotypes)
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.candidates = {}
         self.max_cand = max_cand
-        self.n_isotypes = self.transmat.shape[0]
+        # self.n_isotypes = self.transmat.shape[0]
 
         self.obs_states = {key: val.isotypes for key,val in self.clonotypes.items()}
         self.threshold = threshold
@@ -82,7 +94,7 @@ class Tribal:
         is given.'''
         candidates = {}
         for c in self.clonotypes:
-            print(f"clontoype {c}: size: {self.clonotypes[c].size()}")
+            # print(f"clontoype {c}: size: {self.clonotypes[c].size()}")
             if self.clonotypes[c].size() > self.max_cand:
                 cand = self.rng.choice(self.clonotypes[c].size(), self.max_cand, replace=False).tolist()
             else:
@@ -98,22 +110,24 @@ class Tribal:
 
         return candidates 
     
-    @staticmethod
-    def find_best_scores(scores):
+    # @staticmethod
+    def find_best_scores(self,scores):
         min_obj = np.Inf
         best_trees = []
         best_ids = []
-        for s in scores:
-            if s.objective < min_obj:
-                min_obj = s.objective
-                best_trees = [s.tree]
-                best_ids = [s.tree.id]
+        bs =ScoreList(scores)
+        s = bs.sample_best_scores(self.rng)
+        # for s in scores:
+        #     if s.objective < min_obj:
+        min_obj = s.objective
+        best_trees = [s.tree]
+        best_ids = [s.tree.id]
             
-            elif round(min_obj, 5) == round(s.objective, 5):
-                best_trees.append(s.tree)
-                best_ids.append(s.tree.id)
-            else:
-                continue
+            # elif round(min_obj, 5) == round(s.objective, 5):
+            #     best_trees.append(s.tree)
+            #     best_ids.append(s.tree.id)
+            # else:
+            #     continue
         return min_obj, best_trees, best_ids
 
 
@@ -125,7 +139,7 @@ class Tribal:
             best_tree_ids = {}
             observed_data = {}
             for i,c in enumerate(self.clonotypes):
-                    print(f'clonotype {c}')
+                    # print(f'clonotype {c}')
                     ts = TribalSub( isotype_weights=transmat,alpha=self.alpha, nworkers=nproc)
                     all_scores = ts.forest_mode(candidates[c], mode=self.mode)
                     best_score, best_trees, best_ids = self.find_best_scores(all_scores)
@@ -156,18 +170,25 @@ class Tribal:
     def run(self, nproc=1):
 
         best_log_like_score = np.NINF
-    
+        best_fit_score = np.inf
         best_trans =None
         best_states = None
         best_fit_scores = {}
         log_like_scores = {}
-        init_mat_lists = [self.init_transmat.copy()]
-        for i in range(self.restarts-1):
-            init_mat_lists.append(tm.add_noise(self.init_transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma))
+        # init_mat_lists = [self.init_transmat.copy()]
+
+        stay_probs = np.linspace(0.55,0.95, self.restarts)
+        # for i in range(self.restarts):
+        init_mat_lists = [  tm.gen_trans_mat(stay_probs[i], self.n_isotypes) for i in range(self.restarts)]
+            # init_mat_lists.append(tm.add_noise(self.init_transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma))
 
         results = []
-        for t in init_mat_lists:
+        for i,t in enumerate(init_mat_lists):
+            print(f"Starting restart {i}.....")
             results.append(self.fit(t, nproc))
+            # DrawStateDiag(results[i][2], results[i][3], rev_encoding).heatmap(f"test/heatmap_em{i}.png")
+            # np.savetxt(f"test/transmat_em{i}.txt", results[i][2])
+            print(f"Starting restart {i} complete!")
 
 
         # with Pool(nproc) as p:
@@ -175,8 +196,10 @@ class Tribal:
         restart=0
         for fit_score, exp_log_like, tmat, state_probs in results:     
             print(f"\nFit Phase Complete for restart {restart}!\nFit Score: {fit_score} Exp Log Like {exp_log_like}")
-            if exp_log_like > best_log_like_score:
+            # if exp_log_like > best_log_like_score:
+            if fit_score  < best_fit_score:
                 best_log_like_score = exp_log_like
+                best_fit_score = fit_score
                 best_trans = tmat
                 best_states = state_probs
                 best_iter = restart
@@ -185,7 +208,7 @@ class Tribal:
             restart+= 1
 
 
-        return best_fit_scores[best_iter], best_trans,best_states, log_like_scores
+        return best_fit_scores, best_trans,best_states, log_like_scores
 
     
     def fit(self, transmat, nproc=1):
@@ -214,7 +237,7 @@ class Tribal:
             print("\nFitting transition matrix...")
             cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
 
-            DrawStateDiag(transmat).heatmap(f"/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2/tribal/refine_ilp/temp/transmat_{i}.png")
+            # DrawStateDiag(transmat).heatmap(f"/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2/tribal/refine_ilp/temp/transmat_{i}.png")
          
             print(f"\nCycle {i} Complete: Current Score: {current_score} Previous Score: {old_score} Curr EM Log Like: {cur_log_like}")
             
@@ -413,7 +436,8 @@ def pickle_save(obj, fname):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-p", "--path", type=str, required=True, help="path to the directory containing input files")
+    parser.add_argument("-f", "--forest", type=str, help="path to pickled clonotypes dictionary of lineeage forests" )
+    parser.add_argument("-p", "--path", type=str, required=False, help="path to the directory containing input files")
     parser.add_argument("-c", "--clonotypes", required=False, type=str,
         help="filename with list of clonotype subdirectories that should be included in the inference. If not provided, scans provided path for all subdirectory names")
     parser.add_argument("-e", "--encoding", type=str, help="text file isotype states listed in germline order")
@@ -426,7 +450,7 @@ if __name__ == "__main__":
         help="optional filename of input transition matrix for initialization")
     parser.add_argument("-r", "--root", required=False, default="naive",
         help="the common id of the root in all clonotypes")
-    parser.add_argument( "--tree_path", type=str, required=True, help="path to directory where candidate trees are saved")
+    parser.add_argument( "--tree_path", type=str, required=False, help="path to directory where candidate trees are saved")
     parser.add_argument("--candidates", type=str, default="outtree", help="filename containing newick strings for candidate trees")
     parser.add_argument("--niter", type=int, help="max number of iterations in the fitting phase", default=10)
     parser.add_argument("--thresh", type=float, help="theshold for convergence in fitting phase" ,default=0.1)
@@ -448,20 +472,26 @@ if __name__ == "__main__":
     # parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
-    # fpath = "/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/tmat_inf/direct/cells35/size75/rep1/2.0/0.365"
-    # args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes75.txt", 
+    # fpath = "/scratch/projects/tribal/benchmark_pipeline/sim_data/recomb/direct/cells35/size75/rep1/2.0/0.365"
+    # args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes25.txt", 
     #     "--encoding", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
     #     "--alpha", "0.8",
     #     "-p", fpath,
-    #     "--max_cand", "50",
+    #     "-s", "1003",
+    #     "--max_cand", "5",
     #     "--niter" , "20",
+    #     "--restarts", "1",
+    #     "-j", "0.10",
     #     "--root", "naive",
     #     "--tree_path", fpath,
     #     "--nworkers", "7",
     #     "--fasta", "GCsim_dedup.fasta",
     #     "--isotypes", "GCsim.isotypes",
     #     "--candidates", "dnapars/outtree",
-    #     "--mode", "refine_ilp"])
+    #     "--mode", "refine_ilp",
+    #     "--heatmap", "test/heatmap_em_refine_ilp_10.pdf",
+    #     "--transmat_inf", "test/transmat_em_refine_ilp_10.txt"
+    #     ])
 
     if args.encoding is not None:
         iso_encoding, start_iso, n_isotypes = create_isotype_encoding(args.encoding)
@@ -481,20 +511,25 @@ if __name__ == "__main__":
 
 
     
-    if args.clonotypes is not None:
-        clonotypes = []
-        with open(args.clonotypes, 'r+') as file:
-            for line in file:
-                clonotypes.append(line.strip())
-
+    if args.forest is not None:
+        clonodict = ut.pickle_load(args.forest)
+    
     else:
-         clonotypes = [it.name for it in os.scandir(args.path) if it.is_dir()]
+        if args.clonotypes is not None:
+            clonotypes = []
+            with open(args.clonotypes, 'r+') as file:
+                for line in file:
+                    clonotypes.append(line.strip())
 
-    clonodict = {}
-    for c in clonotypes:
-        print(f"reading input for clonotype {c}")
-        clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
-                        args.candidates, args.isotypes, iso_encoding, start_iso)
+        else:
+            clonotypes = [it.name for it in os.scandir(args.path) if it.is_dir()]
+
+        clonodict = {}
+        for c in clonotypes:
+            print(f"reading input for clonotype {c}")
+            clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
+                            args.candidates, args.isotypes, iso_encoding, start_iso)
+
     
 
     tr= Tribal(clonodict, 
@@ -520,8 +555,11 @@ if __name__ == "__main__":
     print("\nTRIBAL Complete!, saving results...")
 
     if args.score is not None:
+        restart = 0
         with open(args.score, 'w+') as file:
-            file.write(str(obj_score))
+            for obj, like in zip(obj_score, all_log_like):
+                file.write(f"{restart},{obj},{like}\n")
+                restart +=1
 
     if args.transmat_infer is not None:
         np.savetxt(args.transmat_infer, transmat)

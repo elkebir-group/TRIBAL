@@ -58,7 +58,8 @@ class Tribal:
         self.init_transmat = self.transmat.copy()
 
     
-        self.states = np.arange(self.transmat.shape[0])
+        # self.states = np.arange(self.transmat.shape[0])
+        self.states = np.arange(n_isotypes)
 
         self.seed = seed
         self.rng = np.random.default_rng(seed)
@@ -226,21 +227,26 @@ class Tribal:
         cand_tmat = []
         cand_scores = []
         best_trees = []
-        transmat = self.transmat
+        # transmat = self.transmat
+        stay_probs = np.linspace(0.55,0.95, self.restarts)
+        # for i in range(self.restarts):
+        # init_mat_lists = [  tm.gen_trans_mat(stay_probs[i], self.n_isotypes) for i in range(self.restarts)]
+
         # for i in range(self.niterations):
         for i in range(self.restarts):
             print(f"\nStarting Cycle {i}...")
 
+            transmat =  tm.gen_trans_mat(stay_probs[i], self.n_isotypes)
             
             # candidates = self.intialize_candidates(best_tree_ids)
             candidates = self.intialize_candidates()
             init_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(candidates, transmat=transmat, nproc=nproc)
-            for _ in range(50):
+            for _ in range(self.niterations):
                 
+                print("\nFitting transition matrix...")
+                for j in range(self.niterations):
 
-                for j in range(50):
-
-                    print("\nFitting transition matrix...")
+                   
                     # cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
                     transmat, state_probs = MaxLike(self.n_isotypes).infer(best_scores) 
                     updated_score = 0
@@ -257,7 +263,7 @@ class Tribal:
                         current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(refined_cands, transmat=transmat, nproc=nproc, mode="score")
 
                         break
-
+          
             # DrawStateDiag(transmat).heatmap(f"/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2/tribal/refine_ilp/temp/transmat_{i}.png")
             # ts = TribalSub( isotype_weights=transmat,alpha=self.alpha, nworkers=nproc)
             # all_scores = ts.forest_mode(candidates[c], mode=self.mode)
@@ -465,7 +471,8 @@ def pickle_save(obj, fname):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-p", "--path", type=str, required=True, help="path to the directory containing input files")
+    parser.add_argument("-f", "--forest", type=str, help="path to pickled clonotypes dictionary of lineeage forests" )
+    parser.add_argument("-p", "--path", type=str, required=False, help="path to the directory containing input files")
     parser.add_argument("-c", "--clonotypes", required=False, type=str,
         help="filename with list of clonotype subdirectories that should be included in the inference. If not provided, scans provided path for all subdirectory names")
     parser.add_argument("-e", "--encoding", type=str, help="text file isotype states listed in germline order")
@@ -478,7 +485,7 @@ if __name__ == "__main__":
         help="optional filename of input transition matrix for initialization")
     parser.add_argument("-r", "--root", required=False, default="naive",
         help="the common id of the root in all clonotypes")
-    parser.add_argument( "--tree_path", type=str, required=True, help="path to directory where candidate trees are saved")
+    parser.add_argument( "--tree_path", type=str, required=False, help="path to directory where candidate trees are saved")
     parser.add_argument("--candidates", type=str, default="outtree", help="filename containing newick strings for candidate trees")
     parser.add_argument("--niter", type=int, help="max number of iterations in the fitting phase", default=10)
     parser.add_argument("--thresh", type=float, help="theshold for convergence in fitting phase" ,default=0.1)
@@ -498,30 +505,26 @@ if __name__ == "__main__":
     parser.add_argument("--propmap", type=str, help="filename where the {pdf,png} of isotype proportions should be saved")
 
     # parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
-    # args = parser.parse_args(None if sys.argv[1:] else ['-h'])
+    args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
-    fpath = "/scratch/projects/tribal/bcr-phylo-benchmark/sim_data/tmat_inf/direct/cells35/size25/rep1/2.0/0.365"
-    args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes25.txt", 
-        "--encoding", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
-        "--alpha", "0.8",
-        "-p", fpath,
-        "--max_cand", "5",
-        "--niter" , "10",
-        "--root", "naive",
-        "--tree_path", fpath,
-        "--nworkers", "15",
-        "--fasta", "GCsim_dedup.fasta",
-        "--isotypes", "GCsim.isotypes",
-        "--candidates", "dnapars/outtree",
-        "--mode", "refine_ilp",
-        "--restarts", "1",
-        "--mu", "0.15",
-        "--sigma", "0.05",
-        "--thresh", "0.05",
-        "--heatmap", "test/ml_est_heatmap.png",
-        "--transmat_inf", "test/ml_est_transmat.txt",
-        "--state_probs", "test/ml_est_prop.txt",
-        "--propmap", "test/ml_est_propmap.png" ])
+    # fpath = "/scratch/projects/tribal/benchmark_pipeline/sim_data/recomb/direct/cells35/size75/rep1/2.0/0.365"
+    # args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes25.txt", 
+    #     "--encoding", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
+    #     "--alpha", "0.8",
+    #     "-p", fpath,
+    #     "--max_cand", "25",
+    #     "--niter" , "20",
+    #     "--restarts", "15",
+    #     "--root", "naive",
+    #     "--tree_path", fpath,
+    #     "--nworkers", "7",
+    #     "--fasta", "GCsim_dedup.fasta",
+    #     "--isotypes", "GCsim.isotypes",
+    #     "--candidates", "dnapars/outtree",
+    #     "--mode", "refine",
+    #     "--heatmap", "test/heatmap_ml_refine.pdf",
+    #     "--transmat_inf", "test/transmat_ml_refine.txt"
+    #     ])
 
     if args.encoding is not None:
         iso_encoding, start_iso, n_isotypes = create_isotype_encoding(args.encoding)
@@ -541,20 +544,24 @@ if __name__ == "__main__":
 
 
     
-    if args.clonotypes is not None:
-        clonotypes = []
-        with open(args.clonotypes, 'r+') as file:
-            for line in file:
-                clonotypes.append(line.strip())
-
+    if args.forest is not None:
+        clonodict = ut.pickle_load(args.forest)
+    
     else:
-         clonotypes = [it.name for it in os.scandir(args.path) if it.is_dir()]
+        if args.clonotypes is not None:
+            clonotypes = []
+            with open(args.clonotypes, 'r+') as file:
+                for line in file:
+                    clonotypes.append(line.strip())
 
-    clonodict = {}
-    for c in clonotypes:
-        print(f"reading input for clonotype {c}")
-        clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
-                        args.candidates, args.isotypes, iso_encoding, start_iso)
+        else:
+            clonotypes = [it.name for it in os.scandir(args.path) if it.is_dir()]
+
+        clonodict = {}
+        for c in clonotypes:
+            print(f"reading input for clonotype {c}")
+            clonodict[c] = create_input(args.path, args.tree_path, c, args.root, args.fasta, 
+                            args.candidates, args.isotypes, iso_encoding, start_iso)
     
 
     tr= Tribal(clonodict, 
@@ -581,9 +588,9 @@ if __name__ == "__main__":
 
  
 
-    best_trees.pickle_scores("test/trees.pickle")
-    for i,score in enumerate(best_trees):
-        score.tree.save_png(f"test/trees/clonotype{i+1}.png", score.isotypes, show_legend=True)
+    # best_trees.pickle_scores("test/trees.pickle")
+    # for i,score in enumerate(best_trees):
+    #     score.tree.save_png(f"test/trees/clonotype{i+1}.png", score.isotypes, show_legend=True)
 
 
     if args.score is not None:
