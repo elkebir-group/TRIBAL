@@ -2,13 +2,14 @@ configfile: "tribal.yml"
 import pandas as pd 
 
 
-def get_files(dirn, fname):
+def get_files(dirn, mode, fname):
     targets = []
-    for d in config["datasets"]:
+    for d in config["dataset"]:
         df =pd.read_csv(f"{d}/igphyml/name_isotype_mapping.csv")
         clonotypes = df['clone_id'].unique()
         for c in clonotypes:
-            targets.append(f"{d}/{dirn}/{c}/{fname}")
+            for s in config["script"]:
+                targets.append(f"{d}/{dirn}/{s}/{mode}/{c}/{fname}")
     return targets 
 
 
@@ -20,7 +21,8 @@ rule all:
         expand("{dataset}/tribal_recomb/{script}/transmat.txt",
             dataset = config["dataset"],
             script = config["script"]
-        )
+        ),
+        get_files("tribal_recomb", "refine_ilp", "tree.txt")
 
 rule prep_dnapars:
     input: 
@@ -96,59 +98,49 @@ rule tribal:
 
 
 
-
-
-# rule tribal_refine:
-#     input: 
-#         alignment= "{dataset}/input/{clonotype}/concat.aln.fasta",
-#         isotypes = "{dataset}/input/{clonotype}/isotype.fasta",
-#         transmat =  "{dataset}/tribal/0.25/transmat.txt",
-#         candidates ="{dataset}/dnapars/{clonotype}/outtree",
-#         encoding = "mouse_isotype_encoding.txt",
-#     output: 
-#         forest="{dataset}/{mode}/{clonotype}/forest.pickle",
-#         tree= "{dataset}/{mode}/{clonotype}/tree.txt",
-#         seq= "{dataset}/{mode}/{clonotype}/inferred_seq.csv",
-#         fasta= "{dataset}/{mode}/{clonotype}/inferred_seq.fasta",
-#         isotypes= "{dataset}/{mode}/{clonotype}/isotypes.csv",
-#         score= "{dataset}/{mode}/{clonotype}/scores.csv",
-#         png = "{dataset}/{mode}/{clonotype}/tree.png",
-#         opts = directory("{dataset}/{mode}/{clonotype}/opt_trees"),
-#         rf_dist="{dataset}/{mode}/{clonotype}/best_rf_dist.csv",
-#         node_degree ="{dataset}/{mode}/{clonotype}/parsimony_node_degree.csv",
-#         refine_degree ="{dataset}/{mode}/{clonotype}/refine_node_degree.csv",
-#     params:
-#         root = "naive",
-#         ntrees = config["ntrees"],
-#         lamb = config["lamb"],
-#     threads: config['nworkers']
-#     log: 
-#         run= "{dataset}/{mode}/{clonotype}/refine.log",
-#         err ="{dataset}/{mode}/{clonotype}/refine.err.log"  
-#     benchmark: "{dataset}/{mode}/{clonotype}/refine.benchmark.log" 
-#     shell:
-#         "nice python ../src/tribal_tree.py "
-#         " -r {params.root} "
-#         " -a {input.alignment} "
-#         "-t {input.transmat} "
-#         "-e {input.encoding} "
-#         "-i {input.isotypes} "
-#         "--candidates {input.candidates} "
-#         "--alpha {params.lamb} "
-#         "--sequences {output.seq} "
-#         "--fasta {output.fasta} "
-#         "--score {output.score} "
-#         "--iso_infer {output.isotypes} "
-#         "--png {output.png} "
-#         "--mode {wildcards.mode} "
-#         "--ntrees {params.ntrees} "
-#         "--all_optimal_sol {output.opts} "
-#         "--best_tree_diff {output.rf_dist} "
-#         "--nworkers {threads} "
-#         "--tree {output.tree} "
-#         "--pars_degree {output.node_degree} "
-#         "--refine_degree {output.refine_degree} "
-#         "-o {output.forest} > {log.run} 2> {log.err} "  
+rule tribal_refine:
+    input: 
+        forest = "{dataset}/tribal_recomb/input_forest.pickle",
+        encoding = "mouse_isotype_encoding.txt",
+        transmat =  "{dataset}/tribal_recomb/{script}/transmat.txt",
+    output: 
+        forest="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
+        tree= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/tree.txt",
+        seq= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/inferred_seq.csv",
+        fasta= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/inferred_seq.fasta",
+        isotypes= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/isotypes.csv",
+        score= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/scores.csv",
+        png = "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/tree.png",
+        opts = directory("{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/opt_trees"),
+        rf_dist="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/best_rf_dist.csv",
+        node_degree ="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/parsimony_node_degree.csv",
+        refine_degree ="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine_node_degree.csv",
+    params:
+        root = "naive",
+        mode = "refine_ilp"
+    threads: config['nworkers']
+    log: 
+        run= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine.log",
+        err ="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine.err.log"  
+    benchmark: "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine.benchmark.log" 
+    shell:
+        "nice -n 5 python ../src/tribal_tree.py "
+        " -r {params.root} "
+        " -f {input.forest} "
+        "-c {wildcards.clonotype} "
+        "-t {input.transmat} "
+        "-e {input.encoding} "
+        "--sequences {output.seq} "
+        "--fasta {output.fasta} "
+        "--score {output.score} "
+        "--iso_infer {output.isotypes} "
+        "--png {output.png} "
+        "--mode {wildcards.mode} "
+        "--all_optimal_sol {output.opts} "
+        "--best_tree_diff {output.rf_dist} "
+        "--nworkers {threads} "
+        "--tree {output.tree} "
+        "-o {output.forest} > {log.run} 2> {log.err} "  
 
    
 
