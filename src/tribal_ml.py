@@ -605,8 +605,8 @@ if __name__ == "__main__":
     if args.heatmap is not None:
         DrawStateDiag(transmat, state_probs, rev_encoding).heatmap(args.heatmap)
    
-    # if args.propmap is not None:
-    #     DrawStateDiag(transmat, state_probs, rev_encoding).state_heatmap(args.propmap)
+    if args.propmap is not None:
+        DrawStateDiag(transmat, state_probs, rev_encoding).state_heatmap(args.propmap)
 
 
     # if args.outpath is not None:

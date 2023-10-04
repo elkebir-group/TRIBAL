@@ -88,6 +88,8 @@ class TribalSub:
                                                     cost_function=self.cost_function)
         iso_score, iso_labels = lin_tree.isotype_parsimony(isotype_labels,  weights=self.iso_weights, states=self.states)
         obj = self.compute_score(seq_score, iso_score)
+        # lin_tree.save_png(f"test/lin_tree_score{lin_tree.id}.png", iso_labels)
+
 
         return   Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
@@ -107,19 +109,24 @@ class TribalSub:
             # lin_tree.save_png(f"/scratch/projects/tribal/test/init_tree{lin_tree.id}.png", isotype_labels)
   
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
+           
        
                 # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
             seq_score_prior, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
             # fg.save_graph("test/flow_graph.png")
             # fg.save_graph(f"test/graphs/G{lin_tree.id}.png")
-            st = SteinerTree(fg.G, fg.find_terminals(), fg.seq_weights, fg.iso_weights,fg.node_mapping, fg.tree_to_graph, fg.node_out_degree, root=self.root_id, lamb=self.alpha, threads=1 )
+            st = SteinerTree(fg.G, lin_tree.T, fg.find_terminals(), fg.seq_weights, 
+                             fg.iso_weights,fg.node_mapping, fg.tree_to_graph,
+                               fg.node_out_degree, pars_score = seq_score_prior, root=self.root_id, lamb=self.alpha, threads=1 )
             obj, tree = st.run()
             # print(f"tree: {lin_tree.id} obj: {iso_score}")
             out_tree, out_iso = cg.decodeTree(tree)
             
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
+            # print(out_lt.id)
+            # out_lt.save_png(f"test/lin_tree{lin_tree.id}.png", out_iso)
             # total_out = sum([out_lt.T.out_degree[n] for n in out_lt.T.nodes if "7_" in n])
             # total_in = sum([out_lt.T.in_degree[n] for n in out_lt.T.nodes if "7_" in n])
             # print(total_out - total_in + 1)
@@ -133,9 +140,9 @@ class TribalSub:
             seq_score, seq_labels = out_lt.sequence_parismony(alignment)
             assert seq_score_prior ==seq_score
 
-            iso_score =(obj - self.alpha*seq_score)/ (1-self.alpha)
+            # iso_score =(obj - self.alpha*seq_score)/ (1-self.alpha)
 
-            sc = Score(obj, seq_score, iso_score, seq_labels, out_iso, out_lt)
+            sc = Score(obj, seq_score, obj, seq_labels, out_iso, out_lt)
             sc.check_score(self.iso_weights)
 
             return sc 
@@ -441,6 +448,8 @@ def get_alignment(fname):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("-f", "--full-forest", type=str, help="path to pickled clonotypes dictionary of lineeage forests" )
+    parser.add_argument("-c", "--clonotype", type=str, help="name of clonotype lineage to refine from the full forest" )
     parser.add_argument("-a", "--alignment", type=str,
         help="filename of input fasta file containing the alignment")
     parser.add_argument("-i", "--isotypes",  type=str,
@@ -535,35 +544,35 @@ if __name__ == "__main__":
     # ])
 
    
+#     dataset = "GCB_NP_1"
+#     path = f"/scratch/projects/tribal/experimental_data/{dataset}"
+#     clonotype = "B_44_4_14_64_1_58"
 
-    # path = "/scratch/projects/tribal/experimental_data/day_14"
-    # clonotype = "B_120_2_8_210_1_13"
-    # alignment= f"{path}/input/{clonotype}/concat.aln.fasta"
-    # candidates = f"{path}/dnapars/{clonotype}/outtree" 
-    # isotypes = f"{path}/input/{clonotype}/isotype.fasta"
-    # encoding = "/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt"
-    # transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"
-    # # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
-    # mode= "refine_ilp"
-    # args = parser.parse_args([
-    #     "-a", alignment,
-    #     "-i", isotypes,
-    #     "-t", transmat,
-    #     "--nworkers", "10",
-    #     "-r", "naive",
-    #     "--candidates" ,candidates,
-    #     "-e", encoding,
-    #     "--mode", mode,
-    #     # "--all_obj", f"test/{mode}.csv",
-    #     "--png", f"test/{mode}3.png",
-    #     "--ntrees", "2",
-    #     "--all_optimal_sol", "test/opt_tree",
-    #      "--tree", f"test/{mode}.txt",
-    #     "--sequences", f"test/{mode}_seq.csv",
-    #     "--iso_infer", f"test/{mode}_iso.csv",
-    #     "--best_tree_diff", f"test/best_tree_rf.csv",
-    #     "--pickle_best", f"test/{mode}3.pickle"
-    # ])
+#     forest = f"{path}/tribal_recomb/input_forest.pickle"
+#     transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal_recomb/marginal/transmat.txt"
+#     # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
+#     mode= "refine_ilp"
+#     # mode = "score"
+#     args = parser.parse_args([
+#         "-f", forest,
+#         "-c", clonotype
+# ,        "-t", "/scratch/projects/tribal/test/transmat_em.txt",  #ransmat,
+#         "--nworkers", "3",
+#         "-r", "naive",
+ 
+#         "-e","/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt",
+#         "--mode", mode,
+#         # "--all_obj", f"test/{mode}.csv",
+#         "--png", f"test/{clonotype}.png",
+#         # "--ntrees", "2",
+#         # "--all_optimal_sol", "test/opt_tree",
+#         #  "--tree", f"test/{clonotype}txt",
+#         # "--sequences", f"test/{clonotype}seq.csv",
+#         "--score", f"test/{clonotype}.scores.v1.csv",
+#         # "--iso_infer", f"test/{clonotype}iso.csv",
+#         # "--best_tree_diff", f"test/best_tree_rf.csv",
+#         # "--pickle_best", f"test/{clonotype}.pickle"
+#     ])
   
     # path = "/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2"
     # clonotype = "MouseHTO-2_1073"
@@ -648,23 +657,35 @@ if __name__ == "__main__":
       
 
     else:
-        if args.lineage is not None:
-            lin= ut.pickle_load(args.lineage)
-           
+        if args.clonotype is not None and args.full_forest is not None:
+            full_forest = ut.pickle_load(args.full_forest)
+            lin_forest = full_forest[args.clonotype]
+
+        else:    
+            if args.lineage is not None:
+                    lin= ut.pickle_load(args.lineage)
+            
             if args.forest:
                 lin_forest = lin
                 if lin_forest.alignment is None:
                     lin_forest.alignment = alignment 
                 if lin_forest.isotypes is None:
                     lin_forest.isotypes = isotypes_filt 
-               
+                
             else:
                 lin_forest = LineageForest( alignment, isotypes_filt, [lin])
               
  
+    # for c in full_forest:
+    # for c in ['B_71_1_1_16_1_4']:
+        # print(c)
+    # lin_forest = full_forest[c]
+    ncells = len(lin_forest.alignment)
+    print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
     tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
-    ncells = len(lin_forest.alignment)
+
+    all_results =  tr.forest_mode(lin_forest, mode =args.mode)
     data_rows = []
     import pandas as pd 
     for lin_tree in lin_forest:
@@ -672,7 +693,7 @@ if __name__ == "__main__":
         id = lin_tree.id 
         for n in tree:
             data_rows.append([id, n, tree.out_degree[n]])
-    
+
     node_degree = pd.DataFrame(data_rows, columns=['tree', 'n', 'out_degree'])
 
     if args.pars_degree is not None:
@@ -681,7 +702,7 @@ if __name__ == "__main__":
 
     
 
-    print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
+
 
     # flow_scores, combined_score,  combined_lt, seq_labels, all_isotypes, best_ilp_lt, best_iso_ilp = tr.forest_infer(lin_forest)
     # flow_scores, best_ilp_lt, best_iso_ilp, ilp_seq_labels =tr.forest_infer(lin_forest)
@@ -721,7 +742,7 @@ if __name__ == "__main__":
       
             
             # lin.save_png(f"test/tree_{lin.id}.png", lin_forest.isotypes, isotype_encoding)
-    all_results =  tr.forest_mode(lin_forest, mode =args.mode)
+
 
     print(len(all_results))
     for a in all_results:
@@ -813,7 +834,7 @@ if __name__ == "__main__":
 
     
     if args.png is not None:
-        best_tree.save_png(args.png, best_result.isotypes, isotype_encoding, show_labels=False)
+        best_tree.save_png(args.png, best_result.isotypes, isotype_encoding, show_labels=True)
     
 
     best_labels = ut.update_labels(best_result.labels)

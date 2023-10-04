@@ -152,8 +152,8 @@ class EMProbs:
                             coeff = np.exp(val)
                             new_tmat[parent_state, child_state] += coeff
                             new_term = coeff* self.log_tmat[parent_state, child_state]
-                            if np.isnan(new_term):
-                                print("here")
+                            # if np.isnan(new_term):
+                            #     print("here")
                             exp_log_like += coeff* self.log_tmat[parent_state, child_state]
 
   

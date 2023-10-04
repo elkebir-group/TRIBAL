@@ -142,12 +142,12 @@ class LineageTree:
         return 0, alignment
         
 
-        # sp = SmallParsimony(self.T, 
-        #                     self.root,
-        #                     alphabet= alphabet,
-        #                     cost = cost_function)
-        # seq_score, labels = sp.sankoff(alignment)
-        # return seq_score, labels
+        sp = SmallParsimony(self.T, 
+                            self.root,
+                            alphabet= alphabet,
+                            cost = cost_function)
+        seq_score, labels = sp.sankoff(alignment)
+        return seq_score, labels
     
     
     def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None, convert=False):

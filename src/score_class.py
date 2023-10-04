@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from lineage_tree import LineageTree
 from functools import total_ordering
 import pickle
+import numpy as np
 
 @dataclass
 @total_ordering
@@ -119,6 +120,13 @@ class ScoreList(list):
         min_score_object = [obj for obj in self if round(obj.iso_obj, 5) == round(min_score,5)][0]
         return min_score, [min_score_object]
     
+    def find_all_best_scores(self):
+        min_score = min(self, key=lambda x: x.iso_obj).iso_obj
+
+        # Filter objects with the minimum score
+        min_score_object = [obj for obj in self if round(obj.iso_obj, 5) == round(min_score,5)]
+        return min_score, min_score_object
+    
     def get_all_trees(self):
 
         return [x.tree for x in self]
@@ -129,6 +137,15 @@ class ScoreList(list):
     def pickle_scores(self, fname):
         with open(fname, 'wb') as file:
             pickle.dump(self, file)
+    
+    def sample_best_scores(self, rng=None, seed=1016):
+        if rng is None:
+            rng = np.random.default_rng(seed)
+        _, best_scores = self.find_all_best_scores()
+        sampled_index = np.random.choice(len(best_scores))
+        return best_scores[sampled_index]
+
+        
     
     
     
