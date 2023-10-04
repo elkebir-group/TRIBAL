@@ -13,7 +13,8 @@ class SteinerTree:
     c is an edge weight mapping, finds a Steiner Tree in G where the sum of the edge weights is minimum
     c = lambda* seq_weights + (1-lambda)*iso_weights 
     '''
-    def __init__(self, G, S, seq_weights, iso_weights,node_mapping, tree_to_graph, tree_out_degree, root=0, lamb=0.9, threads=3) -> None:
+    def __init__(self, G,T, S,  seq_weights, iso_weights,node_mapping, 
+                 tree_to_graph, tree_out_degree, pars_score=None, root=0, lamb=0.9, threads=3) -> None:
         
         #set solve parameters 
         self.m = gp.Model('steiner')
@@ -25,7 +26,7 @@ class SteinerTree:
         self.root= root
         self.nodes = list(G.nodes)
         self.edges = list(G.edges)
-        
+        self.seq_weights = seq_weights
         self.internal_nodes = [n for n in self.nodes if n not in self.terminals and n!= self.root ]
         self.in_nodes = {j : [] for j in self.nodes}
         self.out_nodes = {j : [] for j in self.nodes}
@@ -35,11 +36,15 @@ class SteinerTree:
                 self.out_nodes[i].append(j)
         
         #compute edge weights from the sequence and isotype weights 
-        self.c = {e:lamb* seq_weights[e] + (1-lamb) *iso_weights[e]for e in self.edges}
+        # self.c = {e:lamb* seq_weights[e] + (1-lamb) *iso_weights[e]for e in self.edges}
+        self.c = {e:iso_weights[e]for e in self.edges}
 
 
         #create a tuple of terminals and edges 
         self.flow_dest = [(t,i,j) for i,j in self.edges for t in self.terminals]
+
+       
+             
         
         #add a continuous flow variable 
         self.f = self.m.addVars(self.flow_dest, name='flow', lb=0.0)
@@ -47,25 +52,29 @@ class SteinerTree:
         #add a binary variable indicating if edge i,j is included in the Steiner tree 
         self.x = self.m.addVars(self.edges, vtype=GRB.BINARY, name="edges")
 
+        
+        for u,v in T.edges:
+             self.m.addConstr(sum(self.x[i,j] for i in tree_to_graph[u] for j in tree_to_graph[v] if (i,j) in self.edges ) ==1)
         #we need this variable if we want to prevent unifurcations 
         # self.z = self.m.addVars(self.internal_nodes, vtype=GRB.BINARY, name="node use")  
 
          #minimize the sum of the edge weights of the Steiner Tree in G
         self.m.setObjective( sum(self.c[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
 
+        # if pars_score is not None:
+        #     self.m.addConstr(sum(seq_weights[i,j]*self.x[i,j]  for [i,j] in self.edges) == pars_score) 
 
         #enforce that there is a single MRCA child of the root node 
-        self.m.addConstr(sum(self.x[self.root,j] for j in self.out_nodes[self.root] ) <= 1)
+        # self.m.addConstr(sum(self.x[self.root,j] for j in self.out_nodes[self.root] ) <= 1)
 
-        for n, deg in tree_out_degree.items():
-             nodes = tree_to_graph[n]
-             if deg ==1:
-                  continue
-             self.m.addConstr(sum(self.x[i,j] for i in nodes for j in self.out_nodes[i]) \
-                               - sum(self.x[i,j] for j in nodes for i in self.in_nodes[j]) <= deg -1)
+        # for n, deg in tree_out_degree.items():
+        #      nodes = tree_to_graph[n]
+        #      if deg ==1:
+        #           continue
+        #      self.m.addConstr(sum(self.x[i,j] for i in nodes for j in self.out_nodes[i]) \
+        #                        - sum(self.x[i,j] for j in nodes for i in self.in_nodes[j]) <= deg -1)
              
 
-        
         # need to send 1 unit of flow from the root to each terminal
         for t in self.terminals:
 
@@ -81,15 +90,15 @@ class SteinerTree:
             #ensures 1 unit of flow reaches each termminal
             self.m.addConstr(sum(self.f[t,i,t] for i in self.in_nodes[t])==1)
             
-            # self.m.addConstr(sum(self.f[t,t,j] for j in self.out_nodes[t])==0)
+            self.m.addConstr(sum(self.f[t,t,j] for j in self.out_nodes[t])==0)
             
             #ensure 1 unit of flow designated for each terminal leaves the root
             self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
 
         ## constraint to prevent unifurcations in internal nodes 
         # for i in self.internal_nodes:
-        # self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
-        # self.m.addConstr(1e5*self.z[i] >= sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals))
+        #     self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
+        #     self.m.addConstr(1e5*self.z[i] >= sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals))
 
         # for n,val in degree_max.items():
         #         if len(self.out_nodes[n]) > 0:
@@ -107,7 +116,32 @@ class SteinerTree:
 
         
 
+    def post_process(self, T):
+    #  return T
+        '''
+        Remove any unifurcations that have 0 branch length
+        '''
+        unifurcations = [n for n in T if T.out_degree[n]==1 and n != self.root]
+
+        to_remove = []
+        for u in unifurcations:
+            
+            child = list(T.neighbors(u))[0]
+
+            if self.c[u,child] ==0: # and self.seq_weights[u,child]==0:
+                to_remove.append((u,child))
         
+        for u,v in to_remove:
+              parent = list(T.predecessors(u))
+              if len(parent) > 0:
+                if u.split("_")[0] ==parent[0].split("_")[0]:
+                    parent = parent[0]
+                    T.remove_node(u)
+                    T.add_edge(parent, v)
+
+
+        return T
+                   
  
     
     
@@ -120,8 +154,8 @@ class SteinerTree:
                 score = self.m.objVal
    
                 for i,j in self.edges:
-               
-                    if solution[i,j] > 0.5:
+                    total_flow = sum(flow[t,i,j] for t in self.terminals)
+                    if solution[i,j] > 0.5 and total_flow >0:
                         T.add_edge(i,j)
                     # else:
                          
@@ -134,8 +168,10 @@ class SteinerTree:
             else:
                  print("Warning model infeasible")
                  score = np.Inf
-    
             
+            # def post_process():
+     
+            T = self.post_process(T)
             return score, T
     
 
@@ -188,7 +224,7 @@ class ConstructGraph:
         T = LinTree.T
         root = LinTree.root
         id = LinTree.id
-
+      
         G = nx.DiGraph()
         seq_weights = {}
         iso_weights = {}
@@ -247,7 +283,7 @@ class ConstructGraph:
                     for v in T.neighbors(n):
                         is_leaf=T.out_degree[v]==0
                         for j in nodes_to_states[v]:
-                            if i <= j:
+                            if i <= j: #and T.out_degree[n] > 2 and  self.iso_costs[int(i),int(j)] > 0:
                                 G.add_edge(new_node, name_node(id,v,j, is_leaf=is_leaf))
                                 seq_weights[new_node,name_node(id,v,j,is_leaf=is_leaf)] = 0
 
@@ -274,6 +310,7 @@ class ConstructGraph:
 
         
         fg = FlowGraph(id, G, seq_weights, iso_weights, self.node_isotypes, node_mapping, tree_to_graph, node_out_degree)
+   
         self.Graphs.append(fg)
         return fg
     
