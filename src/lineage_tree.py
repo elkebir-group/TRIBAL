@@ -352,3 +352,93 @@ class LineageForest:
                 pickle.dump(tree, file)
 
 
+#####load scripts 
+from ete3 import Tree 
+import re
+def lintree_from_newick(fname,root):
+    '''
+    takes in a filename containing line separated newick strings and returns a list of LineageTrees
+    '''
+    trees = read_trees(fname, root)
+    lin_trees = []
+    for i,t in enumerate(trees):
+        lin_trees.append(LineageTree(t,root,id=i))
+    
+    return lin_trees 
+
+
+
+def read_trees(fname,root):
+    '''
+    Takes in a fname and a name of the root
+    returns a list of networkx trees 
+    '''
+
+    exp = '\[.*\]'
+    trees = []
+       
+    with open(fname, 'r') as file:
+        nw_strings = []
+        nw_string = ""
+        for nw in file:
+                line = nw.strip()
+                nw_string += line
+                if ";" in line:
+                    
+                    nw_strings.append(nw_string)
+                    nw_string = ""
+
+        for nw in nw_strings:
+
+            nw = re.sub(exp, '', nw)
+            
+
+            ete_tree = Tree(nw, format=0)
+
+            nx_tree= convert_to_nx(ete_tree, root)
+          
+            trees.append(nx_tree)
+        return trees
+
+
+def convert_to_nx(ete_tree, root):
+    nx_tree = nx.DiGraph()
+    internal_node = 1
+    internal_node_count = 0
+    for node in ete_tree.traverse("preorder"):
+
+        if node.name == "":
+            node.name = internal_node
+            internal_node_count += 1
+            internal_node += 1
+        if node.is_root():
+            root_name =node.name
+
+
+        for c in node.children:
+            if c.name == "":
+                c.name = str(internal_node)
+                internal_node += 1
+                internal_node_count += 1
+    
+
+            nx_tree.add_edge(node.name, c.name)
+
+    
+    if len(list(nx_tree.neighbors(root))) == 0:
+        # path = nx.shortest_path(nx_tree, source=root_name, target=root)
+
+        G = nx_tree.to_undirected()
+        H = nx.dfs_tree(G,source=root)
+        # print("Edges of the re-rooted tree:")
+        # print(list(H.edges()))
+
+        if H.out_degree[root_name]==0:
+            H.remove(root_name)
+
+   
+        # nx_tree.remove_edge(root_name, root)
+        # nx_tree.add_edge(root, root_name)
+      
+
+    return H
