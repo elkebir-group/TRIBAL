@@ -4,7 +4,9 @@ from utils import read_dict
 import argparse 
 
 class DrawTree:
-    def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None, show_labels=True) -> None:
+    def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", 
+                 show_legend=False, isotype_encoding=None, 
+                 show_labels=True, hide_underscore=True) -> None:
         self.parents = parents
         if isotypes is not None:
             self.isotypes = isotypes
@@ -12,6 +14,8 @@ class DrawTree:
             nodes = [key for key in parents] + [val for key, val in parents.items()]
             nodes =set(nodes)
             self.isotypes = {n: 0 for n in nodes }
+        
+    
      
         
 
@@ -48,7 +52,8 @@ class DrawTree:
             if p == self.root:
                 lab = "r"
        
-            if "_" in lab:
+
+            if "_" in lab and hide_underscore:
                     lab =lab.split("_")[0]
        
             if not show_labels:
