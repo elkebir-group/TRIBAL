@@ -1,6 +1,7 @@
 configfile: "tribal.yml"
 import pandas as pd 
-
+import sys
+sys.append("../src")
 
 def get_files(dirn, modes, fname):
     targets = []
@@ -145,6 +146,25 @@ rule tribal_refine:
         "-o {output.forest} > {log.run} 2> {log.err} "  
 
    
+rule newick_strings:
+    input:    
+        scores="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
+        mapping =  "{dataset}/igphyml/seq_mappings/{clonotype}.mapping.csv",
+     output:
+        newicks = "{dataset}/tribal_recomb/{script}/{mode}/newick/{clonotype}.nwk.csv"
+      run:
+          import utils as ut 
+          import lineage_tree as lt 
+          seq_mapping = ut.read_dict(input.mapping)
+          rev_mapping = {val: key for key,val in seq_mapping.items()}
+          scores  = lt.load(input.forest)
+          for score in scores:
+            id = score.lin_tree.id 
+
+
+
+           
+    
 
 
 

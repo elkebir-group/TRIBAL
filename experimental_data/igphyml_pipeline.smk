@@ -81,6 +81,7 @@ rule convert_to_linforests:
     output:
         linforest = "{dataset}/igphyml/results/{clone}.pickle",
         png = "{dataset}/igphyml/pngs/{clone}.png",
+        seq_mapping = "{dataset}/igphyml/seq_mappings/{clone}.mapping.csv",
     params:
         root = "Germline"
     run:
@@ -125,7 +126,7 @@ rule convert_to_linforests:
         df  = df[df["clone_id"]==wildcards.clone]
         seq_dict = dict(zip(df["sequence_id"], df["seq_name"]))
         seq_dict[root] = "naive"
-        seq_dict["Germline_Inferred"] = "Germline Inferred"
+        ut.save_dict(seq_dict, output.seq_mapping)
 
     
         alignment = {}
@@ -134,6 +135,7 @@ rule convert_to_linforests:
                 alignment[seq_dict[n]] = s 
             else:
                 alignment[n] = s
+
 
         lin_tree = lt.LineageTree(tree, "naive", name=wildcards.clone)
         lin_tree.relabel(seq_dict)
