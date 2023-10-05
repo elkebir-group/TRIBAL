@@ -66,7 +66,7 @@ if __name__ == "__main__":
     max_seq.reset_index(drop=True, inplace=True)
 
     # Display the result with the germline sequence having the maximum count
-    max_seq
+    # max_seq
 
     num_germlines = max_seq.groupby("clone_id").size()
     bad_germlines = num_germlines[num_germlines > 1]

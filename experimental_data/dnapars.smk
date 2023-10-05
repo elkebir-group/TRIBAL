@@ -61,46 +61,7 @@ rule dnapars_run:
         dnapars < dnapars.cfg > dnapars.log
         )
         """
-        # expand("{run_dir}/clonotype_summary.csv",
-        # run_dir = config["run_dir"]),
-        # expand("{run_dir}/input/{clonotype}/{seq}.aln.fasta",
-        # run_dir = config["run_dir"],
-        # clonotype= get_clonotypes(),
-        # seq = config["seq"]),
-        # expand("{run_dir}/input/{clonotype}/concat.aln.fasta",
-        # run_dir = config["run_dir"],
-        # clonotype = get_clonotypes(),
-        # ),
-        # expand("{run_dir}/input/{clonotype}/concat.algn.phylip",
-        # run_dir = config["run_dir"],
-        # clonotype = get_clonotypes(),
-        # ),
-        # expand( "{run_dir}/dnapars/{clonotype}/dnapars.log",
-        #  run_dir = config["run_dir"],
-        #  clonotype = get_clonotypes(),
-        # ),
-        # expand( "{run_dir}/tribal/transmat.txt",
-        #     run_dir=config["run_dir"],
-        # ),
-        # expand( "{run_dir}/tribal/{jump_prob}/transmat.pdf",
-        #     run_dir=config["run_dir"],
-        #     jump_prob = config["jump_probs"]
-        # ),
-        # expand("{run_dir}/tribal_search/{clonotype}/{alpha}/search_tree.png",
-        #     run_dir=config["run_dir"],
-        #     alpha = config['alpha'],
-        #     clonotype = get_clonotypes(),
-        #     # clonotype = ["B_21_3_13_154_2_3"]
-        # ),
-        # expand("heatmaps/{run_dir}.pdf",
-        #     run_dir = config["run_dir"]
-        # ),
-        # expand("{run_dir}/tribal_refine/{clonotype}/0.75/tree.png",
-        #     run_dir=config["run_dir"],
-        #     clonotype = get_clonotypes(),
-        #     # clonotype = ["B_21_3_13_154_2_3"]
-        # )
-
+   
 
 
 

@@ -2,14 +2,15 @@ configfile: "tribal.yml"
 import pandas as pd 
 
 
-def get_files(dirn, mode, fname):
+def get_files(dirn, modes, fname):
     targets = []
     for d in config["dataset"]:
         df =pd.read_csv(f"{d}/igphyml/name_isotype_mapping.csv")
         clonotypes = df['clone_id'].unique()
         for c in clonotypes:
-            for s in config["script"]:
-                targets.append(f"{d}/{dirn}/{s}/{mode}/{c}/{fname}")
+            for m in modes:
+                for s in config["script"]:
+                    targets.append(f"{d}/{dirn}/{s}/{m}/{c}/{fname}")
     return targets 
 
 
@@ -22,7 +23,7 @@ rule all:
             dataset = config["dataset"],
             script = config["script"]
         ),
-        get_files("tribal_recomb", "refine_ilp", "tree.txt")
+        get_files("tribal_recomb", ["score", "refine_ilp"], "tree.txt")
 
 rule prep_dnapars:
     input: 
@@ -97,7 +98,6 @@ rule tribal:
         "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "    
 
 
-
 rule tribal_refine:
     input: 
         forest = "{dataset}/tribal_recomb/input_forest.pickle",
@@ -117,7 +117,7 @@ rule tribal_refine:
         refine_degree ="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine_node_degree.csv",
     params:
         root = "naive",
-        mode = "refine_ilp"
+        # mode = "refine_ilp"
     threads: config['nworkers']
     log: 
         run= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/refine.log",
@@ -140,6 +140,8 @@ rule tribal_refine:
         "--best_tree_diff {output.rf_dist} "
         "--nworkers {threads} "
         "--tree {output.tree} "
+        "--pars_degree {output.node_degree} "
+        "--refine_degree {output.refine_degree} "
         "-o {output.forest} > {log.run} 2> {log.err} "  
 
    

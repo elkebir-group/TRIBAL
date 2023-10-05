@@ -8,7 +8,7 @@ import os
 import pickle 
 import pygraphviz as pgv
 from pandas import DataFrame
-from utils import hamming_distance
+from utils import hamming_distance, read_fasta
 from collections import Counter
 
 
@@ -36,6 +36,9 @@ class LineageTree:
     
         
         return preds[0]
+
+    def relabel(self, dict):
+        self.T = nx.relabel_nodes(self.T, dict)
     
     def children(self,n):
         return list(self.T.neighbors(n))
@@ -200,7 +203,7 @@ class LineageTree:
         return iso_score, labels 
     
 
-    def save_png(self,fname, isotypes, iso_encoding=None, show_legend=False, show_labels=True):
+    def save_png(self,fname, isotypes=None, iso_encoding=None, show_legend=False, show_labels=True):
     
         parents = self.get_parents()
         dt = DrawTree(parents, isotypes, show_legend=show_legend, isotype_encoding=iso_encoding, show_labels=show_labels)
@@ -355,7 +358,7 @@ class LineageForest:
 #####load scripts 
 from ete3 import Tree 
 import re
-def lintree_from_newick(fname,root):
+def lintrees_from_newick(fname,root):
     '''
     takes in a filename containing line separated newick strings and returns a list of LineageTrees
     '''
@@ -366,18 +369,26 @@ def lintree_from_newick(fname,root):
     
     return lin_trees 
 
-
+def load(fname):
+    with open(fname, "rb") as file:
+        lt = pickle.load(fname)
+    
+    return lt 
 
 def read_trees(fname,root):
     '''
     Takes in a fname and a name of the root
     returns a list of networkx trees 
     '''
+    print(f"\nreading trees from {fname}....")
 
     exp = '\[.*\]'
     trees = []
+    # if os.path.exists(fname):
+    #     print(f"{fname} does not exist")
+    #     return trees
        
-    with open(fname, 'r') as file:
+    with open(fname, 'r+') as file:
         nw_strings = []
         nw_string = ""
         for nw in file:
@@ -398,8 +409,13 @@ def read_trees(fname,root):
             nx_tree= convert_to_nx(ete_tree, root)
           
             trees.append(nx_tree)
+        print(f"\n{len(trees)} read from {fname}!")
         return trees
-
+    
+def get_alignment(fname):
+    alignment = read_fasta(fname)
+    alignment = {key: list(value.strip()) for key,value in alignment.items()}
+    return alignment
 
 def convert_to_nx(ete_tree, root):
     nx_tree = nx.DiGraph()
@@ -442,3 +458,54 @@ def convert_to_nx(ete_tree, root):
       
 
     return H
+
+# dataset = "day_14"
+# clonotype = "B_97_1_11_11_1_33"
+# path = f"/scratch/projects/tribal/experimental_data/{dataset}/igphyml"
+# fname = f"data/{clonotype}.fasta_igphyml_tree.txt"
+# root = f"{clonotype}_GERM"
+# newick_file =f"{path}/{fname}"
+# name_mapping = f"{path}/name_isotype_mapping.csv"
+# encoding = "/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt"
+# afname= f"{path}/data/{clonotype}.fasta"
+
+# alignment = get_alignment(afname)
+# print(alignment)
+
+# encoding_dict = {}
+# with open(encoding, "r+" ) as file:
+#     for i,line in enumerate(file):
+#         if "m" and "d" in line.lower():
+#             encoding_dict["Ighm"] =i
+#             encoding_dict["Ighd"] = i
+#         else:
+#             encoding_dict[line.strip()] =i 
+# print(encoding_dict)
+
+
+# import pandas as pd 
+# df = pd.read_csv(name_mapping)
+
+# df['seq_name'] = df['seq_name'].str.replace("_","")
+# df  = df[df["clone_id"]==clonotype]
+
+# seq_dict = dict(zip(df['sequence_id'], df['seq_name']))
+# seq_dict[root] = "naive"
+# iso_dict = dict(zip(df["seq_name"], df["isotype"]))
+
+# iso_encodings = {key : encoding_dict[val] for key, val in iso_dict.items()}
+# iso_encodings["naive"] = 0
+
+
+
+
+
+# # newick_file = f"/scratch/projects/tribal/experimental_data/day_14/igphyml/data/B_97_1_11_11_1_33.fasta_igphyml_tree.txt"
+
+# lin_trees = lintrees_from_newick(newick_file, root)
+# for l in lin_trees:
+#     l.save_png(f"test/{clonotype}_igphyml.png")
+#     l.relabel(seq_dict)
+#     l.save_png(f"test/{clonotype}.png", iso_encodings)
+#     l.pickle_tree("test/tree.pickle")
+    

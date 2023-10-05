@@ -9,8 +9,8 @@ infer:
   - ml
 
 script:
-  marginal: "../src/tribal_temp.py"
-  ml: "../src/tribal_ml_temp.py"
+  marginal: "../src/tribal.py"
+  ml: "../src/tribal_ml.py"
   
 refine_modes:
   # - refine

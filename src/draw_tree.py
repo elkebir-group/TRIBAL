@@ -4,9 +4,17 @@ from utils import read_dict
 import argparse 
 
 class DrawTree:
-    def __init__(self, parents, isotypes, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None, show_labels=True) -> None:
+    def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", show_legend=False, isotype_encoding=None, show_labels=True) -> None:
         self.parents = parents
-        self.isotypes = isotypes
+        if isotypes is not None:
+            self.isotypes = isotypes
+        else:
+            nodes = [key for key in parents] + [val for key, val in parents.items()]
+            nodes =set(nodes)
+            self.isotypes = {n: 0 for n in nodes }
+     
+        
+
         self.root= root
 
         if color_encoding is None:
@@ -57,11 +65,14 @@ class DrawTree:
                 if val == self.root:
                     add_node(val)
                 new_edge = (val, key)
-                if self.isotypes[val] == self.isotypes[key]:
+                try:
+                    if self.isotypes[val] == self.isotypes[key]:
 
+                        self.graph.add_edge(*new_edge, color="black")
+                    else:
+                        self.graph.add_edge(*new_edge, color="black", style="dashed")
+                except:
                     self.graph.add_edge(*new_edge, color="black")
-                else:
-                    self.graph.add_edge(*new_edge, color="black", style="dashed")
         
         if show_legend:
             used_isotypes.sort()
