@@ -10,6 +10,7 @@ import pygraphviz as pgv
 from pandas import DataFrame
 from utils import hamming_distance, read_fasta
 from collections import Counter
+from ete3 import Tree 
 
 
 
@@ -74,22 +75,39 @@ class LineageTree:
     def set_tree(self, tree):
         self.T= tree
     
-    def root_to_tip(self):
+    def root_to_tip(self, new_root):
         kids = self.children(self.root)
   
         if len(kids) ==1:
-            new_root = "root_0"
             for k in kids:
                 self.T.add_edge(new_root, k)
                 self.T.remove_edge(self.root, k)
             self.T.add_edge(new_root, self.root)
+        else:
+            raise ValueError("Expecting a root node with a single child!")
 
     def root_outgroup(self, outgroup):
         self.T.remove_node(outgroup)
         self.T.add_edge(outgroup, self.root)
         self.root = outgroup
     
-    
+    def to_newick(self, fname, format=9):
+        T_prev = self.T.copy()
+        self.root_to_tip(new_root=-1)
+        def get_node(nodename):
+            if nodename in nodes_by_name:
+                return nodes_by_name[nodename]
+            else:
+                nodes_by_name[nodename] = Tree(name=nodename)
+                return nodes_by_name[nodename]
+
+        nodes_by_name = {}
+        for parent, child in self.T.edges:
+            parent = get_node(parent)
+            parent.add_child(get_node(child))
+        self.T = T_prev
+        tree= get_node(-1)
+        tree.write(format=format, outfile=fname)
     
     @staticmethod
     def find_leaf_descendants(node, graph):
@@ -203,10 +221,13 @@ class LineageTree:
         return iso_score, labels 
     
 
-    def save_png(self,fname, isotypes=None, iso_encoding=None, show_legend=False, show_labels=True):
+    def save_png(self,fname, isotypes=None, iso_encoding=None, 
+                 show_legend=False, show_labels=True, hide_underscore=True):
     
         parents = self.get_parents()
-        dt = DrawTree(parents, isotypes, show_legend=show_legend, isotype_encoding=iso_encoding, show_labels=show_labels)
+        dt = DrawTree(parents, isotypes, show_legend=show_legend,
+                       isotype_encoding=iso_encoding, show_labels=show_labels,
+                       hide_underscore=hide_underscore)
         dt.save(fname)
 
     def save_tree(self,fname):
