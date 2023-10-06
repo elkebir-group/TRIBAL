@@ -138,6 +138,8 @@ class ScoreList(list):
         with open(fname, 'wb') as file:
             pickle.dump(self, file)
     
+ 
+    
     def sample_best_scores(self, rng=None, seed=1016):
         if rng is None:
             rng = np.random.default_rng(seed)
@@ -146,6 +148,9 @@ class ScoreList(list):
         return best_scores[sampled_index]
 
         
-    
+def load( fname):
+    with open(fname,'rb') as file:
+            obj = pickle.load(file)
+    return obj
     
     

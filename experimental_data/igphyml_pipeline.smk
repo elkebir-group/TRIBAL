@@ -13,13 +13,14 @@ def get_files():
 
 rule all:
    input:  
-        expand("{dataset}/igphyml/data_lineages_gy.tsv_igphyml_stats.txt",
-            dataset = config['datasets']
-        ),
-        expand("{dataset}/igphyml/likelihoods.csv",
+        expand("{dataset}/igphyml/all_files.rds",
             dataset = config['datasets']
         ),
         get_files()
+        # expand("{dataset}/igphyml/data_lineages_gy.tsv_igphyml_stats.txt",
+        #     dataset = config['datasets']
+        # ),
+ 
 
 
 rule clean_airr:
@@ -37,13 +38,23 @@ rule clean_airr:
         " -c {input.clonotypes} -o {output.indata} "
         "-p {output.mapping} "
 
+rule generate_clones:
+    input: 
+         airr = "{dataset}/igphyml/input_data.tsv",
+         mapping= "{dataset}/igphyml/name_isotype_mapping.csv",
+    output: 
+        clones = "{dataset}/igphyml/clones.rds",
+    conda: "r_dowser"
+    script:
+        'generate_clones.R'
+
+
 
 # snakemake --use-conda  -s igphyml_pipeline.smk -j 1
 rule run_igphyml:
     input: 
-        airr = "{dataset}/igphyml/input_data.tsv"
+       airr  = "{dataset}/igphyml/clones.rds",
     output:
-       clones= "{dataset}/igphyml/clones.rds",
        trees = "{dataset}/igphyml/trees.rds",
     conda: "r_dowser"
     params:
@@ -77,11 +88,13 @@ rule convert_to_linforests:
         tree = "{dataset}/igphyml/results/{clone}.tree.csv",
         sequences =  "{dataset}/igphyml/results/{clone}.sequence.csv",
         isotypes = "{dataset}/recomb_input/{clone}/isotype.fasta",
-        encoding = "mouse_isotype_encoding.txt"
+        encoding = "mouse_isotype_encoding.txt",
+        all_files = "{dataset}/igphyml/all_files.rds"
     output:
         linforest = "{dataset}/igphyml/results/{clone}.pickle",
         png = "{dataset}/igphyml/pngs/{clone}.png",
         seq_mapping = "{dataset}/igphyml/seq_mappings/{clone}.mapping.csv",
+        node_scores = "{dataset}/igphyml/entropy/{clone}.node_scores.csv",
     params:
         root = "Germline"
     run:
@@ -128,7 +141,6 @@ rule convert_to_linforests:
         seq_dict[root] = "naive"
         ut.save_dict(seq_dict, output.seq_mapping)
 
-    
         alignment = {}
         for n, s in seq.items():
             if n in seq_dict:
@@ -136,9 +148,15 @@ rule convert_to_linforests:
             else:
                 alignment[n] = s
 
-
         lin_tree = lt.LineageTree(tree, "naive", name=wildcards.clone)
         lin_tree.relabel(seq_dict)
+        degree_dict = lin_tree.get_node_degrees()
+        avg_entropy, clade_entropy = lin_tree.avg_entropy(iso_encodings)
+        deg_series = pd.Series(degree_dict, name="degree").rename_axis("node")
+        ent_series = pd.Series(clade_entropy, name="entropy").rename_axis("node")
+        merged_series = pd.concat([deg_series, ent_series], axis=1)
+        merged_series.to_csv(output.node_scores)
+
         lin_tree.save_png(output.png, iso_encodings, hide_underscore=False)
         lin_forest = lt.LineageForest(alignment, iso_encodings, [lin_tree])
         lin_forest.save_forest(output.linforest)

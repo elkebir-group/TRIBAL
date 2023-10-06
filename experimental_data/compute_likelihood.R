@@ -6,16 +6,16 @@ clones <- readRDS(snakemake@input[['clones']])
 
 clones <- readRDS("/scratch/projects/tribal/experimental_data/GCB_NP_1/igphyml/clones.rds")
 
-dat <- snakemake@wildcards[['dataset']]
-script <- snakemake@wildcards[['script']]
-mode <- snakemake@wildcards[['mode']]
-nproc <- snakemake@params[['nproc']]
+# dat <- snakemake@wildcards[['dataset']]
+# script <- snakemake@wildcards[['script']]
+# mode <- snakemake@wildcards[['mode']]
+# nproc <- snakemake@params[['nproc']]
 
 
-# dat <- "day_14"
-# script <- "marginal"
-# mode <- "refine_ilp"
-# nproc <- 10
+dat <- "GCB_NP_1"
+script <- "marginal"
+mode <- "refine_ilp"
+nproc <- 5
 
 pth <- sprintf("/scratch/projects/tribal/experimental_data/%s/tribal_recomb/%s/%s/newick", dat, script, mode)
 
@@ -30,16 +30,16 @@ for(cl in clones$clone_id){
     trees[[cl]] <- tree
 }
 
-# clones$trees <- trees
-# clones2 <- clones %>% filter(seqs == ntips)
-# t <- trees[['B_147_6_76_148_1_41']]
-# dat <- clones2$data[[1]]
-# seq_ids <- dat@data$sequence_id
-# myseqs <-t[['tip.label']]
-# setdiff(myseqs, seq_ids)
-# setdiff(seq_ids, myseqs)
+clones$trees <- trees
 
-# ntips <- unlist(lapply(trees, function(x) length(x[['tip.label']])))
+t <- trees[['B_79_1_8_64_1_56']]
+dat <- clones$data[[1]]
+seq_ids <- dat@data$sequence_id
+myseqs <-t[['tip.label']]
+setdiff(myseqs, seq_ids)
+setdiff(seq_ids, myseqs)
+
+ntips <- unlist(lapply(trees, function(x) length(x[['tip.label']])))
 
 
 

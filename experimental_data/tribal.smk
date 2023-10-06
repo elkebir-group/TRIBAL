@@ -1,7 +1,7 @@
 configfile: "tribal.yml"
 import pandas as pd 
 import sys
-sys.append("../src")
+sys.path.append("../src")
 
 def get_files(dirn, modes, fname):
     targets = []
@@ -14,6 +14,17 @@ def get_files(dirn, modes, fname):
                     targets.append(f"{d}/{dirn}/{s}/{m}/{c}/{fname}")
     return targets 
 
+def get_files2(dirn, modes, fname):
+    targets = []
+    for d in config["dataset"]:
+        df =pd.read_csv(f"{d}/igphyml/name_isotype_mapping.csv")
+        clonotypes = df['clone_id'].unique()
+        for c in clonotypes:
+            for m in modes:
+                for s in config["script"]:
+                    targets.append(f"{d}/{dirn}/{s}/{m}/newick/{c}.{fname}")
+    return targets 
+
 
 rule all:
     input: 
@@ -24,7 +35,15 @@ rule all:
             dataset = config["dataset"],
             script = config["script"]
         ),
-        get_files("tribal_recomb", ["score", "refine_ilp"], "tree.txt")
+        get_files("tribal_recomb", ["score", "refine_ilp"], "tree.txt"),
+        get_files2("tribal_recomb", ["score", "refine_ilp"], "nwk.csv"),
+        # expand("{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv",
+        #          dataset = config["dataset"],
+        #          script = config["script"],
+        #          mode = config["refine_modes"]
+        # )
+
+
 
 rule prep_dnapars:
     input: 
@@ -105,7 +124,7 @@ rule tribal_refine:
         encoding = "mouse_isotype_encoding.txt",
         transmat =  "{dataset}/tribal_recomb/{script}/transmat.txt",
     output: 
-        forest="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
+        scores="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
         tree= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/tree.txt",
         seq= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/inferred_seq.csv",
         fasta= "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/inferred_seq.fasta",
@@ -143,23 +162,68 @@ rule tribal_refine:
         "--tree {output.tree} "
         "--pars_degree {output.node_degree} "
         "--refine_degree {output.refine_degree} "
-        "-o {output.forest} > {log.run} 2> {log.err} "  
+        "--pickle_best {output.scores} > {log.run} 2> {log.err} "  
 
    
 rule newick_strings:
     input:    
         scores="{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
         mapping =  "{dataset}/igphyml/seq_mappings/{clonotype}.mapping.csv",
-     output:
+    output:
         newicks = "{dataset}/tribal_recomb/{script}/{mode}/newick/{clonotype}.nwk.csv"
-      run:
-          import utils as ut 
-          import lineage_tree as lt 
-          seq_mapping = ut.read_dict(input.mapping)
-          rev_mapping = {val: key for key,val in seq_mapping.items()}
-          scores  = lt.load(input.forest)
-          for score in scores:
-            id = score.lin_tree.id 
+    run:
+            import utils as ut 
+            import lineage_tree as lt 
+            import score_class as sc 
+            seq_df = pd.read_csv(input.mapping, names=["id", "name"])
+            rev_mapping = dict(zip(seq_df["name"], seq_df["id"]))
+       
+            scores  = sc.load(input.scores)
+            records = []
+            for score in scores:
+                lin_tree = score.tree
+                lin_tree.relabel(rev_mapping)
+                records.append([lin_tree.id, lin_tree.to_newick() ])
+            df = pd.DataFrame(records, columns=["id", "newick"])
+            df["clone_id"] = wildcards.clonotype 
+            df.to_csv(output.newicks, index=False)
+
+rule compute_igphyml_likelihoods:
+    input:      
+        clones= "{dataset}/igphyml/clones.rds",
+    output:
+        outtrees = "{dataset}/tribal_recomb/{script}/{mode}/igphyml.trees.rds",
+        likelihoods = "{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv"
+    conda: "r_dowser"
+    params:
+        nproc = 5
+    script: 
+        "compute_likelihood.R"
+
+rule compute_node_scores:
+    input: "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}/forest.pickle",
+    output:   "{dataset}/tribal_recomb/{script}/{mode}/{clonotype}.node_scores.csv",
+    run:
+        import score_class as sc 
+        scores = sc.load(input)
+        first = scores[0]
+        lin_tree= first.tree 
+        degree_dict = lin_tree.get_node_degrees()
+        avg_entropy, clade_entropy = lin_tree.avg_entropy(iso_encodes)
+        deg_series = pd.Series(degree_dict, name="degree").rename_axis("node")
+        ent_series = pd.Series(clade_entopy, name="entropy").rename_axis("node")
+        merged_series = pd.concat([def_series, ent_series], axis=1)
+        merged_series.to_csv(output)
+
+
+
+
+
+
+
+    
+
+
 
 
 

@@ -39,7 +39,11 @@ class LineageTree:
         return preds[0]
 
     def relabel(self, dict):
+       
+
         self.T = nx.relabel_nodes(self.T, dict)
+        if self.root in dict:
+            self.root = dict[self.root]
     
     def children(self,n):
         return list(self.T.neighbors(n))
@@ -91,9 +95,9 @@ class LineageTree:
         self.T.add_edge(outgroup, self.root)
         self.root = outgroup
     
-    def to_newick(self, fname, format=9):
-        T_prev = self.T.copy()
-        self.root_to_tip(new_root=-1)
+    def to_newick(self, fname=None, format=9):
+        # T_prev = self.T.copy()
+        # self.root_to_tip(new_root=-1)
         def get_node(nodename):
             if nodename in nodes_by_name:
                 return nodes_by_name[nodename]
@@ -105,9 +109,11 @@ class LineageTree:
         for parent, child in self.T.edges:
             parent = get_node(parent)
             parent.add_child(get_node(child))
-        self.T = T_prev
-        tree= get_node(-1)
-        tree.write(format=format, outfile=fname)
+        # self.T = T_prev
+        tree= get_node(self.root)
+        if fname is not None:
+            tree.write(format=format, outfile=fname)
+        return tree.write(format=format)
     
     @staticmethod
     def find_leaf_descendants(node, graph):
@@ -275,26 +281,33 @@ class LineageTree:
     
     def avg_node_score(self, func,labels):
         node_score =[]
-
+        clade_score = {}
         for n in self.T:
             #skip the germline unifurication
-            if n == self.root and self.T.out_degree[n]==1:
-                continue
+  
             # nodes = self.get_clade_nodes(n)
             nodes = self.find_leaf_descendants(n, self.T)
             clade_labels = [labels[n] for n in nodes]
-            purity = func(clade_labels)
+            score = func(clade_labels)
+            clade_score[n] = score
+
+            if n == self.root or self.T.out_degree[n]==1:
+                continue
  
-            node_score.append(purity)
+            node_score.append(score)
         
-        return np.mean(node_score)
+        return np.mean(node_score),clade_score
     
     def avg_purity(self, labels):
         return self.avg_node_score(self.compute_purity, labels)
 
+
     def avg_entropy(self, labels):
         return self.avg_node_score(self.compute_entropy, labels)
 
+    
+    def get_node_degrees(self):
+        return {n: self.T.out_degree[n] for n in self.T}
     
     def collapse(self, labels, ignore=[]):
         leaves = [n for n in self.T if self.T.out_degree[n]==0]
