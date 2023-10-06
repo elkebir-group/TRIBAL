@@ -37,11 +37,11 @@ rule all:
         ),
         get_files("tribal_recomb", ["score", "refine_ilp"], "tree.txt"),
         get_files2("tribal_recomb", ["score", "refine_ilp"], "nwk.csv"),
-        # expand("{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv",
-        #          dataset = config["dataset"],
-        #          script = config["script"],
-        #          mode = config["refine_modes"]
-        # )
+        expand("{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv",
+                 dataset = config["dataset"],
+                 script = config["script"],
+                 mode = config["refine_modes"]
+        )
 
 
 
@@ -177,7 +177,9 @@ rule newick_strings:
             import score_class as sc 
             seq_df = pd.read_csv(input.mapping, names=["id", "name"])
             rev_mapping = dict(zip(seq_df["name"], seq_df["id"]))
-       
+            rev_mapping["naive"] =f"{wildcards.clonotype}_GERM"
+
+        
             scores  = sc.load(input.scores)
             records = []
             for score in scores:

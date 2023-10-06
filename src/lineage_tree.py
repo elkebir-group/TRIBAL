@@ -96,8 +96,8 @@ class LineageTree:
         self.root = outgroup
     
     def to_newick(self, fname=None, format=9):
-        # T_prev = self.T.copy()
-        # self.root_to_tip(new_root=-1)
+        T_prev = self.T.copy()
+        self.root_to_tip(new_root=-1)
         def get_node(nodename):
             if nodename in nodes_by_name:
                 return nodes_by_name[nodename]
@@ -109,8 +109,8 @@ class LineageTree:
         for parent, child in self.T.edges:
             parent = get_node(parent)
             parent.add_child(get_node(child))
-        # self.T = T_prev
-        tree= get_node(self.root)
+        self.T = T_prev
+        tree= get_node(-1)
         if fname is not None:
             tree.write(format=format, outfile=fname)
         return tree.write(format=format)

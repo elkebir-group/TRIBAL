@@ -4,18 +4,18 @@ library(ape)
 
 clones <- readRDS(snakemake@input[['clones']])
 
-clones <- readRDS("/scratch/projects/tribal/experimental_data/GCB_NP_1/igphyml/clones.rds")
+# clones <- readRDS("/scratch/projects/tribal/experimental_data/GCB_NP_2/igphyml/clones.rds")
+# 
 
-# dat <- snakemake@wildcards[['dataset']]
-# script <- snakemake@wildcards[['script']]
-# mode <- snakemake@wildcards[['mode']]
-# nproc <- snakemake@params[['nproc']]
+dat <- snakemake@wildcards[['dataset']]
+script <- snakemake@wildcards[['script']]
+mode <- snakemake@wildcards[['mode']]
+nproc <- snakemake@params[['nproc']]
 
-
-dat <- "GCB_NP_1"
-script <- "marginal"
-mode <- "refine_ilp"
-nproc <- 5
+# dat <- "GCB_NP_2"
+# script <- "marginal"
+# mode <- "refine_ilp"
+# nproc <- 7
 
 pth <- sprintf("/scratch/projects/tribal/experimental_data/%s/tribal_recomb/%s/%s/newick", dat, script, mode)
 
@@ -26,23 +26,30 @@ for(cl in clones$clone_id){
     fname <- file.path(pth, suffix)
     all_strings <- read.csv(fname)
     newick <- all_strings[1,"newick"]
+
     tree  <- ape::read.tree(text = newick)
+    # resolved_tree <-ape:: multi2di(tree)
     trees[[cl]] <- tree
 }
 
 clones$trees <- trees
 
-t <- trees[['B_79_1_8_64_1_56']]
-dat <- clones$data[[1]]
-seq_ids <- dat@data$sequence_id
-myseqs <-t[['tip.label']]
-setdiff(myseqs, seq_ids)
-setdiff(seq_ids, myseqs)
 
-ntips <- unlist(lapply(trees, function(x) length(x[['tip.label']])))
+# clones_test <- clones[1,]
+# png(file="test.png")
+# plot(t,no.margin=TRUE,edge.width=2)
+# dev.off()
+# t <- trees[['B_79_1_8_64_1_56']]
+# dat <- clones$data[[1]]
+# seq_ids <- dat@data$sequence_id
+# myseqs <-t[['tip.label']]
+# setdiff(myseqs, seq_ids)
+# setdiff(seq_ids, myseqs)
 
+# ntips <- unlist(lapply(trees, function(x) length(x[['tip.label']])))
 
-
+# clones2 <- clones 
+# clones2$ntips <- ntips
 # clones$ntips <- ntips
 
 
