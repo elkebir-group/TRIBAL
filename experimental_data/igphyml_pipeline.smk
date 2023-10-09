@@ -8,7 +8,8 @@ def get_files():
         df =pd.read_csv(f"{d}/igphyml/name_isotype_mapping.csv")
         clonotypes = df['clone_id'].unique()
         for clone in clonotypes:
-                    targets.append(f"{d}/igphyml/pngs/{clone}.png")
+                    # targets.append(f"{d}/igphyml/pngs/{clone}.png")
+            targets.append(f"{d}/igphyml/mut_analysis/{clone}.pairwise.csv")
     return targets 
 
 rule all:
@@ -163,7 +164,18 @@ rule convert_to_linforests:
 
       
 
-
+rule analysis_mut:
+    input:
+        forest ="{dataset}/igphyml/results/{clone}.pickle",
+    output:
+        summary =  "{dataset}/igphyml/mut_analysis/{clone}.summary.csv",
+        pairwise = "{dataset}/igphyml/mut_analysis/{clone}.pairwise.csv"
+    shell:
+        "python check_for_mutations.py "
+        "--method igphyml "
+        "-t {input.forest} "
+        "-o {output.summary} "
+        "-p {output.pairwise} "
 
 
 

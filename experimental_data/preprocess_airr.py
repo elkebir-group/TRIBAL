@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import Counter
 import argparse 
+import sys 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -19,12 +20,19 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset", type=str, required=True, help="name of dataset")
 
     
-    args = parser.parse_args(None if sys.argv[1:] else ['-h'])
-
-    # dataset = "GCB_NP_2"
-    # dpath = f"/scratch/projects/tribal/experimental_data/{dataset}"
-    dpath = args.path
-    dataset = args.dataset
+    # args = parser.parse_args(None if sys.argv[1:] else ['-h'])
+    # dpath = args.path
+    # dataset = args.dataset
+    dataset = "GCB_NP_2"
+    args = parser.parse_args([
+        "-c", f"{dataset}/clonotypes.txt",
+        "-m",f"{dataset}/{dataset}_dandelion_metadata.tsv",
+        "-t", f"{dataset}/{dataset}_dandelion_table.tsv",
+        "-d", dataset
+    ])
+#    metadata = "{dataset}/{dataset}_dandelion_metadata.tsv",
+#     table = "{dataset}/{dataset}_dandelion_table.tsv",
+#         clonotypes = "{dataset}/clonotypes.txt"
 
 
     def read_tsv(fname, first_col="index"):
@@ -50,11 +58,14 @@ if __name__ == "__main__":
     metadat = read_tsv(args.metadata)
 
     clonotypes = pd.read_csv(args.clonotypes, names=["clone_id"])
+    # print(clonotypes.shape)
 
     meta_filt = pd.merge(metadat, clonotypes, on='clone_id', how='inner')
 
     df = meta_filt
     result = df[df['v_call'].str.startswith('IGH')]
+
+
 
     # Group by 'clone_id' and 'germline_alignment_d_mask', and calculate the count within each group
     grouped = result.groupby(['clone_id', 'germline_alignment_d_mask']).size().reset_index(name='count')
@@ -65,12 +76,16 @@ if __name__ == "__main__":
     # Reset the index to clean up the result DataFrame
     max_seq.reset_index(drop=True, inplace=True)
 
+
     # Display the result with the germline sequence having the maximum count
     # max_seq
 
     num_germlines = max_seq.groupby("clone_id").size()
     bad_germlines = num_germlines[num_germlines > 1]
+
     bad_clonotypes =bad_germlines.index.values
+    print(bad_clonotypes)
+
 
     germline_to_keep = max_seq[~(max_seq['clone_id'].isin(bad_clonotypes))]
     germline_to_keep = germline_to_keep.drop('count', axis=1)

@@ -60,30 +60,30 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--trees", type=str, help="path to list of pickled best scores" )
     parser.add_argument("-a", "--alignment", type=str,
         help="filename of input fasta file containing the alignment")
-    parser.add_argument("-s", "--sequences", type=str,
-        help="csv file of inferred ancestral sequences")
     parser.add_argument("--method", choices=["tribal", "igphyml"])
     parser.add_argument("-o", "--output", type=str,
                         help= "CSV of mutation presence, level and number of subtrees present in" )
     parser.add_argument("-p", "--pairwise", type=str,
                         help= "CSV of pairwise mutation relationship summary" )
 
-    clono = "B_147_7_194_218_1_5"
     # args = parser.parse_args(None if sys.argv[1:] else ['-h'])
-    # pth = "/scratch/projects/tribal/experimental_data/day_14/igphyml/results"
-    # args = parser.parse_args([
-    #     "--method", "igphyml",
-    #     "-t", f"{pth}/{clono}.pickle",
-    #     "-s", f"{pth}/{clono}.sequence.csv"
-    # ])
-    pth = "/scratch/projects/tribal/experimental_data/day_14/tribal_recomb/marginal/refine_ilp"
+
+    clono = "B_147_6_100_148_1_41"
+    pth = "/scratch/projects/tribal/experimental_data/day_14/igphyml/results"
     args = parser.parse_args([
-        "--method", "tribal",
-        "-t", f"{pth}/{clono}/forest.pickle",
-        "-a", f"/scratch/projects/tribal/experimental_data/day_14/recomb_input/{clono}/heavy.aln.fasta",
-        "-o", "test/mut_summary.csv",
-        "-p", "test/pairwise_summary.csv"
+        "--method", "igphyml",
+        "-t", f"{pth}/{clono}.pickle",
+        # "-s", f"{pth}/{clono}.sequence.csv"
     ])
+
+    # pth = "/scratch/projects/tribal/experimental_data/day_14/tribal_recomb/ml/refine_ilp"
+    # args = parser.parse_args([
+    #     "--method", "tribal",
+    #     "-t", f"{pth}/{clono}/forest.pickle",
+    #     "-a", f"/scratch/projects/tribal/experimental_data/day_14/recomb_input/{clono}/heavy.aln.fasta",
+    #     "-o", "test/mut_summary.csv",
+    #     "-p", "test/pairwise_summary.csv"
+    # ])
 
 
     # forest_file = f"/scratch/projects/tribal/experimental_data/day_14/tribal_recomb/marginal/refine_ilp/{clono}/forest.pickle"
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         alignment = forest.alignment
         anc_seqs = {key: "".join(val) for key,val in alignment.items()}
         lin_tree = forest.forest[0]
-        # lin_tree.save_png("test/igphyml.png", forest.isotypes, hide_underscore=False)
+        lin_tree.save_png("test/igphyml.png", forest.isotypes, hide_underscore=False)
 
 
      
@@ -157,10 +157,16 @@ if __name__ == "__main__":
         else:
             x = lev 
         summary.append([m, lev < np.Inf, x, len(ancestral_dict[m])])
-
-    summary_df  = pd.DataFrame(summary, columns=["mut", "is_present", "path_length_from_root", "num_subtrees"])
+    cols =["mut", "is_present", "path_length_from_root", "num_subtrees"]
+    if len(summary) == 0:
+        data = {c: [] for c in cols }
+        summary_df = pd.DataFrame(data)
+   
+    else:
+        summary_df  = pd.DataFrame(summary, columns=cols)
 
     if args.output is not None:
+        print(f"saving {args.output}......")
         summary_df.to_csv(args.output, index=False)
 
     results = []
@@ -189,10 +195,15 @@ if __name__ == "__main__":
                         if not x and not y:
                             total_incomp += 1
             results.append([s, m, total_anc, total_incomp,pairs, both_present])
-
-    relationship = pd.DataFrame(results, columns=["mut1", "mut2", "total_ancestral", "total_incomp", "pairs", "both_present"])
+    cols2 = ["mut1", "mut2", "total_ancestral", "total_incomp", "pairs", "both_present"]
+    if len(results) ==0:
+        data = {c: [] for c in cols2}
+        relationship = pd.DataFrame(data)
+    else:
+        relationship = pd.DataFrame(results, columns=cols2)
 
     if args.pairwise is not None:
+        print(f"saving {args.pairwise}......")
         relationship.to_csv(args.pairwise, index=False)
 
     

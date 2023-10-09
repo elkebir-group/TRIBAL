@@ -95,9 +95,23 @@ class LineageTree:
         self.T.add_edge(outgroup, self.root)
         self.root = outgroup
     
+    def prune_unifurcations(self):
+        unifur = [n for n in self.T if self.T.out_degree[n]==1 and n != self.root]
+        if len(unifur) > 0:
+            print(f"Removing unifurcations {unifur}")
+        for n in self.preorder_traversal():
+            if n in unifur:
+                gparent = list(self.T.predecessors(n))[0]
+                child = list(self.T.neighbors(n))[0]
+                self.T.remove_edge(n, child)
+                self.T.remove_node(n)
+                self.T.add_edge(gparent, child)
+
     def to_newick(self, fname=None, format=9):
         T_prev = self.T.copy()
+        self.prune_unifurcations()
         self.root_to_tip(new_root=-1)
+    
         def get_node(nodename):
             if nodename in nodes_by_name:
                 return nodes_by_name[nodename]
@@ -164,17 +178,41 @@ class LineageTree:
             clade_set.append(self.find_leaf_descendants(node, tree))
     
         return(set(map(frozenset, clade_set)))
+    
+    def get_node_levels(self):
+        source_node = self.root
+        # if self.T.out_degree[self.root]==1:
+        #     source_node = list(self.T.neighbors(self.root))[0]
+        # else:
+        #     source_node = self.root 
 
-    def sequence_parismony(self, alignment, alphabet=None, cost_function=None):
-        return 0, alignment
+        node_levels = {source_node: 0}
+
+        # Perform a BFS traversal and calculate the level of each node
+        queue = [(source_node, 0)]  # (node, level)
+        while queue:
+            node, level = queue.pop(0)
+            for neighbor in self.T.neighbors(node):
+                if neighbor not in node_levels:
+                    node_levels[neighbor] = level + 1
+                    queue.append((neighbor, level + 1))
+        return node_levels 
+
+    def sequence_parismony(self, alignment, 
+                           alphabet=None, 
+                           cost_function=None,
+                           compute=False):
+        if not compute:
+            
+            return 0, alignment
         
-
-        sp = SmallParsimony(self.T, 
-                            self.root,
-                            alphabet= alphabet,
-                            cost = cost_function)
-        seq_score, labels = sp.sankoff(alignment)
-        return seq_score, labels
+        else:
+            sp = SmallParsimony(self.T, 
+                                self.root,
+                                alphabet= alphabet,
+                                cost = cost_function)
+            seq_score, labels = sp.sankoff(alignment)
+            return seq_score, labels
     
     
     def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None, convert=False):
@@ -403,9 +441,13 @@ def lintrees_from_newick(fname,root):
     
     return lin_trees 
 
+def is_ancestral(self, u,v):
+    path = nx.shortest_path(self.T, source=u, target=v)
+    return len(path) > 0
+
 def load(fname):
     with open(fname, "rb") as file:
-        lt = pickle.load(fname)
+        lt = pickle.load(file)
     
     return lt 
 
