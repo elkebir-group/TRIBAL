@@ -24,17 +24,18 @@ class DrawTree:
         if color_encoding is None:
             self.color_encoding =  {
                 -1: "#FFFFFF",
-                0 : "#f0f0f0",
+                0 : "#808080",
                 1 : "#FFEDA0",
                 2 : "#FD8D3C",
                 3 : "#E31A1C",
                 4 : "#800026",
-                5 : "mediumseagreen",
+                5 : "#6A51A3",
                 6 : "#74C476",
-                7 : "#6A51A3",
+                7 : "mediumseagreen",
                 8 : "darkgoldenrod",
                 9 : "thistle1"
             }
+          
         else:
             self.color_encoding = color_encoding
 
