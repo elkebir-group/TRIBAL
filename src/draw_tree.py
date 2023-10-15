@@ -6,7 +6,7 @@ import argparse
 class DrawTree:
     def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", 
                  show_legend=False, isotype_encoding=None, 
-                 show_labels=True, hide_underscore=True) -> None:
+                 show_labels=True, hide_underscore=True, use_dashed=False) -> None:
         self.parents = parents
         if isotypes is not None:
             self.isotypes = isotypes
@@ -76,7 +76,10 @@ class DrawTree:
 
                         self.graph.add_edge(*new_edge, color="black")
                     else:
-                        self.graph.add_edge(*new_edge, color="black", style="dashed")
+                        if self.use_dashed:
+                            self.graph.add_edge(*new_edge, color="black", style="dashed")
+                        else:
+                            self.graph.add_edge(*new_edge, color="black")
                 except:
                     self.graph.add_edge(*new_edge, color="black")
         

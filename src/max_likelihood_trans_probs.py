@@ -4,12 +4,13 @@ from utils import pickle_load
 from draw_state_diagram import DrawStateDiag
 import argparse, sys
 class MaxLike:
-    def __init__(self, n_isotypes=7, pseudo_counts = 0.001) -> None:
+    def __init__(self, n_isotypes=7, pseudo_count =1) -> None:
         
         self.n_iso = n_isotypes
-        self.trans_probs = np.zeros((self.n_iso, self.n_iso))
-        self.state_probs = np.zeros(self.n_iso)
-        self.pseudo_counts = pseudo_counts
+        self.trans_probs = np.full((self.n_iso, self.n_iso), pseudo_count)
+        self.trans_probs =np.triu(self.trans_probs)
+        self.state_probs = np.ones(self.n_iso)
+
         
     def infer(self, score_list):
         '''
@@ -25,13 +26,13 @@ class MaxLike:
         
         #add pseudo counts of unobserved transitions in the data
 
-        for i in range(self.trans_probs.shape[0]):
-            if self.state_probs[i] ==0:
-                self.state_probs[i] = self.pseudo_counts 
-            for j in range(self.trans_probs.shape[1]):
-                if j >= i and self.trans_probs[i,j] ==0:
+                
+            # if self.state_probs[i] ==0:
+            #     self.state_probs[i] = self.pseudo_counts 
+            # for j in range(self.trans_probs.shape[1]):
+            #     if j >= i and self.trans_probs[i,j] ==0:
 
-                    self.trans_probs[i,j]= self.pseudo_counts
+            #         self.trans_probs[i,j]= self.pseudo_counts
         row_sums = self.trans_probs.sum(axis=1)
     
         self.trans_probs = self.trans_probs/ row_sums[:, np.newaxis]
@@ -84,6 +85,7 @@ if __name__ == "__main__":
     parser.add_argument("--state_probs", type=str, help="filename where the inferred state probabilities should be saved")
     parser.add_argument("--heatmap", type=str, help="filename where the {png,pdf} of transition matrix should be saved")
     parser.add_argument("--propmap", type=str, help="filename where the {pdf,png} of isotype proportions should be saved")
+    parser.add_argument("--method", choices = ["dnapars", "dnaml", "igphyml"])
 
     # parser.add_argument("--save_all_restarts", type=str, help="path where all restarts should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
@@ -109,12 +111,16 @@ if __name__ == "__main__":
     path = args.path
 
     clonotypes = [i+1 for i in range(args.clonotypes)]
+    # score_list = []
+    # for c in clonotypes:
+    #     scores = pickle_load(f"{path}/{c}/dnapars/best_results.pickle")
+    #     score_list.append(scores[0])
 
-    score_list = [pickle_load(f"{path}/{c}/dnapars/best_results.pickle") for c in clonotypes]
+    score_list = [pickle_load(f"{path}/{c}/{args.method}/best_results.pickle") for c in clonotypes]
     for i,s in enumerate(score_list):
         print(f"clonotype {i+1} : {len(s)}")
 
-    ml = MaxLike(n_isotypes=n_isotypes, pseudo_counts=args.pseudo)
+    ml = MaxLike(n_isotypes=n_isotypes, pseudo_count=args.pseudo)
     transmat, state_probs = ml.infer(score_list)
 
 
