@@ -94,10 +94,10 @@ class Tribal:
             candidates[c]= LineageForest( alignment=self.clonotypes[c].alignment, isotypes=self.clonotypes[c].isotypes)
             for index in cand:
                 candidates[c].add(deepcopy(self.clonotypes[c][index]))
-            # if best_tree_ids is not None:
-            #     for i in best_tree_ids[c]:
-            #         if i not in cand:
-            #             candidates[c].add(deepcopy(self.clonotypes[c][i]))
+            if best_tree_ids is not None:
+                for i in best_tree_ids[c]:
+                    if i not in cand:
+                        candidates[c].add(deepcopy(self.clonotypes[c][i]))
 
         return candidates 
     
@@ -145,7 +145,7 @@ class Tribal:
                     all_best_scores.append(best_scores)
            
                     # total_likelihood += best_score
-                    best_tree_ids[c] = best_scores[0].tree.id
+                    best_tree_ids[c] = [score.tree.id for score in best_scores]
                     # for j,t in enumerate(best_trees):
                     #     tree_name = f"{c}_{j}"
                     #     observed_data[tree_name] = self.obs_states[c]
@@ -208,7 +208,7 @@ class Tribal:
     #     return best_fit_scores[best_iter], best_trans,best_states, log_like_scores
 
     
-    def fit(self, transmat, nproc=1):
+    def fit(self, nproc=1):
   
      
         ''' resolve the polytomys using a basic sankoff cost function
@@ -222,8 +222,7 @@ class Tribal:
             return a single best tree for each clonotype
 
         '''
-        best_tree_ids = None 
-        old_score = np.Inf
+       
         cand_tmat = []
         cand_scores = []
         best_trees = []
@@ -237,32 +236,53 @@ class Tribal:
             print(f"\nStarting Cycle {i}...")
 
             transmat =  tm.gen_trans_mat(stay_probs[i], self.n_isotypes)
+            best_tree_ids = None 
+            old_score = np.Inf
             
+            for j in range(self.niterations):
             # candidates = self.intialize_candidates(best_tree_ids)
-            candidates = self.intialize_candidates()
-            init_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(candidates, transmat=transmat, nproc=nproc)
-            for _ in range(self.niterations):
-                
-                print("\nFitting transition matrix...")
-                for j in range(self.niterations):
+                candidates = self.intialize_candidates(best_tree_ids)
+                current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(candidates, transmat=transmat, nproc=nproc)
+                print(f"iteration: {j} old score: {old_score} current score: {current_score}")
 
-                   
-                    # cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
-                    transmat, state_probs = MaxLike(self.n_isotypes).infer(best_scores) 
-                    updated_score = 0
-                    for scores in best_scores:
-                        updated_score += scores[0].compute_score(-1*np.log(transmat))
-                    
-                    current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(refined_cands, transmat=transmat, nproc=nproc, mode="score")
-                    print(f"iteration: {j} init score: {updated_score} current score: {current_score}")
-                    if self.check_convergence(current_score, updated_score, self.threshold):
+                if self.check_convergence(current_score, old_score, self.threshold):
                         cand_tmat.append((transmat, state_probs))
                         cand_scores.append(current_score)
                         best_trees.append(best_scores)
-                        transmat = tm.add_noise(transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma)
-                        current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(refined_cands, transmat=transmat, nproc=nproc, mode="score")
-
                         break
+                else:
+                    old_score = current_score
+                    transmat, state_probs = MaxLike(self.n_isotypes).infer(best_scores) 
+        
+        min_value = min(cand_scores)
+        min_index = cand_scores.index(min_value)
+        transmat, state_probs = cand_tmat[min_index]
+        best_scores = best_trees[min_index]
+        best_scores = ScoreList([b[0] for b in best_scores])
+        
+        return min_value, transmat, state_probs, best_scores
+
+         
+                
+
+
+                   
+                    # cur_log_like, state_probs, transmat= EMProbs(lin_forest, transmat, self.states).fit(obs_data)
+         
+                    # updated_score = 0
+                    # for scores in best_scores:
+                    #     updated_score += scores[0].compute_score(-1*np.log(transmat))
+                    
+                    # current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(refined_cands, transmat=transmat, nproc=nproc, mode="score")
+                    # print(f"iteration: {j} init score: {updated_score} current score: {current_score}")
+                    # if self.check_convergence(current_score, updated_score, self.threshold):
+                    #     cand_tmat.append((transmat, state_probs))
+                    #     cand_scores.append(current_score)
+                    #     best_trees.append(best_scores)
+                    #     transmat = tm.add_noise(transmat.copy(), self.rng, mu=self.mu, sigma=self.sigma)
+                    #     current_score, best_scores, best_tree_ids, refined_cands = self.score_candidates(refined_cands, transmat=transmat, nproc=nproc, mode="score")
+
+                    #     break
           
             # DrawStateDiag(transmat).heatmap(f"/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2/tribal/refine_ilp/temp/transmat_{i}.png")
             # ts = TribalSub( isotype_weights=transmat,alpha=self.alpha, nworkers=nproc)
@@ -275,12 +295,6 @@ class Tribal:
             #     break
                    
     
-        min_value = min(cand_scores)
-        min_index = cand_scores.index(min_value)
-        transmat, state_probs = cand_tmat[min_index]
-        best_scores = best_trees[min_index]
-        best_scores = ScoreList([b[0] for b in best_scores])
-        return min_value, transmat, state_probs, best_scores
         # return best_fit_scores[best_iter], best_trans,best_states, log_like_scores
         # return  current_score, updated_score, transmat, state_probs
                
@@ -510,18 +524,17 @@ if __name__ == "__main__":
     # fpath = "/scratch/projects/tribal/benchmark_pipeline/sim_data/recomb/direct/cells35/size75/rep1/2.0/0.365"
     # args = parser.parse_args(["--clonotypes","/scratch/projects/tribal/benchmark_pipeline/tmats_exp/clonotypes25.txt", 
     #     "--encoding", "/scratch/projects/tribal/benchmark_pipeline/sim_encoding.txt",
-    #     "--alpha", "0.8",
     #     "-p", fpath,
-    #     "--max_cand", "25",
+    #     "--max_cand", "5",
     #     "--niter" , "20",
-    #     "--restarts", "15",
+    #     "--restarts", "1",
     #     "--root", "naive",
     #     "--tree_path", fpath,
     #     "--nworkers", "7",
     #     "--fasta", "GCsim_dedup.fasta",
     #     "--isotypes", "GCsim.isotypes",
     #     "--candidates", "dnapars/outtree",
-    #     "--mode", "refine",
+    #     "--mode", "refine_ilp",
     #     "--heatmap", "test/heatmap_ml_refine.pdf",
     #     "--transmat_inf", "test/transmat_ml_refine.txt"
     #     ])

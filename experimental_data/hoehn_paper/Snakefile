@@ -29,6 +29,7 @@ rule all:
     input:
         # expand_input(mouse=[1,2,3]),
         # expand_input2(mouse=config["mice"], mode=config["mode"], alpha=config["alpha"]),
+        'igphyml_likelihoods.csv',
         expand_input1(mouse=config["mice"], modes=config["mode"], fname="nwk.csv"),
         expand_input1(mouse=config["mice"], modes=config["mode"], fname="node_scores.csv"),
         expand_input2(mouse=config["mice"]),
@@ -205,7 +206,15 @@ rule newick_strings:
             df["clone_id"] = wildcards.clone
             df.to_csv(output.newicks, index=False)
 
-    
+
+rule extract_igphyml_likelihood:
+    input: 
+        trees= 'trees_bymouse_ccall.rds'
+    output: 
+        likelihood = 'igphyml_likelihoods.csv'
+    conda: "r_dowser"
+    script:
+        "../extract_likelihood.R"
 
 # rule tribal_search:
 #         input: 

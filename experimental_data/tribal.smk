@@ -184,20 +184,6 @@ rule newick_strings:
             rev_mapping = dict(zip(seq_df["name"], seq_df["id"]))
             rev_mapping["naive"] =f"{wildcards.clonotype}_GERM"
 
-            # def prune_unifurcations(lin_tree):
-            #     unifur = [n for n in lin_tree.T if lin_tree.T.out_degree[n]==1 and n != lin_tree.root]
-            #     if len(unifur) > 0:
-            #         print(f"Removing unifurcations {unifur}")
-            #     else:
-            #         return lin_tree
-            #     for n in lin_tree.preorder_traversal():
-            #         if n in unifur:
-            #             gparent = list(lin_tree.T.predecessors(n))[0]
-            #             child = list(lin_tree.T.neighbors(n))[0]
-            #             lin_tree.T.remove_edge(n, child)
-            #             lin_tree.T.remove_node
-            #             lin_tree.T.add_edge(gparent, child)
-            #     return lin_tree
 
             scores  = sc.load(input.scores)
             records = []
