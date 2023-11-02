@@ -50,8 +50,8 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
 <a name="phases"></a>
 ## Phases
 TRIBAL is run in two phases. 
-  1. It infers the isotype transition probabilities for a set of k clonotypes. 
-  2. It uses the inferred isotype transition probabilities to aid in B cell lineage tree inference. 
+  1. infers the isotype transition probabilities for a set of k clonotypes. 
+  2. uses these probabilities to find the most parsiminious refinement of each candidate tree
 
 
 <a name="io"></a>
