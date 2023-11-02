@@ -151,47 +151,62 @@ optional arguments:
 
 ### B cell lineage tree inference
 <a name="tree"></a>
+```
 
-      usage: tribal_tree.py [-h] [-a ALIGNMENT] [-i ISOTYPES] [-t TRANSMAT] -r ROOT [--timeout TIMEOUT] [-l LINEAGE] [--forest] [--candidates CANDIDATES]
-                            [--mode {score,refine,search}] -e ENCODING [--alpha ALPHA] [-j JUMP_PROB] [--ntrees NTREES] [-o OUTPUT] [--tree TREE] [--fasta FASTA] [--png PNG]
-                            [--all_pngs] [--sequences SEQUENCES] [--score SCORE] [--iso_infer ISO_INFER] [--save_candidates SAVE_CANDIDATES] [--nworkers NWORKERS] [--seed SEED]
+usage: tribal_tree.py [-h] [-f FULL_FOREST] [-c CLONOTYPE] [-a ALIGNMENT] [-i ISOTYPES] [-t TRANSMAT] -r ROOT [--timeout TIMEOUT] [-l LINEAGE] [--forest]
+                      [--candidates CANDIDATES] [--mode {score,refine,refine_ilp,search}] -e ENCODING [--alpha ALPHA] [-j JUMP_PROB] [--ntrees NTREES] [-o OUTPUT]
+                      [--tree TREE] [--fasta FASTA] [--png PNG] [--all_pngs] [--sequences SEQUENCES] [--score SCORE] [--reversible] [--iso_infer ISO_INFER]
+                      [--all_optimal_sol ALL_OPTIMAL_SOL] [--nworkers NWORKERS] [--seed SEED] [--best_tree_diff BEST_TREE_DIFF] [--pickle_best PICKLE_BEST]
+                      [--pickle_all PICKLE_ALL]
 
-      optional arguments:
-        -h, --help            show this help message and exit
-        -a ALIGNMENT, --alignment ALIGNMENT
-                              filename of input fasta file containing the alignment
-        -i ISOTYPES, --isotypes ISOTYPES
-                              filename of input file containing the isotype labels
-        -t TRANSMAT, --transmat TRANSMAT
-                              filename of input transition matrix
-        -r ROOT, --root ROOT  the id of the root sequence in the alignment
-        --timeout TIMEOUT     max number of hours to let tribal search per tree
-        -l LINEAGE, --lineage LINEAGE
-                              pickle file of lineage tree/forest returned from tribal.py
-        --forest
-        --candidates CANDIDATES
-                              filename containing newick strings for candidate tree(s)
-        --mode {score,refine,search}
-        -e ENCODING, --encoding ENCODING
-        --alpha ALPHA
-        -j JUMP_PROB, --jump-prob JUMP_PROB
-        --ntrees NTREES       number of top scoring trees to return
-        -o OUTPUT, --output OUTPUT
-                              outputfile of all best trees
-        --tree TREE           outputfile of best tree
-        --fasta FASTA         filename where reconstructed ancestral sequences should be saved as fasta file
-        --png PNG             filename where to save a png of the optimal tree
-        --all_pngs
-        --sequences SEQUENCES
-                              filename where reconstructed ancestral sequences should be saved as csv file
-        --score SCORE         filename of the objective function value objective function value
-        --iso_infer ISO_INFER
-                              filename of the inferred isotypes for the internal nodes
-        --save_candidates SAVE_CANDIDATES
-                              directory where to save data for candidate trees
-        --nworkers NWORKERS   number of workers to use in the event of multiple input candidate trees
-        --seed SEED           random seed for picking a single best tree among all tied trees
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FULL_FOREST, --full-forest FULL_FOREST
+                        path to pickled clonotypes dictionary of lineeage forests
+  -c CLONOTYPE, --clonotype CLONOTYPE
+                        name of clonotype lineage to refine from the full forest
+  -a ALIGNMENT, --alignment ALIGNMENT
+                        filename of input fasta file containing the alignment
+  -i ISOTYPES, --isotypes ISOTYPES
+                        filename of input file containing the isotype labels
+  -t TRANSMAT, --transmat TRANSMAT
+                        filename of input transition matrix
+  -r ROOT, --root ROOT  the id of the root sequence in the alignment
+  --timeout TIMEOUT     max number of hours to let tribal search per tree
+  -l LINEAGE, --lineage LINEAGE
+                        pickle file of lineage tree/forest returned from tribal.py
+  --forest
+  --candidates CANDIDATES
+                        filename containing newick strings for candidate tree(s)
+  --mode {score,refine,refine_ilp,search}
+  -e ENCODING, --encoding ENCODING
+  --alpha ALPHA
+  -j JUMP_PROB, --jump-prob JUMP_PROB
+  --ntrees NTREES       number of top scoring trees to return
+  -o OUTPUT, --output OUTPUT
+                        outputfile of all best trees
+  --tree TREE           outputfile of best tree
+  --fasta FASTA         filename where reconstructed ancestral sequences should be saved as fasta file
+  --png PNG             filename where to save a png of the optimal tree
+  --all_pngs
+  --sequences SEQUENCES
+                        filename where reconstructed ancestral sequences should be saved as csv file
+  --score SCORE         filename of the objective function value objective function value
+  --reversible          a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized and irreversiblility is ignored)
+  --iso_infer ISO_INFER
+                        filename of the inferred isotypes for the internal nodes
+  --all_optimal_sol ALL_OPTIMAL_SOL
+                        path where all optimal solution results are saved
+  --nworkers NWORKERS   number of workers to use in the event of multiple input candidate trees
+  --seed SEED           random seed for picking a single best tree among all tied trees
+  --best_tree_diff BEST_TREE_DIFF
+                        best tree RF distances
+  --pickle_best PICKLE_BEST
+                        filename to pickle the best results
+  --pickle_all PICKLE_ALL
+                        filename to pickle the best results
 
+```
 
 ### Isotype transition probability inference example
 
