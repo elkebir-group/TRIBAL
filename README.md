@@ -29,7 +29,7 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
 ### Using github
    1. Clone the repository
       ```bash
-            $ git clone https://github.com/elkebir-group/tribal.git
+            $ git clone https://github.com/elkebir-group/TRIBAL.git
        ```
        <a name="pre-requisites"></a> 
    2. Install dependencies 
