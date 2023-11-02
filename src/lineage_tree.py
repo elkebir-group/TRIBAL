@@ -16,7 +16,7 @@ from ete3 import Tree
 
 @dataclass
 class LineageTree:
-    """Class for keeping track of lineage trees"""
+    """B cell lineage tree class"""
     T: nx.DiGraph
     root: str
     id: int = 0
@@ -183,10 +183,7 @@ class LineageTree:
     
     def get_node_levels(self):
         source_node = self.root
-        # if self.T.out_degree[self.root]==1:
-        #     source_node = list(self.T.neighbors(self.root))[0]
-        # else:
-        #     source_node = self.root 
+
 
         node_levels = {source_node: 0}
 
@@ -237,16 +234,6 @@ class LineageTree:
         else:
             print("Warning: labels were not provided for all nodes!")
             return np.NAN
-    # @staticmethod
-    # def convert_transmat_to_weights(transmat):
-
-    #     log_transmat = -1*np.log(transmat)
-    #     states = np.arange(transmat.shape[0])
-    #     weights = {}
-    #     for s in states:
-    #         for t in states:
-    #             weights[s,t] = log_transmat[s,t]
-    #     return weights, states
     
     def isotype_parsimony(self, iso_leaves, weights, states):
    
@@ -312,7 +299,7 @@ class LineageTree:
 
 
     def get_clade_nodes(self, node):
-        clade_nodes = [node]  # Start with the provided node
+        clade_nodes = [node]  
 
         successors = list(self.T.successors(node))
         while successors:
@@ -325,9 +312,7 @@ class LineageTree:
         node_score =[]
         clade_score = {}
         for n in self.T:
-            #skip the germline unifurication
-  
-            # nodes = self.get_clade_nodes(n)
+
             nodes = self.find_leaf_descendants(n, self.T)
             clade_labels = [labels[n] for n in nodes]
             score = func(clade_labels)
@@ -383,12 +368,6 @@ class LineageForest:
     forest: list = field(default_factory=list)
  
  
-
-    # def __post_init__(self):
-     
-    #     for i,tree in enumerate(self.forest):
-    #         tree.set_id(i)
-    
     def generate_from_list(self, tree_list, root=None):
 
         for i,t in enumerate(tree_list):
@@ -401,7 +380,7 @@ class LineageForest:
 
     def add(self, tree):
         self.forest.append(tree)
-        # tree.set_id(len(self.forest))
+
 
     def __getitem__(self, key):
         return self.forest[key]
@@ -464,9 +443,6 @@ def read_trees(fname,root):
 
     exp = '\[.*\]'
     trees = []
-    # if os.path.exists(fname):
-    #     print(f"{fname} does not exist")
-    #     return trees
        
     with open(fname, 'r+') as file:
         nw_strings = []
@@ -522,70 +498,14 @@ def convert_to_nx(ete_tree, root):
 
     
     if len(list(nx_tree.neighbors(root))) == 0:
-        # path = nx.shortest_path(nx_tree, source=root_name, target=root)
+
 
         G = nx_tree.to_undirected()
         H = nx.dfs_tree(G,source=root)
-        # print("Edges of the re-rooted tree:")
-        # print(list(H.edges()))
+   
 
         if H.out_degree[root_name]==0:
             H.remove(root_name)
 
-   
-        # nx_tree.remove_edge(root_name, root)
-        # nx_tree.add_edge(root, root_name)
-      
-
     return H
 
-# dataset = "day_14"
-# clonotype = "B_97_1_11_11_1_33"
-# path = f"/scratch/projects/tribal/experimental_data/{dataset}/igphyml"
-# fname = f"data/{clonotype}.fasta_igphyml_tree.txt"
-# root = f"{clonotype}_GERM"
-# newick_file =f"{path}/{fname}"
-# name_mapping = f"{path}/name_isotype_mapping.csv"
-# encoding = "/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt"
-# afname= f"{path}/data/{clonotype}.fasta"
-
-# alignment = get_alignment(afname)
-# print(alignment)
-
-# encoding_dict = {}
-# with open(encoding, "r+" ) as file:
-#     for i,line in enumerate(file):
-#         if "m" and "d" in line.lower():
-#             encoding_dict["Ighm"] =i
-#             encoding_dict["Ighd"] = i
-#         else:
-#             encoding_dict[line.strip()] =i 
-# print(encoding_dict)
-
-
-# import pandas as pd 
-# df = pd.read_csv(name_mapping)
-
-# df['seq_name'] = df['seq_name'].str.replace("_","")
-# df  = df[df["clone_id"]==clonotype]
-
-# seq_dict = dict(zip(df['sequence_id'], df['seq_name']))
-# seq_dict[root] = "naive"
-# iso_dict = dict(zip(df["seq_name"], df["isotype"]))
-
-# iso_encodings = {key : encoding_dict[val] for key, val in iso_dict.items()}
-# iso_encodings["naive"] = 0
-
-
-
-
-
-# # newick_file = f"/scratch/projects/tribal/experimental_data/day_14/igphyml/data/B_97_1_11_11_1_33.fasta_igphyml_tree.txt"
-
-# lin_trees = lintrees_from_newick(newick_file, root)
-# for l in lin_trees:
-#     l.save_png(f"test/{clonotype}_igphyml.png")
-#     l.relabel(seq_dict)
-#     l.save_png(f"test/{clonotype}.png", iso_encodings)
-#     l.pickle_tree("test/tree.pickle")
-    
