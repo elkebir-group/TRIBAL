@@ -75,11 +75,6 @@ class TribalSub:
         self.root_id = root_id
       
 
-
-
-   
-
-
     
     def score(self, lin_tree, alignment, isotype_labels):
         
@@ -88,7 +83,7 @@ class TribalSub:
                                                     cost_function=self.cost_function)
         iso_score, iso_labels = lin_tree.isotype_parsimony(isotype_labels,  weights=self.iso_weights, states=self.states)
         obj = self.compute_score(seq_score, iso_score)
-        # lin_tree.save_png(f"test/lin_tree_score{lin_tree.id}.png", iso_labels)
+
 
 
         return   Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
@@ -104,43 +99,29 @@ class TribalSub:
         return Score(obj, seq_score, iso_score, seq_labels, iso_labels, lin_tree)
 
     def refine_ilp(self, lin_tree, alignment, isotype_labels):
-            # print(f"refining tree {lin_tree.id}")
-            # print(lin_tree.T.out_degree["7"])
-            # lin_tree.save_png(f"/scratch/projects/tribal/test/init_tree{lin_tree.id}.png", isotype_labels)
+
   
             cg = ConstructGraph(self.iso_weights, isotype_labels, root_identifier=self.root_id)
            
-       
-                # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
+
             seq_score_prior, seq_labels = lin_tree.sequence_parismony(alignment)
             fg = cg.build(lin_tree, seq_labels)
-            # fg.save_graph("test/flow_graph.png")
-            # fg.save_graph(f"test/graphs/G{lin_tree.id}.png")
+
             st = SteinerTree(fg.G, lin_tree.T, fg.find_terminals(), fg.seq_weights, 
                              fg.iso_weights,fg.node_mapping, fg.tree_to_graph,
                                fg.node_out_degree, pars_score = seq_score_prior, root=self.root_id, lamb=self.alpha, threads=1 )
             obj, tree = st.run()
-            # print(f"tree: {lin_tree.id} obj: {iso_score}")
+
             out_tree, out_iso = cg.decodeTree(tree)
             
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
-            # print(out_lt.id)
-            # out_lt.save_png(f"test/lin_tree{lin_tree.id}.png", out_iso)
-            # total_out = sum([out_lt.T.out_degree[n] for n in out_lt.T.nodes if "7_" in n])
-            # total_in = sum([out_lt.T.in_degree[n] for n in out_lt.T.nodes if "7_" in n])
-            # print(total_out - total_in + 1)
-      
-
-
-            # out_lt.save_png(f"/scratch/projects/tribal/test/out_tree{lin_tree.id}.png", out_iso)
-
-            #TODO: Speed up by not recomputing the sequences 
+    
 
             seq_score, seq_labels = out_lt.sequence_parismony(alignment)
             assert seq_score_prior ==seq_score
 
-            # iso_score =(obj - self.alpha*seq_score)/ (1-self.alpha)
+
 
             sc = Score(obj, seq_score, obj, seq_labels, out_iso, out_lt)
             sc.check_score(self.iso_weights)
@@ -165,9 +146,7 @@ class TribalSub:
     
                 if mode == "multSPR":
                     spr_trees = MultSPR(cand_tribal, best_result.isotypes, self.states)
-                # spr_trees = SPR(best_tree, self.Q_isotype)
-                # else:
-                #     spr_trees = USPR(cand_tribal.get_unrooted_tree(), self.rng)
+
                 for t in spr_trees:
                     improvement = False
                     cand_tribal.set_tree(t)            
@@ -205,53 +184,13 @@ class TribalSub:
 
 
 
-    # def forest_infer(self, lin_forest, alignment=None, isotypes=None):
-    #         if alignment is None:
-    #             alignment = lin_forest.alignment
-    #         if isotypes is None:
-    #             isotype_labels = lin_forest.isotypes 
-    #         else:
-    #             isotype_labels = isotypes
-            
-    #         cg = ConstructGraph(isotype_weights, isotype_labels, root_identifier=self.root_id)
-    #         refine_scores = {}
-    #         best_score = np.Inf
-    #         best_tree = None
-    #         for lin_tree in lin_forest.get_trees():
-    #             # lin_tree.save_png("curr_tree.png", isotype_labels, isotype_encoding)
-    #             score, seq_labels = lin_tree.sequence_parismony(alignment)
-    #             fg = cg.build(lin_tree, seq_labels)
-    #             st = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights,root=self.root_id, lamb=self.alpha )
-    #             tree_score, tree = st.run()
-    #             if tree_score < best_score:
-    #                 best_tree, best_iso = cg.decodeTree(tree)
-    #                 best_score = tree_score
-    #             refine_scores[lin_tree.id] = tree_score
-            
-    #         best_lt = LineageTree(best_tree, "naive")
-    #         _, seq_labels = best_lt.sequence_parismony(alignment)
-            
-      
-    #         return refine_scores, best_lt, best_iso, seq_labels
-            # combined_fg = cg.combineGraphs()
-            # st =SteinerTree(combined_fg.G, combined_fg.seq_weights, combined_fg.iso_weights, root=self.root_id, lamb=self.alpha)
-            # combined_score, combined_tree = st.run()
-            # combined_tree, all_isotypes = cg.decodeTree(combined_tree)
-            # combined_lt =LineageTree(combined_tree, "naive")
-       
-
-          
-         
-            # return refine_scores, combined_score, combined_lt, seq_labels, all_isotypes, best_lt, best_iso
         
             
 
 
     def forest_mode_loop(self, lin_forest, alignment=None, isotypes=None, mode="score"):
             
-            # best_results = []
-            # best_result = None 
-            # best_tree = None
+    
 
             all_results = {}
             
@@ -276,15 +215,6 @@ class TribalSub:
          
                 result = mode_func(lin_tree,alignment, isotype_labels)
                 all_results.append(  result)
-            #scan through results and find the top ntrees results 
-            # for result in all_results:
-            #     if len(best_results) ==0:
-            #         best_results.append( result)
-                  
-            #         # print(best_result)
-            #     else:
-            #         if result.improvement(best_results[-1]) or len(best_results) < ntrees:
-            #             self.update_best_results(result, best_results, ntrees)
                        
                       
 
@@ -295,8 +225,7 @@ class TribalSub:
 
     def forest_mode(self, lin_forest, alignment=None, isotypes=None, mode="score", ntrees=1):
             
-            best_results = []
-        
+         
 
             all_results = {}
             
@@ -319,20 +248,6 @@ class TribalSub:
         
             with Pool(self.nworkers) as pool:
                 all_results = pool.starmap(mode_func,zip(lin_forest.get_trees(), repeat(alignment), repeat(isotype_labels)))     
-
-         
-         
-            #scan through results and find the top ntrees results 
-            # for result in all_results:
-            #     if len(best_results) ==0:
-            #         best_results.append( result)
-                  
-        
-            #     else:
-            #         if result.improvement(best_results[-1]) or len(best_results) < ntrees:
-            #             self.update_best_results(result, best_results, ntrees)
-                       
-            
 
     
             return all_results
@@ -399,12 +314,12 @@ def convert_to_nx(ete_tree, root):
     return nx_tree
         
 def update_best_results(new_result, results, ntrees):
-        #find index where new result should be inserted
+
         new_score = new_result.objective
         added = False 
         for index, res in enumerate(results):
             if new_score < res.objective:
-                 #insert new result in its proper place
+
                 results.insert(index, new_result)
                 added = True
                 break 
@@ -412,33 +327,10 @@ def update_best_results(new_result, results, ntrees):
             results.append(new_result)
         
         if len(results) > ntrees:
-            #remove the highest scoring tree in the list
+
             del results[-1]
 
-# def find_leaf_descendants(node, graph):
-#     leaf_descendants = set()
 
-#     # Helper function to traverse the graph
-#     def dfs(current_node):
-#         nonlocal leaf_descendants
-#         # If the current node is a leaf, add it to the set
-#         if graph.out_degree(current_node) == 0:
-#             leaf_descendants.add(current_node)
-#         else:
-#             # Traverse all child nodes recursively
-#             for child_node in graph.successors(current_node):
-#                 dfs(child_node)
-
-#     # Start the depth-first search from the specified node
-#     dfs(node)
-#     return leaf_descendants
-
-# def get_clade_set(tree):
-#     clade_set = []
-#     for node in tree:
-#         clade_set.append(find_leaf_descendants(node, tree))
-    
-#     return(set(map(frozenset, clade_set)))
 
 def get_alignment(fname):
     alignment = ut.read_fasta(fname)
@@ -479,129 +371,18 @@ if __name__ == "__main__":
     parser.add_argument("--reversible",  action="store_true", 
                         help="a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized and irreversiblility is ignored)")
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
-    # parser.add_argument( "--ilp_sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
-    # parser.add_argument("--ilp_tree",  type=str, help="outputfile of best tree")
-    # parser.add_argument("--ilp_iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
-
     parser.add_argument("--all_optimal_sol",  help="path where all optimal solution results are saved"  )
     parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event of multiple input candidate trees")
     parser.add_argument("--seed", type=int, default=1026, help="random seed for picking a single best tree among all tied trees")
-    # parser.add_argument("--all_obj", type=str, help="comparison of ilp heuristic versus min heuristc")
     parser.add_argument("--best_tree_diff", type=str, help="best tree RF distances")
     parser.add_argument("--pickle_best", type=str, help="filename to pickle the best results")
     parser.add_argument("--pickle_all", type=str, help="filename to pickle the best results")
 
-    parser.add_argument("--pars_degree", type=str, help="input parsimony node out degree")
-    parser.add_argument("--refine_degree", type=str, help="refinement node out degree")
-    # parser.add_argument("--combined_tree", type=str, help="png for combined tree")
-    # parser.add_argument("--best_ilp", type=str, help="png for best ilp heuristic tree")
-
 
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
-        # -r naive -t ../sim_data/tmat_inf/seq/transmats/transmat3.txt --candidates ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/dnapars/outtree  -a ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/GCsim_dedup.fasta -e ../sim_encoding.txt -i ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/16/GCsim.isotypes --alpha 0.75 --sequences ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/inferred_seq.csv --fasta ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/inferred_seq.fasta --score ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/score.csv --iso_infer ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/isotypes.csv --png ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/tree.png --mode refine_ilp --nworkers 1 --ntrees 3 --pickle_best ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/best_results_gt.pickle --best_tree_diff ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/rf_dist.csv --seed 16 -o ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/forest.pickle --tree ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/tree.txt > ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/refine_ilp.log 2> ../sim_data/tmat_inf/seq/cells35/size75/rep3/2.0/0.365/tribal_refine_ilp_gt/16/refine_ilp.err.log 
 
-    # /sim_data/tmat_inf/seq/cells35/size25/rep1/2.0/0.365/tribal_refine_ilp_gt_old/24
 
-    # path = "/scratch/projects/tribal/benchmark_pipeline"
-    # n = 35
-    # k = 75
-    # r = 3
-    # ttype = "seq"
-    # clonotype = 16
-    # alignment= f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim_dedup.fasta"
-    # isotypes = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/GCsim.isotypes"
-    # # transmat =   f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal/transmat.txt"
-    # transmat =f"{path}/sim_data/tmat_inf/{ttype}/transmats/transmat{r}.txt"
-    # candidates = f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/{clonotype}/dnapars/outtree"
-    # lf =  f"{path}/sim_data/tmat_inf/{ttype}/cells{n}/size{k}/rep{r}/2.0/0.365/tribal_refine_ilp/20/forest.pickle"
-    # encoding = f"{path}/sim_encoding.txt"
-    # mode= "refine_ilp"
-    # alpha = 0.75
-    
-    # args = parser.parse_args([
-    #     "-a", alignment,
-    #     "-i", isotypes,
-    #     "-t", transmat,
-    #     "--nworkers", "1",
-    #     "-r", "naive",
-    #     "--candidates" ,candidates,
-    #     # "-l", lf,
-    #     # "--forest",
-    #     "--alpha", str(alpha),
-    #     "-e", encoding,
-    #     "--mode", mode,
-    #     # "--all_obj", f"test/{mode}.csv",
-    #     "--png", f"test/{mode}.png",
-    #     "--ntrees", "1",
-    #     # "--all_optimal_sol", "test/opt_tree",
-    #      "--tree", f"test/{mode}.txt",
-    #     "--sequences", f"test/{mode}_seq.csv",
-    #     "--iso_infer", f"test/{mode}_iso.csv",
-    #     "--best_tree_diff", f"test/best_tree_rf.csv",
-    #     # "--pickle_best", f"test/{mode}.pickle",
-    #     "--score", f"test/{mode}.scores.csv"
-    # ])
-
-   
-#     dataset = "GCB_NP_1"
-#     path = f"/scratch/projects/tribal/experimental_data/{dataset}"
-#     clonotype = "B_44_4_14_64_1_58"
-
-#     forest = f"{path}/tribal_recomb/input_forest.pickle"
-#     transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal_recomb/marginal/transmat.txt"
-#     # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
-#     mode= "refine_ilp"
-#     # mode = "score"
-#     args = parser.parse_args([
-#         "-f", forest,
-#         "-c", clonotype
-# ,        "-t", "/scratch/projects/tribal/test/transmat_em.txt",  #ransmat,
-#         "--nworkers", "3",
-#         "-r", "naive",
- 
-#         "-e","/scratch/projects/tribal/experimental_data/mouse_isotype_encoding.txt",
-#         "--mode", mode,
-#         # "--all_obj", f"test/{mode}.csv",
-#         "--png", f"test/{clonotype}.png",
-#         # "--ntrees", "2",
-#         # "--all_optimal_sol", "test/opt_tree",
-#         #  "--tree", f"test/{clonotype}txt",
-#         # "--sequences", f"test/{clonotype}seq.csv",
-#         "--score", f"test/{clonotype}.scores.v1.csv",
-#         # "--iso_infer", f"test/{clonotype}iso.csv",
-#         # "--best_tree_diff", f"test/best_tree_rf.csv",
-#         # "--pickle_best", f"test/{clonotype}.pickle"
-#     ])
-  
-    # path = "/scratch/projects/tribal/experimental_data/hoehn_paper/Mouse_2"
-    # clonotype = "MouseHTO-2_1073"
-    # alignment= f"{path}/clones/{clonotype}/heavy.fasta"
-    # candidates = f"{path}/dnapars/{clonotype}/outtree" 
-    # isotypes = f"{path}/clones/{clonotype}/isotype.fasta"
-    # encoding = "/scratch/projects/tribal/experimental_data/hoehn_paper/isotype_encoding.txt"
-    # # transmat = "/scratch/projects/tribal/experimental_data/day_14/tribal/0.1/transmat.txt"
-    # # transmat = "/scratch/projects/tribal/benchmark_pipeline/sim_data/tmat_inf/direct/transmats/transmat2.txt"
-    # mode= "score"
-    # args = parser.parse_args([
-    #     "-a", alignment,
-    #     "-i", isotypes,
-    #     "--nworkers", "10",
-    #     "-r", "naive",
-    #     "--candidates" ,candidates,
-    #     "-e", encoding,
-    #     "--mode", mode,
-    #     # "--all_obj", f"test/{mode}.csv",
-    #     "--png", f"grant_example/{mode}.pdf",
-    #     # "--ntrees", "2",
-    #     "--all_optimal_sol", f"grant_example/opt_tree_{mode}",
-    #      "--tree", f"grant_example/{mode}.txt",
-    #     "--sequences", f"grant_example/{mode}_seq.csv",
-    #     "--iso_infer", f"grant_example/{mode}_iso.csv",
-    #     "--pickle_best", f"grant_example/{mode}.pickle",
-    #     "--score", f"grant_example/{mode}.scores.csv"
-    # ])
-  
   
 
     
@@ -676,97 +457,25 @@ if __name__ == "__main__":
                 lin_forest = LineageForest( alignment, isotypes_filt, [lin])
               
  
-    # for c in full_forest:
-    # for c in ['B_71_1_1_16_1_4']:
-        # print(c)
-    # lin_forest = full_forest[c]
+
     ncells = len(lin_forest.alignment)
     print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
     tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
 
     all_results =  tr.forest_mode(lin_forest, mode =args.mode)
-    data_rows = []
-    import pandas as pd 
-    for lin_tree in lin_forest:
-        tree = lin_tree.T
-        id = lin_tree.id 
-        for n in tree:
-            data_rows.append([id, n, tree.out_degree[n]])
-
-    node_degree = pd.DataFrame(data_rows, columns=['tree', 'n', 'out_degree'])
-
-    if args.pars_degree is not None:
-        node_degree.to_csv(args.pars_degree, index=False)
-
 
     
 
 
 
-    # flow_scores, combined_score,  combined_lt, seq_labels, all_isotypes, best_ilp_lt, best_iso_ilp = tr.forest_infer(lin_forest)
-    # flow_scores, best_ilp_lt, best_iso_ilp, ilp_seq_labels =tr.forest_infer(lin_forest)
-    # if args.combined_tree is not None:
-    #     combined_lt.save_png(args.combined_tree, all_isotypes, isotype_encoding)
 
-    # if args.best_ilp is not None:
-    #     best_ilp_lt.save_png(args.best_ilp, best_iso_ilp, isotype_encoding)
-    
-    # ilp_best_labels = ut.update_labels(ilp_seq_labels)
-
-    # if args.ilp_sequences is not None:
-    #     ut.save_dict(ilp_best_labels, args.ilp_sequences)
-    
-
-    # if args.ilp_tree is not None:
-    #     best_ilp_lt.save_tree(args.ilp_tree)
-       
-    # if args.ilp_iso_infer is not None:
-    #     ut.save_dict(best_iso_ilp, args.ilp_iso_infer)
-    # for lin in lin_forest:
-
-    #     if lin.id ==3:
-    #         clade_sets_11 = []
-    #         for node in lin.T:
-    #             clade_sets_11.append(find_leaf_descendants(node, lin.T))
-    #         t11 = set(map(frozenset, clade_sets_11))
-    #     if lin.id ==21:
-    #         clade_sets_21 = []
-    #         for node in lin.T:
-    #             clade_sets_21.append(find_leaf_descendants(node, lin.T))
-    #         t21 = set(map(frozenset, clade_sets_21))
-    # symmetric_diff = t11.symmetric_difference(t21)
-    # print(len(symmetric_diff))
-    # rf_dist = 0.5*len(symmetric_diff)
-    # print(rf_dist)
-      
-            
-            # lin.save_png(f"test/tree_{lin.id}.png", lin_forest.isotypes, isotype_encoding)
-
-
-    print(len(all_results))
     for a in all_results:
         print(a)
-         #scan through results and find the top ntrees results 
     best_results = []
     top_ntrees = []
     data_rows = []
     best_obj = np.Inf
-    for res in all_results:
-        tree  = res.tree.T
-        id = res.tree.id
-        for n in tree:
-            data_rows.append([id, n, tree.out_degree[n]])
-    
-
-
-
-        if res.objective < best_obj:
-            best_obj = res.objective
-    
-    refine_degree = pd.DataFrame(data_rows, columns=['tree', 'n', 'out_degree'])
-    if args.refine_degree is not None:
-        refine_degree.to_csv(args.refine_degree, index=False)
     
     for res in all_results:
         if round(res.objective,5) == round(best_obj,5):
@@ -801,31 +510,14 @@ if __name__ == "__main__":
         with open(args.score, 'w+') as file:
             file.write("tree,alpha,objective,sequence,isotype,\n")
             
-            # file.write(f"combined,{combined_score},NA\n")    
             for res in all_results:
                 file.write(f"{res.tree.id},{args.alpha},{res.objective},{res.seq_obj},{res.iso_obj}\n")
-    #randomly pick the best result if there are multiple trees with the same optimal objective
-    # top_score = best_results[0].objective
-    # tied_trees = []
-    # for res in best_results:
-    #     if res.objective ==top_score:
-    #         tied_trees.append(res)
-    # rng = np.random.default_rng(args.seed)
-    # best_result = rng.choice(tied_trees, 1)[0]
     best_result = best_results[0]
     
     best_tree= best_result.tree
     print(f"{args.mode} complete! \nBest Tree: {best_result.tree.id}")
     print(best_results[0])
     print("\nsaving results......")
-    # if args.all_obj is not None:
-    #     with open(args.all_obj, 'w+') as file:
-    #         file.write("tree,ilp,heuristic\n")
-            
-    #         # file.write(f"combined,{combined_score},NA\n")    
-    #         for key,val in flow_scores.items():
-    #             heur = all_results[key]
-    #             file.write(f"{key},{val},{heur.objective}\n")
 
 
     if args.output is not None:
@@ -854,39 +546,10 @@ if __name__ == "__main__":
         ut.save_dict(best_result.isotypes, args.iso_infer)
     
 
-    # for i,res in enumerate(best_results):
-    #     if i ==0:
-    #         png_fname = args.png 
-    #         fasta_fname =args.fasta
-    #         seq_fname = args.sequences 
-    #         tree_fname = args.tree
-    #         iso_fname =args.iso_infer
-    #     elif args.all_optimal_sol:
-    #         if args.png is not None:
-    #             png_fname =  f"test/{mode}.{i}.png"
-            
-         
-    #         if args.fasta is not None:
-    #             fasta_fname =args.fasta + "." + str(i)
-    #         if args.sequences is not None:
-    #             seq_fname = args.sequences + "." + str(i)
-    #         if args.tree is not None:
-    #             tree_fname = args.tree + "." + str(i)
-    #         if args.iso_infer is not None:
-    #             iso_fname =args.iso_infer + "." + str(i)
-    #     else:
-    #         break
-   
-    
-        # if args.score:
-        #     with open(args.score, 'w+') as file:
-        #         for result in all_results:
-        #             file.write(f"{result.tree.id},{args.alpha},{result.objective},{result.seq_obj},{result.iso_obj}\n")
         
     if args.all_optimal_sol is not None:
         pth =args.all_optimal_sol
         if not os.path.exists(pth):
-            # Create the pth
             os.makedirs(pth)
             print("Directory created:", pth)
         else:
