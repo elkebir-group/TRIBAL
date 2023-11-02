@@ -4,7 +4,7 @@
 
 
 ![Overview of TRIBAL](Figure1.png)
-TRIBAL is a method to infer isotype transition probabilities, isotype proportions and B cell clonal lineages for a set of n B cells clustering into k clonotypes. 
+TRIBAL is a method to infer B cell clonal lineages and isotype transition probabilities for a set of n B cells clustered into k clonotypes. 
 
 
 
