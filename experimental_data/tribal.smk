@@ -41,12 +41,12 @@ rule all:
         # get_files("tribal_recomb", ["score", "refine_ilp"], "tree.txt"),
         get_files2("tribal_recomb", ["score", "refine_ilp"], "newick", "nwk.csv"),
         get_files2("tribal_recomb", ["refine_ilp", "score"], "node_scores", "node_scores.csv"),
-        # get_files2("tribal_recomb", ["refine_ilp", "score"], "mut_analysis", "summary.csv"),
-        # expand("{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv",
-        #          dataset = config["dataset"],
-        #          script = config["script"],
-        #          mode = config["refine_modes"]
-        # )
+        get_files2("tribal_recomb", ["refine_ilp"], "mut_analysis", "summary.csv"),
+        expand("{dataset}/tribal_recomb/{script}/{mode}/likelihoods.csv",
+                 dataset = config["dataset"],
+                 script = config["script"],
+                 mode = config["refine_modes"]
+        )
 
 
 
@@ -86,41 +86,41 @@ rule prep_dnapars:
 #             for c in clonotypes:
 #                 file.write(f"{c}\n")
 
-# rule tribal:
-#     input: 
-#         forest = "{dataset}/tribal_recomb/input_forest.pickle",
-#         encoding = "mouse_isotype_encoding.txt",
-#     params:
-#         max_cand = config["max_cand"],
-#         niter = config["niter"],
-#         thresh = config["threshold"],
-#         seed =  config["seed"],
-#         root = "naive",
-#         restarts = config["nrestarts"],
-#         mode = "refine_ilp",
-#         script = lambda wildcards: config['script'][wildcards.script]
-#         # inpath = "./{dataset}/recomb_input",
-#         # tree_path = "./{dataset}/dnapars",
-#         # fasta= "heavy.aln.fasta"
-#     threads: config["nworkers"]
-#     output:
-#         transmat = "{dataset}/tribal_recomb/{script}/transmat.txt",
-#         stateprobs = "{dataset}/tribal_recomb/{script}/state_probs.txt",
-#         heatmap = "{dataset}/tribal_recomb/{script}/transmat.pdf",
-#         propmap = "{dataset}/tribal_recomb/{script}/state_probs.pdf",
-#         score = "{dataset}/tribal_recomb/{script}/fit_score.csv"
-#     log:
-#         std = "{dataset}/tribal_recomb/{script}/fit.log",
-#         err = "{dataset}/tribal_recomb/{script}/fit.err.log"
-#     benchmark: "{dataset}/tribal_recomb/{script}/benchmark.log"
-#     shell:
-#         "nice -n 5 python {params.script} --forest {input.forest} "
-#         "-r {params.root} -e {input.encoding} -s {params.seed}  "
-#         " --niter {params.niter} --mode {params.mode} "
-#         "--thresh {params.thresh} --transmat_infer {output.transmat}  "
-#         "--state_probs {output.stateprobs} --score {output.score}  "  
-#         "--nworkers {threads} --restarts {params.restarts} "
-#         "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "    
+rule tribal:
+    input: 
+        forest = "{dataset}/tribal_recomb/input_forest.pickle",
+        encoding = "mouse_isotype_encoding.txt",
+    params:
+        max_cand = config["max_cand"],
+        niter = config["niter"],
+        thresh = config["threshold"],
+        seed =  config["seed"],
+        root = "naive",
+        restarts = config["nrestarts"],
+        mode = "refine_ilp",
+        script = lambda wildcards: config['script'][wildcards.script]
+        # inpath = "./{dataset}/recomb_input",
+        # tree_path = "./{dataset}/dnapars",
+        # fasta= "heavy.aln.fasta"
+    threads: config["nworkers"]
+    output:
+        transmat = "{dataset}/tribal_recomb/{script}/transmat.txt",
+        stateprobs = "{dataset}/tribal_recomb/{script}/state_probs.txt",
+        heatmap = "{dataset}/tribal_recomb/{script}/transmat.pdf",
+        propmap = "{dataset}/tribal_recomb/{script}/state_probs.pdf",
+        score = "{dataset}/tribal_recomb/{script}/fit_score.csv"
+    log:
+        std = "{dataset}/tribal_recomb/{script}/fit.log",
+        err = "{dataset}/tribal_recomb/{script}/fit.err.log"
+    benchmark: "{dataset}/tribal_recomb/{script}/benchmark.log"
+    shell:
+        "python {params.script} --forest {input.forest} "
+        "-r {params.root} -e {input.encoding} -s {params.seed}  "
+        " --niter {params.niter} --mode {params.mode} "
+        "--thresh {params.thresh} --transmat_infer {output.transmat}  "
+        "--state_probs {output.stateprobs} --score {output.score}  "  
+        "--nworkers {threads} --restarts {params.restarts} "
+        "--heatmap {output.heatmap} --propmap {output.propmap} > {log.std} 2> {log.err} "    
 
 
 rule tribal_refine:

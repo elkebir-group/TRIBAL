@@ -14,9 +14,9 @@ def get_files():
 
 rule all:
    input:  
-        expand("{dataset}/igphyml/all_files.rds",
-            dataset = config['datasets']
-        ),
+        # expand("{dataset}/igphyml/all_files.rds",
+        #     dataset = config['datasets']
+        # ),
         get_files()
         # expand("{dataset}/igphyml/data_lineages_gy.tsv_igphyml_stats.txt",
         #     dataset = config['datasets']

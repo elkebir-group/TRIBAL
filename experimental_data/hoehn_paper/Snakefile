@@ -37,7 +37,7 @@ rule all:
 
         # expand("Mouse_{mouse}/clonotypes.txt", mouse = config["mice"]),
         expand("Mouse_{mouse}/tribal_ml/{mode}/transmat.txt", mouse = config["mice"], mode=config["mode"]),
-        expand("Mouse_{mouse}/tribal_ml/{mode}/trees.rds", mouse = config["mice"], mode=config["mode"])
+        # expand("Mouse_{mouse}/tribal_ml/{mode}/trees.rds", mouse = config["mice"], mode=config["mode"])
 
 rule csv_to_fasta:
     input: "Mouse_{mouse}/clone_data/{clone}.csv"
@@ -364,18 +364,7 @@ rule igphyml_node_scores:
         ant_series = pd.Series(ant_entropy, name="annot_entropy").rename_axis("node")
         merged_series = pd.concat([deg_series, ent_series, ant_series], axis=1)
         merged_series["tree"] = 0
-        merged_series.to_csv(output.scores, index=False)
-
-
-
-  
-
-
-
-
-
-
-
+        merged_series.to_csv(output.scores)
 
 
 

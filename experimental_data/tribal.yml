@@ -5,12 +5,14 @@ dataset:
   - GCB_NP_2
 
 infer:
-  - marginal
-  - ml
+  # - marginal
+  # - ml
+  - ml2
 
 script:
-  marginal: "../src/tribal.py"
-  ml: "../src/tribal_ml.py"
+  # marginal: "../src/tribal.py"
+  # ml: "../src/tribal_ml.py"
+  ml2: "../src/tribal_ml.py"
   
 refine_modes:
   # - refine
@@ -19,9 +21,9 @@ refine_modes:
 #TRIBAL parameters
 # lamb: 0.75
 # ntrees: 10
-max_cand: 50
+max_cand: 100
 niter: 10
-nworkers: 4
+nworkers: 5
 nrestarts: 10
 # mu: 0.075
 # sigma: 0.05

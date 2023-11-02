@@ -105,11 +105,13 @@ class LineageTree:
                 child = list(self.T.neighbors(n))[0]
                 self.T.remove_edge(n, child)
                 self.T.remove_node(n)
+            
                 self.T.add_edge(gparent, child)
+        return unifur
 
     def to_newick(self, fname=None, format=9):
         T_prev = self.T.copy()
-        self.prune_unifurcations()
+        _ =self.prune_unifurcations()
         self.root_to_tip(new_root=-1)
     
         def get_node(nodename):
@@ -266,12 +268,14 @@ class LineageTree:
     
 
     def save_png(self,fname, isotypes=None, iso_encoding=None, 
-                 show_legend=False, show_labels=True, hide_underscore=True):
+                 show_legend=False, show_labels=True, hide_underscore=True,
+                 color_encoding = None):
     
         parents = self.get_parents()
-        dt = DrawTree(parents, isotypes, show_legend=show_legend,
+        dt = DrawTree(parents, isotypes, show_legend=show_legend, root=self.root,
                        isotype_encoding=iso_encoding, show_labels=show_labels,
-                       hide_underscore=hide_underscore)
+                       hide_underscore=hide_underscore,
+                       color_encoding=color_encoding)
         dt.save(fname)
 
     def save_tree(self,fname):
