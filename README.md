@@ -100,56 +100,53 @@ TRIBAL is run in two phases.
 ## Usage
 ### Isotype Transition Probability Inference
 <a name="probabilities"></a>
+```
 
-        usage: tribal.py [-h] -p PATH [-c CLONOTYPES] [-e ENCODING] [--n_isotypes N_ISOTYPES] [--fasta FASTA] [-i ISOTYPES] [-j JUMP_PROB] [-t TRANSMAT] [-r ROOT] --tree_path TREE_PATH
-                        [--candidates CANDIDATES] [--niter NITER] [--thresh THRESH] [--mu MU] [--sigma SIGMA] [--nworkers NWORKERS] [--max_cand MAX_CAND] [-s SEED] [--alpha ALPHA]
-                        [--restarts RESTARTS] [--mode {score,refine,search}] [-o OUTPATH] [--score SCORE] [--transmat_infer TRANSMAT_INFER] [--state_probs STATE_PROBS]
-                        [--diagram DIAGRAM] [--diagram_pdf DIAGRAM_PDF] [--heatmap HEATMAP] [--save_all_restarts SAVE_ALL_RESTARTS]
+usage: tribal.py [-h] [-f FOREST] [-p PATH] [-c CLONOTYPES] [-e ENCODING] [--n_isotypes N_ISOTYPES] [--fasta FASTA] [-i ISOTYPES] [-j JUMP_PROB] [-t TRANSMAT]
+                 [-r ROOT] [--tree_path TREE_PATH] [--candidates CANDIDATES] [--niter NITER] [--thresh THRESH] [--nworkers NWORKERS] [--max_cand MAX_CAND] [-s SEED]
+                 [--restarts RESTARTS] [--mode {score,refine,refine_ilp,search}] [--score SCORE] [--transmat_infer TRANSMAT_INFER] [--state_probs STATE_PROBS]
+                 [--heatmap HEATMAP] [--propmap PROPMAP]
 
-        optional arguments:
-        -h, --help            show this help message and exit
-        -p PATH, --path PATH  path to the directory containing input files
-        -c CLONOTYPES, --clonotypes CLONOTYPES
-                                filename with list of clonotype subdirectories that should be included in the inference. If not provided, scans provided path for all subdirectory names
-        -e ENCODING, --encoding ENCODING
-                                text file isotype states listed in germline order
-        --n_isotypes N_ISOTYPES
-                                the number of isotypes states to use if isotype encoding file is not provided and input isotypes are encoded numerically
-        --fasta FASTA         filename of input MSA in fasta file
-        -i ISOTYPES, --isotypes ISOTYPES
-                                filename of isotype fasta file within each clonotype directory
-        -j JUMP_PROB, --jump_prob JUMP_PROB
-                                for inititalization of transition matrix if not provided
-        -t TRANSMAT, --transmat TRANSMAT
-                                optional filename of input transition matrix for initialization
-        -r ROOT, --root ROOT  the common id of the root in all clonotypes
-        --tree_path TREE_PATH
-                                path to directory where candidate trees are saved
-        --candidates CANDIDATES
-                                filename containing newick strings for candidate trees
-        --niter NITER         max number of iterations in the fitting phase
-        --thresh THRESH       theshold for convergence in fitting phase
-        --mu MU               mean of gaussian white noise to add for distortion
-        --sigma SIGMA         std of gaussian white noise to add for distortion
-        --nworkers NWORKERS   number of workers to use in the event in multiple restarts
-        --max_cand MAX_CAND   max candidate tree size per clonotype
-        -s SEED, --seed SEED
-        --alpha ALPHA
-        --restarts RESTARTS   number of restarts
-        --mode {score,refine,search}
-        -o OUTPATH, --outpath OUTPATH
-                                path to directory where output files should be saved
-        --score SCORE         filename where the score file should be saved
-        --transmat_infer TRANSMAT_INFER
-                                filename where the inferred transition matrix should be saved
-        --state_probs STATE_PROBS
-                                filename where the inferred state probabilities should be saved
-        --diagram DIAGRAM     filename where the png of transition matrix should be saved
-        --diagram_pdf DIAGRAM_PDF
-                                filename where the pdf of transition matrix should be saved
-        --heatmap HEATMAP     filename where the heatmap pdf of transition matrix should be saved
-        --save_all_restarts SAVE_ALL_RESTARTS
-                                path where all restarts should be saved
+optional arguments:
+    -h, --help            show this help message and exit
+    -f FOREST, --forest FOREST
+                          path to pickled clonotypes dictionary of lineage forests
+    -p PATH, --path PATH  path to the directory containing input files
+    -c CLONOTYPES, --clonotypes CLONOTYPES
+                          filename with list of clonotype subdirectories that should be included in the inference. If not provided, scans provided path for all
+                          subdirectory names
+    -e ENCODING, --encoding ENCODING
+                          text file isotype states listed in germline order
+    --n_isotypes N_ISOTYPES
+                          the number of isotypes states to use if isotype encoding file is not provided and input isotypes are encoded numerically
+    --fasta FASTA         filename of input MSA in fasta file
+    -i ISOTYPES, --isotypes ISOTYPES
+                          filename of isotype fasta file within each clonotype directory
+    -j JUMP_PROB, --jump_prob JUMP_PROB
+                          for inititalization of transition matrix if not provided
+    -t TRANSMAT, --transmat TRANSMAT
+                          optional filename of input transition matrix for initialization
+    -r ROOT, --root ROOT  the common id of the root in all clonotypes
+    --tree_path TREE_PATH
+                          path to directory where candidate trees are saved
+    --candidates CANDIDATES
+                          filename containing newick strings for candidate trees
+    --niter NITER         max number of iterations in the fitting phase
+    --thresh THRESH       theshold for convergence in fitting phase
+    --nworkers NWORKERS   number of workers to use in the event in multiple restarts
+    --max_cand MAX_CAND   max candidate tree size per clonotype
+    -s SEED, --seed SEED
+    --restarts RESTARTS   number of restarts
+    --mode {score,refine,refine_ilp,search}
+    --score SCORE         filename where the score file should be saved
+    --transmat_infer TRANSMAT_INFER
+                          filename where the inferred transition matrix should be saved
+    --state_probs STATE_PROBS
+                          filename where the inferred state probabilities should be saved
+    --heatmap HEATMAP     filename where the {png,pdf} of transition matrix should be saved
+    --propmap PROPMAP     filename where the {pdf,png} of isotype proportions should be saved
+
+```
 
 
 ### B cell lineage tree inference
