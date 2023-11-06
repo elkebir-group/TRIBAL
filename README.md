@@ -18,7 +18,7 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
   - [B cell lineage tree inference](#b-cell-lineage-tree-inference)
   - [Example](#example)
 
-- [Snakemake](#snakemake)
+
 
 <a name="install"></a>
 
@@ -51,7 +51,7 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
 ## Phases
 TRIBAL is run in two phases:
   1. infers the isotype transition probabilities for a set of $k$ clonotypes. 
-  2. uses these probabilities to find the most parsimonious refinement $T'_j$  of each input tree $T_j$ for every clonotype $j$.
+  2. finds the most parsimonious refinement $T'_j$  of each input tree $T_j$ for every clonotype $j$.
 
 Two phases are required because the size of the input sets may be large for some clonotypes. TRIBAL will 
 downsample the input set in each iteration to size `--max_cand` to speed up inference. It always retains the best tree found so far in its sample
