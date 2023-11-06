@@ -36,7 +36,7 @@ class SteinerTree:
                 self.out_nodes[i].append(j)
         
         #compute edge weights from the sequence and isotype weights 
-        # self.c = {e:lamb* seq_weights[e] + (1-lamb) *iso_weights[e]for e in self.edges}
+    
         self.c = {e:iso_weights[e]for e in self.edges}
 
 
@@ -61,18 +61,6 @@ class SteinerTree:
          #minimize the sum of the edge weights of the Steiner Tree in G
         self.m.setObjective( sum(self.c[i,j]*self.x[i,j] for [i,j] in self.edges) , GRB.MINIMIZE)
 
-        # if pars_score is not None:
-        #     self.m.addConstr(sum(seq_weights[i,j]*self.x[i,j]  for [i,j] in self.edges) == pars_score) 
-
-        #enforce that there is a single MRCA child of the root node 
-        # self.m.addConstr(sum(self.x[self.root,j] for j in self.out_nodes[self.root] ) <= 1)
-
-        # for n, deg in tree_out_degree.items():
-        #      nodes = tree_to_graph[n]
-        #      if deg ==1:
-        #           continue
-        #      self.m.addConstr(sum(self.x[i,j] for i in nodes for j in self.out_nodes[i]) \
-        #                        - sum(self.x[i,j] for j in nodes for i in self.in_nodes[j]) <= deg -1)
              
 
         # need to send 1 unit of flow from the root to each terminal
@@ -94,25 +82,6 @@ class SteinerTree:
             
             #ensure 1 unit of flow designated for each terminal leaves the root
             self.m.addConstr(sum(self.f[t,self.root,j] for j in self.out_nodes[self.root])==1)
-
-        ## constraint to prevent unifurcations in internal nodes 
-        # for i in self.internal_nodes:
-        #     self.m.addConstr(sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals) >= 2*self.z[i])
-        #     self.m.addConstr(1e5*self.z[i] >= sum(sum(self.f[t,i,j] for j in self.out_nodes[i]) for t in self.terminals))
-
-        # for n,val in degree_max.items():
-        #         if len(self.out_nodes[n]) > 0:
-        #             self.m.addConstr(sum(self.x[n,j] for j in self.out_nodes[n]) <= val)
-
-        #ensure only 1 node is selected when multiple candidate isotypes exist
-        # for node_list in mut_exc_list:
-        #     cand_edges_in = []
-        #     for n in node_list:
-        #         predeccessors = G.predecessors(n)
-        #         for p in predeccessors:
-        #              cand_edges_in.append((p,n))     
-            # self.m.addConstr(sum(self.x[i,j] for i,j in cand_edges_in )<=1)
-    
 
         
 
@@ -157,30 +126,22 @@ class SteinerTree:
                     total_flow = sum(flow[t,i,j] for t in self.terminals)
                     if solution[i,j] > 0.5 and total_flow >0:
                         T.add_edge(i,j)
-                    # else:
-                         
-                    #     for t in self.terminals:
-                    #         if flow[t,i,j] > 0.0:
-                    #            print(f"{t}:  edge {i} -> {j}")
             
-                    #    break
 
             else:
                  print("Warning model infeasible")
                  score = np.Inf
-            
-            # def post_process():
+       
      
             T = self.post_process(T)
             return score, T
     
 
-#treeid_nodeid_isotype_polytomy
+
 def name_node(tree, node, label,  is_poly=False, is_leaf=False): 
 
         lab = str(node) + "_" + str(label)
-        # if not is_leaf:
-        #     lab = str(tree) + "_" + lab
+
         if is_poly:
              lab += "_p"
         return  lab
@@ -314,16 +275,6 @@ class ConstructGraph:
         self.Graphs.append(fg)
         return fg
     
-    # def combineGraphs(self):
-    #      graphs = [fg.G for fg in self.Graphs]
-    #      combined_graph = nx.compose_all(graphs)
-    #      seq_weights = {}
-    #      iso_weights = {}
-    #      for fg in self.Graphs:
-    #           seq_weights.update(fg.seq_weights)
-    #           iso_weights.update(fg.iso_weights)
-        
-    #      return FlowGraph(0, combined_graph, seq_weights, iso_weights)
         
     def decodeTree(self, tree, root_id="naive"):
          isotypes = {}
@@ -374,9 +325,6 @@ class FlowGraph:
                 8 : "darkgoldenrod",
                 9 : "thistle1"
             }
-        # Generate layout
-        # pos = nx.spring_layout(self.G)
-
         # Draw the graph
         if '.pdf' in fname:
              ext = 'pdf'
@@ -401,126 +349,6 @@ class FlowGraph:
  
                          
                      
-# T = nx.DiGraph()
-# T.add_edges_from([(0, 8), (8,7), (7,1), (7,2), (7,3), (7,10), (4,5), (4,6), (8,4),(8,9)])
-# isotypes  = {0: 0,  1:3, 2:0, 3:1, 5:2, 6:0, 9:3, 10:3}
-
-# # T.add_edges_from([('naive', 'w'), ('w','x'), ('w','y'), ('w','z')]) # (0,5)
-# # T= nx.relabel_nodes(T, {1:"f", 2:"b", 3:"c", 4:"d", 5:"e"})
-# # isotypes  = {'naive': 0,  'x':3, 'y':1, 'z':1, 5:3}
-
-
-# # T.add_edges_from([('naive', 0), (0,1), (1,2), (1,3), (1,4),(1,6), (0,5)])  # (0,5)
-# # isotypes  = {'naive': 0, "b":1, "c":3, "d":1, "e":2}  #5:2
-# iso_costs = {}
-# for u in range(4):
-#      for v in range(4):
-#           if u > v:
-#                continue
-#           elif u == v:
-#                 iso_costs[(u,v)] = 1
-#           elif v == u + 1:
-#                iso_costs[(u,v)] = 2
-#                 # iso_costs[(u,v)] = 0
-#           else:
-#                iso_costs[(u,v)] = 3
-#             #    iso_costs[(u,v)] = 10
-#             #    iso_costs[(u,v)] = 0   
-
-# # for key, val in iso_costs.items():
-# #      iso_costs[key] = -1*np.log(val)
-# # for key, val in iso_costs.items():
-# #      print(f"{key}: {val}")
-# ext = "png"
-# sequences = {n: ['a,c'] for n in T.nodes}
-# sequences = {5: ['T', 'T', 'A'], 6: ['T', 'T', 'T'], 1: ['C','C','G'], 10: ['C','C','G'], 2: ['C', 'C', 'G'], 3:['G', 'C', 'C'], 0: ['A', 'T', 'T'], 9:['G','T','T']}
-
-# lt =LineageTree(T,0)
-# lt.save_png(f"test/start_tree.{ext}", isotypes)
-# pars_score, seq_labels =lt.sequence_parismony(sequences)
-
-# cg = ConstructGraph(iso_costs, isotypes, root_identifier="naive")
-# fg = cg.build(lt, seq_labels) 
-# fg.save_graph(f"test/flow_graph.{ext}")
-
-# score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, root="0_0", degree_max=fg.degree_max).run()
-# lt2 = LineageTree(T2, "naive", 0)
-# print(f"score: {score}")
-# lt2.save_png(f"test/out_tree.{ext}", fg.isotypes, show_legend=False)
-# print("DONE!")
-
-
-
-
-
-
-# lt2 = LineageTree(T2, "naive", 0)
-# print(f"score: {score}")
-# lt2.save_png("test/out_tree3.png", fg.isotypes)
-
-
-# T.add_edges_from([ ('naive', 'r') ,('r', 'a') , ('r','b'), ('r', 'c'), ('r', 'd'), ('r','e')])
-# #iso_costs = {(0,0): 0.91, (0,1): 1.6, (0,2): 1.6, (0,3): 1.6, (1,1): 0.11, (1,2):  3, (1,3): 3, (2,2): 0.51, (2,3): 0.43, (3,3): 0  }
-
-# iso_costs = {(0,0): 0.55, (0,1): 0.44, (0,2): 0.005, (0,3): 0.005,
-#               (1,1): 0.55, (1,2):  0.44, (1,3): 0.05, 
-#               (2,2): 0.55, (2,3): 0.44, 
-#               (3,3): 1  }
-# iso_costs_log = {}
-# for key in iso_costs:
-#      iso_costs[key] = -1*np.log(iso_costs[key])
-
-
-# isotypes  = {'naive': 0, 'a': 1, 'b':1, 'c': 2, 'd':3, 'e':3}
-
-
-# # # lt2 =LineageTree(T,'root', 1)
-
-
-
-
-# score, T2= SteinerTree( fg.G, fg.seq_weights, fg.iso_weights, fg.degree_bound, fg.mut_exclusive_list, root="naive").run()
-
-
-
-# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd')])
-
-# T.add_edges_from([ ('root', 'r') , ('r','a'), ('r', 'b'), ('r', 'c'), ('r', 'd'), ('r', 'e'), ('r', 'f'), ('r', 'g')])
-# T.add_edges_from([ ('naive', 'r') ,('r', 'a') , ('r','b'), ('r', 'c'), ('c', 'd'), ('c', 'e'), ('c', 'f')])
-
-
-
-# iso_costs = {}
-# for i in range(10):
-#      for j in range(10):
-#           if j >= i:
-#                if i ==j:
-#                     iso_costs[(i,j)] =0
-#                else:
-#                     iso_costs[(i,j)] =1
-
-
-# isotypes  = {'naive': 0, 'a': 2, 'b':2, 'd': 3, 'f':2, 'e': 3}
-
-
-
-
-
-
-
-
-# _ = cg.build(lt1, sequences)
-# fg = cg.combineGraphs()
-
-# print(list(fg.G.nodes))
-# print(list(fg.G.edges))
-
-
-
-# score, T = SteinerTree(fg.G, fg.seq_weights, fg.iso_weights, root='root', lamb=0).run()
-# print(score)
-# print(list(T.edges))
-
                     
              
 
