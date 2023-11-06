@@ -12,7 +12,7 @@ def get_files(dirn, fname):
    
         for c in clonotypes:
   
-                    targets.append(f"{d}/{dirn}/{s}/{c}/{fname}")
+                    targets.append(f"{d}/{dirn}/{c}/{fname}")
     return targets 
 
 
@@ -76,7 +76,7 @@ rule tribal:
 rule tribal_refine:
     input: 
         forest = "{dataset}/tribal/input.pickle",
-        encoding = "mouse_isotype_encoding.txt",
+        encoding = "isotype_encoding.txt",
         transmat =  "{dataset}/tribal/transmat.txt",
     output: 
         tree= "{dataset}/tribal/{clonotype}/tree.txt",
@@ -87,6 +87,7 @@ rule tribal_refine:
         pickle_best = "{dataset}/tribal/{clonotype}/best_trees.pickle"
     params:
         root = "naive",
+        mode = "refine_ilp"
     threads: config['nworkers']
     log: 
         run= "{dataset}/tribal/{clonotype}/refine.log",
@@ -102,10 +103,10 @@ rule tribal_refine:
         "--score {output.score} "
         "--iso_infer {output.isotypes} "
         "--png {output.png} "
-        "--mode {wildcards.mode} "
+        "--mode {params.mode} "
         "--all_optimal_sol {output.opts} "
         "--nworkers {threads} "
         "--tree {output.tree} "
-        "--pickle_best {output.scores} > {log.run} 2> {log.err} "  
+        "--pickle_best {output.pickle_best} > {log.run} 2> {log.err} "  
 
    
