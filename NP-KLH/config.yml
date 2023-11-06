@@ -1,0 +1,14 @@
+dataset: 
+  - NP-KLH-1
+  - NP-KLH-2a
+  - NP-KLH-2b
+
+
+#TRIBAL parameters
+max_cand: 100
+niter: 10
+nworkers: 5
+nrestarts: 10
+seed: 3
+threshold: 0.1
+
