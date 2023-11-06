@@ -35,11 +35,13 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
    2. Install dependencies 
       + python3 >=3.9
       + [numpy](https://numpy.org/doc/)
+      + [pandas](https://pandas.pydata.org)
       + [ete3](http://etetoolkit.org) >=3.1.2
       + [networkx](https://networkx.org)
-      + [pydot](https://pygraphviz.github.io)  
+      + [pygraphviz](https://pygraphviz.github.io)  
       + [seaborn](https://seaborn.pydata.org)
       + [matplotlib](https://matplotlib.org)
+      + [gurobipy](https://pypi.org/project/gurobipy/) ( **Requires the installation of a free academic license.**)
       
       Optional: 
          + [snakemake](https://snakemake.readthedocs.io/en/stable/)
@@ -51,7 +53,14 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
 ## Phases
 TRIBAL is run in two phases. 
   1. infers the isotype transition probabilities for a set of k clonotypes. 
-  2. uses these probabilities to find the most parsiminious refinement of each candidate tree
+  2. uses these probabilities to find the most parsimonious refinement of each inout tree 
+
+Two phases are required because the size of the input sets may be large for some clonotypes. TRIBAL will 
+downsample the input set in each iteration to size `--max_cand` to speed up inference. It always retains the best tree found so far in its sample
+to ensure convergence of the coordinate ascent appraoch. 
+  In the second phase, TRIBAL solves the most parsiminonious refinement for every
+input tree given the isotype transition probabilities inferred in phase 1.  Note that if downsampling is not used, then the second step is not required.
+
 
 
 <a name="io"></a>
@@ -66,20 +75,21 @@ TRIBAL is run in two phases.
              clontoype_2
              clonotype_3
             ```
-        - A text file containing the ordered encoding of isotypes (see example below). The names of isotypes should match the names in the input files.    
+        - A text file containing the ordered list of isotypes found in the data. These will be encoded from $0$ to $r-1$, where $r$ is the number of isotypes listed in the file (see example below). As naming conventions of isotype states varies, the listed isotypes must match the isotype names in the input files. 
              ```
              IgM/D
              IgG3
              IgA
             ```
-        - A specified id of the root sequence  
+
+        - A specified id of the root or germline representing the naive BCR 
         - Each clonotype subdirectory should contain the following two files:  
-            1. fasta file for the concatenated and aligned heavy and light chain variable region sequences  
-            2. fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correpond to sequence ids)  
+            1. fasta file for the MSE of the concatenated heavy and light chain variable region sequences  
+            2. fasta or csv file with the isotype expression of the heavy chain for each cell (ids should correspond to sequence ids)  
     + **Output**:  
         - a text file containing the inferred isotype transition probabilties   
         - a text file containing the inferred isotype proportions   
-        - Optional outputs include heatmaps and state diagrams of the isotype transition probabilities  
+        - Optional outputs include heatmaps of the inferred isotype transition probabilites 
 2. *Tree inference:* 
     + **Input**:  
         - fasta file for the concatenated and aligned heavy and light chain variable region sequences  
@@ -208,7 +218,7 @@ optional arguments:
 
 ```
 
-### Isotype transition probability inference example
+<!-- ### Isotype transition probability inference example
 
 
 Here we show an example of how to run `TRIBAL` to infer isotype transition probabilities. We will use experimental dataset GCB_NP_2.  To run TRIBAL for different datasets, replace `GCB_NP_2` with either `day_14` or `GCB_NP_1`.
@@ -243,32 +253,8 @@ Here we show an example of how to run `TRIBAL` to infer a B cell lineage tree fo
        --mode refine \
         --ntrees 10 \
        --nworkers 5 \
-       -o experimental_data/GCB_NP_2/example/forest.pickle
+       -o experimental_data/GCB_NP_2/example/forest.pickle -->
 
-Then, we perform a greedy hill climbing search starting from each of the top candidates using an isotype aware SPR tree move.
 
-    python src/tribal_tree.py \
-        -r naive \
-        -a experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/concat.aln.fasta \
-       -t experimental_data/GCB_NP_2/transmat.txt \
-       -e experimental_data/mouse_isotype_encoding.txt \
-       -i experimental_data/GCB_NP_2/input/B_12_1_5_24_1_5/isotype.fasta \
-       -l experimental_data/GCB_NP_2/example/forest.pickle \
-       --forest \
-       --alpha 0.75 \
-       --fasta experimental_data/GCB_NP_2/example/seq.fasta \
-       --score experimental_data/GCB_NP_2/example/score.csv \
-       --iso_infer experimental_data/GCB_NP_2/example/isotypes.csv \
-       --png experimental_data/GCB_NP_2/example/tree.png \
-       --mode search \
-       --nworkers 5 \
-       --tree experimental_data/GCB_NP_2/example/tree.txt 
 
-## Snakemake 
-To simplify the process of inference, we have provided  `experimental_data/Snakefile` and `experimental_data/config.yaml` files. To run the snakemake pipeline, navigate to the `experimental_data` directory.  
-     ```$   cd experimental_data```
-
-Update the `config.yaml` file with the desired dataset and TRIBAL parameters. Then use the following 
-command to execute the pipeline, where the argument `-j` specifies the number of cores.   
-     ```$   snakemake -j 10```
 
