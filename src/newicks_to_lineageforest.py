@@ -1,14 +1,11 @@
 
 import networkx as nx
-import numpy as np
 import sys, os, re
 import argparse 
 import pickle
-from copy import deepcopy
 import utils as ut
 from ete3 import Tree
 from alignment import Alignment
-from score_class import ScoreList
 from lineage_tree import LineageForest
 
 
@@ -38,19 +35,16 @@ def convert_to_nx(ete_tree, root):
 
     
     if len(list(nx_tree.neighbors(root))) == 0:
-        # path = nx.shortest_path(nx_tree, source=root_name, target=root)
+ 
 
         G = nx_tree.to_undirected()
         H = nx.dfs_tree(G,source=root)
-        # print("Edges of the re-rooted tree:")
-        # print(list(H.edges()))
+   
 
         if H.out_degree[root_name]==0:
             H.remove(root_name)
 
-   
-        # nx_tree.remove_edge(root_name, root)
-        # nx_tree.add_edge(root, root_name)
+
       
 
     return H
@@ -78,13 +72,7 @@ def create_input( path,  tree_path, clonotype, root, seq_fasta_fname,
     iso_fname =f"{path}/{clonotype}/{iso_fasta_fname}"
     tree_list = create_trees(tree_fname)
 
-    #simplified alignment 
     alignment = Alignment(align_fname,root=args.root).simplify()
-    # alignment = ut.read_fasta(align_fname)
-    # alignment = {key: list(value.strip()) for key,value in alignment.items()}
-
-
-    #only treat isotype file as a fasta file if .fasta is in the name, otherwise, we assume it is a csv file dictionary
     if ".fasta" in iso_fname:
         isotypes = ut.read_fasta(iso_fname)
     else:
@@ -185,19 +173,7 @@ if __name__ == "__main__":
     parser.add_argument( "-o", "--outfile", type=str, help="filename where clonodict pickle object should be saved")
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
   
-    # dataset = "day_14"
-    # fpath = f"/scratch/projects/tribal/experimental_data"
-    # args = parser.parse_args([
-    #     "--clonotypes", f"{fpath}/{dataset}/clonotypes_igphyml.txt", 
-    #     "--encoding", f"{fpath}/mouse_isotype_encoding.txt",
-    #     "-p", f"{fpath}/{dataset}/recomb_input",
-    #     "--root", "naive",
-    #     "--tree_path", f"{fpath}/{dataset}",
-    #     "--fasta", "heavy.aln.fasta",
-    #     "--candidates", "dnapars/outtree",
-    #     "-o", f"{fpath}/{dataset}/tribal_forest.pickle"
-    
-    #     ])
+
 
     if args.encoding is not None:
         iso_encoding, start_iso, n_isotypes = create_isotype_encoding(args.encoding)
