@@ -1,0 +1,18 @@
+dataset:
+  - Mouse_1
+  - Mouse_2
+  - Mouse_3
+
+
+max_cand: 100
+
+niter: 15
+
+threshold: 0.05
+
+seed: 3
+
+nworkers: 5
+nrestarts: 10
+
+
