@@ -59,7 +59,7 @@ to ensure convergence of the coordinate ascent approach.
   In the second phase, TRIBAL solves the most parsiminonious refinement for every
 input tree given the isotype transition probabilities inferred in phase $1$.  
 
- In addition, we provide a helper script [prep_parsimony_format.py](/src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$ (obtained via dnapars), the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
+ In addition, we provide a helper script [prep_parsimony_format.py](src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$ (obtained via dnapars), the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
 
 
 
