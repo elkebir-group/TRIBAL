@@ -36,7 +36,7 @@ rule prep_input:
         root = "naive",
     output: "{dataset}/tribal/input.pickle"
     shell:
-        "python ../src/newicks_to_lineageforest.py --clonotypes {input.clonotypes} "
+        "python ../src/prep_parimsony_forest.py --clonotypes {input.clonotypes} "
         "--encoding {input.encoding} -p {params.inpath} "
         "--tree_path {params.tree_path} -r {params.root} "
         "--fasta {params.fasta} -o {output} "
@@ -68,7 +68,7 @@ rule tribal:
         "-r {params.root} -e {input.encoding} -s {params.seed}  "
         " --niter {params.niter} --mode {params.mode} "
         "--thresh {params.thresh} --transmat_infer {output.transmat}  "
-        "-score {output.score}  "  
+        "--score {output.score}  "  
         "--nworkers {threads} --restarts {params.restarts} "
         "--heatmap {output.heatmap} > {log.std} 2> {log.err} "    
 
