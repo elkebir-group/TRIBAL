@@ -59,7 +59,7 @@ to ensure convergence of the coordinate ascent approach.
   In the second phase, TRIBAL solves the most parsiminonious refinement for every
 input tree given the isotype transition probabilities inferred in phase $1$.  
 
- In addition, we provide a helper script [prep_parsimony_format.py](src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$ (obtained via dnapars), the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
+ In addition, we provide a helper script [prep_parsimony_format.py](/src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$ (obtained via dnapars), the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
 
 
 
@@ -228,7 +228,7 @@ Next, we prep the dnapars output, sequences and isotypes for TRIBAL.
 
 ```
 
-  python ../../src/prep_parismony_forest 
+  python ../src/prep_parismony_forest 
     --clonotypes NP-KLH-2b/clonotypes.txt
     --encoding isotype_encoding.txt 
     -p NP-KLH-2b/input --tree_path ./NP-KLH-2b  -r naive 
@@ -240,7 +240,7 @@ Next, we prep the dnapars output, sequences and isotypes for TRIBAL.
 Then, we infer isotype transition probabilities with downsampling (`--max_cand 10`).  
 
 ```
-  python ../../src/tribal.py --forest NP-KLH-2b/input.pickle 
+  python ../src/tribal.py --forest NP-KLH-2b/input.pickle 
     -r naive --encoding isotype_encoding --seed 3 
     --niter 10 --restarts 1 --mode refine_ilp 
     --thresh 0.1 --nworkers 1 --max_cand 10
