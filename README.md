@@ -41,7 +41,7 @@ TRIBAL is a method to infer B cell clonal lineages and isotype transition probab
       + [pygraphviz](https://pygraphviz.github.io)  
       + [seaborn](https://seaborn.pydata.org)
       + [matplotlib](https://matplotlib.org)
-      + [gurobipy](https://pypi.org/project/gurobipy/) ( **Requires the installation of a free academic license.**)
+      + [gurobipy](https://pypi.org/project/gurobipy/) ( **Requires the activation of a license, which is free for academic use.**)
       
       Optional: 
          + [snakemake](https://snakemake.readthedocs.io/en/stable/)
@@ -55,11 +55,11 @@ TRIBAL is run in two phases:
 
 Two phases are required because the size of the input sets may be large for some clonotypes. TRIBAL will 
 downsample the input set in each iteration to size `--max_cand` to speed up inference. It always retains the best tree found so far in its sample
-to ensure convergence of the coordinate ascent appraoch. 
+to ensure convergence of the coordinate ascent approach. 
   In the second phase, TRIBAL solves the most parsiminonious refinement for every
-input tree given the isotype transition probabilities inferred in phase 1.  
+input tree given the isotype transition probabilities inferred in phase $1$.  
 
- In addition, we provide a helper script [prep_parsimony_format.py](src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$, the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
+ In addition, we provide a helper script [prep_parsimony_format.py](src/prep_parsimony_forest.py) that converts the input trees $\mathcal{T}_j$ (obtained via dnapars), the sequences $\mathbf{A}_j$ and isotype $\mathbf{b}_j$ for each clonotype $j$ of the $k$ clonotypes to the input format for TRIBAL.  
 
 
 
@@ -273,8 +273,10 @@ Finally, we use the inferred isotype transition probabilities to infer a B cell 
 
 ```
 
-We provide a [Snakefile](NP-KLH/Snakefile) and associated [config.yml](NP-KLH/config.yml) that can be used to run this pipeline for all NP-KLH datasets and clonotypes, using the following command:
+We provide a [Snakefile](NP-KLH/Snakefile) and associated [config file](NP-KLH/config.yml) that can be used to run this pipeline for all NP-KLH datasets and clonotypes, using the following command:
 
 ```
 snakemake -j 10
 ```
+
+Similarily, a [Snakefile](ABC/Snakefile) and associated [config file](ABC/config.yml) is provided to run TRIBAL for the ABC data. 
