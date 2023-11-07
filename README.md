@@ -69,7 +69,7 @@ input tree given the isotype transition probabilities inferred in phase $1$.
 
 1. Input
 
-    - A text file containing a list of clonotype subdirectory names  which are to be included in the inference (see example below) or see [clonotypes.txt](NP-KLH/NP-KLH-2b/clonotypes.txt)
+    - A text file containing a list of clonotype subdirectory names that are to be included in the inference (see example below) or see [clonotypes.txt](NP-KLH/NP-KLH-2b/clonotypes.txt)
         ```
           clonotype_1
           clontoype_2
