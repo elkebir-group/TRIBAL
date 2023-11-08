@@ -10,7 +10,7 @@ import time
 from ete3 import Tree
 from itertools import repeat
 from multi_spr import MultSPR
-from score_class import Score
+from score_class import Score, ScoreList
 from lineage_tree import LineageForest, LineageTree
 from multiprocessing import Pool
 from steiner_tree import ConstructGraph, SteinerTree
@@ -360,7 +360,6 @@ if __name__ == "__main__":
     parser.add_argument("-j", "--jump-prob", type=float, default=0.25)
 
     parser.add_argument("--ntrees", type=int, help="number of top scoring trees to return", default=1)
-    parser.add_argument("-o", "--output", type=str, help="outputfile of all best trees")
     parser.add_argument("--tree",  type=str, help="outputfile of best tree")
 
     parser.add_argument( "--fasta", type=str, help="filename where reconstructed ancestral sequences should be saved as fasta file")
@@ -382,9 +381,7 @@ if __name__ == "__main__":
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
 
-
   
-
     
     iso_encoding = {}
     counter = 0
@@ -466,28 +463,12 @@ if __name__ == "__main__":
     all_results =  tr.forest_mode(lin_forest, mode =args.mode)
 
     
-
-
-
-
     for a in all_results:
         print(a)
-    best_results = []
-    top_ntrees = []
-    data_rows = []
-    best_obj = np.Inf
-    
-    for res in all_results:
-        if round(res.objective,5) == round(best_obj,5):
-            best_results.append(res)
 
-        if len(top_ntrees) ==0:
-            top_ntrees.append(res)
-            
-            # print(best_result)
-        else:
-            if res.improvement(top_ntrees[-1]) or len(top_ntrees) < args.ntrees:
-                update_best_results(res, top_ntrees, args.ntrees)
+    score_list = ScoreList(all_results)
+    best_score, best_results = score_list.find_all_best_scores()
+
 
     if args.best_tree_diff is not None:       
         with open(args.best_tree_diff, "w+") as outfile:
@@ -500,11 +481,8 @@ if __name__ == "__main__":
                         rf = res1.tree.rf_distance(res2.tree)
                         outfile.write(f"{res1.tree.id},{res2.tree.id},{rf}\n")
     
-
-
-
     
-    lin_forest_out = LineageForest(lin_forest.alignment, lin_forest.isotypes, [res.tree for res in top_ntrees])
+    # lin_forest_out = LineageForest(lin_forest.alignment, lin_forest.isotypes, [res.tree for res in top_ntrees])
     
     if args.score is not None:
         with open(args.score, 'w+') as file:
@@ -520,8 +498,7 @@ if __name__ == "__main__":
     print("\nsaving results......")
 
 
-    if args.output is not None:
-        lin_forest_out.save_forest(args.output)
+
     
 
     
