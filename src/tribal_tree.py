@@ -340,7 +340,7 @@ def get_alignment(fname):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-f", "--full-forest", type=str, help="path to pickled clonotypes dictionary of lineeage forests" )
+    parser.add_argument("-f", "--input-forest", type=str, help="path to pickled clonotypes dictionary of lineeage forests" )
     parser.add_argument("-c", "--clonotype", type=str, help="name of clonotype lineage to refine from the full forest" )
     parser.add_argument("-a", "--alignment", type=str,
         help="filename of input fasta file containing the alignment")
@@ -356,15 +356,9 @@ if __name__ == "__main__":
     parser.add_argument("--candidates", type=str, help="filename containing newick strings for candidate tree(s)")
     parser.add_argument("--mode", choices=["score", "refine", "refine_ilp", "search"], default="score")
     parser.add_argument("-e", "--encoding", type=str, required=True)
-    parser.add_argument("--alpha", type=float, default=0.9)
-    parser.add_argument("-j", "--jump-prob", type=float, default=0.25)
-
-    parser.add_argument("--ntrees", type=int, help="number of top scoring trees to return", default=1)
     parser.add_argument("--tree",  type=str, help="outputfile of best tree")
-
     parser.add_argument( "--fasta", type=str, help="filename where reconstructed ancestral sequences should be saved as fasta file")
     parser.add_argument( "--png", type=str, help="filename where to save a png of the optimal tree")
-    parser.add_argument( "--all_pngs", action="store_true")
     parser.add_argument( "--sequences", type=str, help="filename where reconstructed ancestral sequences should be saved as csv file")
     parser.add_argument("--score",  type=str, help="filename of the objective function value objective function value")
     parser.add_argument("--reversible",  action="store_true", 
@@ -372,8 +366,6 @@ if __name__ == "__main__":
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
     parser.add_argument("--all_optimal_sol",  help="path where all optimal solution results are saved"  )
     parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event of multiple input candidate trees")
-    parser.add_argument("--seed", type=int, default=1026, help="random seed for picking a single best tree among all tied trees")
-    parser.add_argument("--best_tree_diff", type=str, help="best tree RF distances")
     parser.add_argument("--pickle_best", type=str, help="filename to pickle the best results")
     parser.add_argument("--pickle_all", type=str, help="filename to pickle the best results")
 
@@ -435,8 +427,8 @@ if __name__ == "__main__":
       
 
     else:
-        if args.clonotype is not None and args.full_forest is not None:
-            full_forest = ut.pickle_load(args.full_forest)
+        if args.clonotype is not None and args.input_forest is not None:
+            full_forest = ut.pickle_load(args.input_forest)
             lin_forest = full_forest[args.clonotype]
 
         else:    
@@ -458,7 +450,7 @@ if __name__ == "__main__":
     ncells = len(lin_forest.alignment)
     print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
-    tr = TribalSub(isotype_weights, args.alpha, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
+    tr = TribalSub(isotype_weights, 0.9, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
 
     all_results =  tr.forest_mode(lin_forest, mode =args.mode)
 
@@ -470,20 +462,7 @@ if __name__ == "__main__":
     best_score, best_results = score_list.find_all_best_scores()
 
 
-    if args.best_tree_diff is not None:       
-        with open(args.best_tree_diff, "w+") as outfile:
-            outfile.write("tree1,tree2,rf\n")
-            for i,res1 in enumerate(best_results):
-                
-
-                for j, res2 in enumerate(best_results):
-                    if i < j:
-                        rf = res1.tree.rf_distance(res2.tree)
-                        outfile.write(f"{res1.tree.id},{res2.tree.id},{rf}\n")
-    
-    
-    # lin_forest_out = LineageForest(lin_forest.alignment, lin_forest.isotypes, [res.tree for res in top_ntrees])
-    
+        
     if args.score is not None:
         with open(args.score, 'w+') as file:
             file.write("tree,alpha,objective,sequence,isotype,\n")
