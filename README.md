@@ -158,15 +158,16 @@ optional arguments:
 <a name="tree"></a>
 ```
 
-usage: tribal_tree.py [-h] [-f FULL_FOREST] [-c CLONOTYPE] [-a ALIGNMENT] [-i ISOTYPES] [-t TRANSMAT] -r ROOT [--timeout TIMEOUT] [-l LINEAGE] [--forest]
-                      [--candidates CANDIDATES] [--mode {score,refine,refine_ilp,search}] -e ENCODING [--alpha ALPHA] [-j JUMP_PROB] [--ntrees NTREES] [-o OUTPUT]
-                      [--tree TREE] [--fasta FASTA] [--png PNG] [--all_pngs] [--sequences SEQUENCES] [--score SCORE] [--reversible] [--iso_infer ISO_INFER]
-                      [--all_optimal_sol ALL_OPTIMAL_SOL] [--nworkers NWORKERS] [--seed SEED] [--best_tree_diff BEST_TREE_DIFF] [--pickle_best PICKLE_BEST]
+usage: tribal_tree.py [-h] [-f INPUT_FOREST] [-c CLONOTYPE] [-a ALIGNMENT] [-i ISOTYPES] [-t TRANSMAT] -r ROOT
+                      [--timeout TIMEOUT] [-l LINEAGE] [--forest] [--candidates CANDIDATES]
+                      [--mode {score,refine,refine_ilp,search}] -e ENCODING [--tree TREE] [--fasta FASTA] [--png PNG]
+                      [--sequences SEQUENCES] [--score SCORE] [--reversible] [--iso_infer ISO_INFER]
+                      [--all_optimal_sol ALL_OPTIMAL_SOL] [--nworkers NWORKERS] [--pickle_best PICKLE_BEST]
                       [--pickle_all PICKLE_ALL]
 
 optional arguments:
   -h, --help            show this help message and exit
-  -f FULL_FOREST, --full-forest FULL_FOREST
+  -f INPUT_FOREST, --input-forest INPUT_FOREST
                         path to pickled clonotypes dictionary of lineeage forests
   -c CLONOTYPE, --clonotype CLONOTYPE
                         name of clonotype lineage to refine from the full forest
@@ -185,27 +186,19 @@ optional arguments:
                         filename containing newick strings for candidate tree(s)
   --mode {score,refine,refine_ilp,search}
   -e ENCODING, --encoding ENCODING
-  --alpha ALPHA
-  -j JUMP_PROB, --jump-prob JUMP_PROB
-  --ntrees NTREES       number of top scoring trees to return
-  -o OUTPUT, --output OUTPUT
-                        outputfile of all best trees
   --tree TREE           outputfile of best tree
   --fasta FASTA         filename where reconstructed ancestral sequences should be saved as fasta file
   --png PNG             filename where to save a png of the optimal tree
-  --all_pngs
   --sequences SEQUENCES
                         filename where reconstructed ancestral sequences should be saved as csv file
   --score SCORE         filename of the objective function value objective function value
-  --reversible          a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized and irreversiblility is ignored)
+  --reversible          a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized
+                        and irreversiblility is ignored)
   --iso_infer ISO_INFER
                         filename of the inferred isotypes for the internal nodes
   --all_optimal_sol ALL_OPTIMAL_SOL
                         path where all optimal solution results are saved
   --nworkers NWORKERS   number of workers to use in the event of multiple input candidate trees
-  --seed SEED           random seed for picking a single best tree among all tied trees
-  --best_tree_diff BEST_TREE_DIFF
-                        best tree RF distances
   --pickle_best PICKLE_BEST
                         filename to pickle the best results
   --pickle_all PICKLE_ALL
@@ -253,7 +246,7 @@ Notes:
 - Parallelization can be applied by increasing `--nworkers`. 
 - Setting `--mode score` means that a weighted Sankoff to infer the isotype labels $\beta'$ instead of finding the most parsimonious refinement (solving the MPTR problem). 
 
-Finally, we use the inferred isotype transition probabilities to infer a B cell lineage tree $T'$ labeled by isotypes $\beta'$ for clonotype  [B_19_4_56_2_1_52](NP-KLH-2b/B_19_4_56_2_1_52).
+Finally, we use the inferred isotype transition probabilities to infer a B cell lineage tree $T'$ labeled by isotypes $\beta'$ for clonotype  [B_19_4_56_2_1_52](NP-KLH/NP-KLH-2b/B_19_4_56_2_1_52).
 
 
 ```
