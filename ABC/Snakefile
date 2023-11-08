@@ -3,9 +3,9 @@ configfile: "config.yml"
 
 def get_files(dirn, fname):
     targets = []
-    clonotypes = []
+
     for d in config["dataset"]:
-        
+        clonotypes = []
         with open(f"{d}/clonotypes.txt", 'r+') as file:
             for line in file:
                 clonotypes.append(line.strip())
