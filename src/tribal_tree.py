@@ -468,7 +468,7 @@ if __name__ == "__main__":
             file.write("tree,alpha,objective,sequence,isotype,\n")
             
             for res in all_results:
-                file.write(f"{res.tree.id},{args.alpha},{res.objective},{res.seq_obj},{res.iso_obj}\n")
+                file.write(f"{res.tree.id},{res.objective},{res.seq_obj},{res.iso_obj}\n")
     best_result = best_results[0]
     
     best_tree= best_result.tree
