@@ -27,7 +27,8 @@ class TribalSub:
                 timeout=2, 
                 nworkers=1, 
                 root_id="naive",
-                reversible=False ):
+                reversible=False,
+                compute_seq= False ):
 
         
         #abort search after timeout hours
@@ -73,6 +74,7 @@ class TribalSub:
         self.cost_function = cost_function
         self.nworkers = nworkers
         self.root_id = root_id
+        self.compute_seq= compute_seq
       
 
     
@@ -80,7 +82,7 @@ class TribalSub:
         
         seq_score, seq_labels = lin_tree.sequence_parismony(alignment, 
                                                     alphabet=self.alphabet, 
-                                                    cost_function=self.cost_function)
+                                                    cost_function=self.cost_function, compute=self.compute_seq)
         iso_score, iso_labels = lin_tree.isotype_parsimony(isotype_labels,  weights=self.iso_weights, states=self.states)
         obj = self.compute_score(seq_score, iso_score)
 
@@ -251,9 +253,17 @@ class TribalSub:
 
     
             return all_results
-      
+
+def expand_tree(T, leafset):
+   
+
+    remap = {n: f"{n}_int" for n in T if n in leafset and T.out_degree[n] > 0}
+    T = nx.relabel_nodes(T, remap)
+    for child, parent, in remap.items():
+        T.add_edge(parent, child) 
+    return T     
   
-def create_trees(cand_fname):
+def create_trees(cand_fname, format=0):
     cand_trees = []
       
     exp = '\[.*\]'
@@ -273,8 +283,10 @@ def create_trees(cand_fname):
 
             nw = re.sub(exp, '', nw)
             
-
-            ete_tree = Tree(nw, format=0)
+            try:
+                ete_tree = Tree(nw, format=format)
+            except:
+                ete_tree = Tree(nw, format=0)
       
             nx_tree= convert_to_nx(ete_tree, args.root)
             cand_trees.append(nx_tree)
@@ -354,6 +366,7 @@ if __name__ == "__main__":
     parser.add_argument("-l", "--lineage", type=str, help="pickle file of lineage tree/forest returned from tribal.py")
     parser.add_argument("--forest",  action="store_true")
     parser.add_argument("--candidates", type=str, help="filename containing newick strings for candidate tree(s)")
+    parser.add_argument("--edge-list", type=str, help="filename containing edge list of input tree")
     parser.add_argument("--mode", choices=["score", "refine", "refine_ilp", "search"], default="score")
     parser.add_argument("-e", "--encoding", type=str, required=True)
     parser.add_argument("--tree",  type=str, help="outputfile of best tree")
@@ -363,16 +376,39 @@ if __name__ == "__main__":
     parser.add_argument("--score",  type=str, help="filename of the objective function value objective function value")
     parser.add_argument("--reversible",  action="store_true", 
                         help="a flag to indicate the standard 0/1 cost function is used (the number of isotype changes is minimized and irreversiblility is ignored)")
+    parser.add_argument("--compute-seq",  action="store_true", 
+                        help="if the small parsimony problem should be solved for sequences")
     parser.add_argument("--iso_infer",  type=str, help="filename of the inferred isotypes for the internal nodes")
     parser.add_argument("--all_optimal_sol",  help="path where all optimal solution results are saved"  )
     parser.add_argument("--nworkers", type=int, default=1, help="number of workers to use in the event of multiple input candidate trees")
     parser.add_argument("--pickle_best", type=str, help="filename to pickle the best results")
     parser.add_argument("--pickle_all", type=str, help="filename to pickle the best results")
+    parser.add_argument("--nwk-format", type=int, default=0, help="ete3 newick format for input newick tree file, default=0")
 
 
     args = parser.parse_args(None if sys.argv[1:] else ['-h'])
 
+    # ttype = "direct"
+    # n = 65
+    # r = 1
+    # clonotype = 63
+    # dist = "clonaltree_a0"
+    # inpath = f"benchmark_pipeline/sim_data/recomb/{ttype}/cells{n}/size75/rep{r}/2.0/0.365/{clonotype}"
 
+    # args = parser.parse_args([
+    #     "-r", "naive",
+    #     "--nwk-format" , "1",
+    #     "-i", f"{inpath}/GCsim.isotypes",
+    #     "-a", f"{inpath}/GCsim_dedup.fasta",
+    #     "--edge-list", f"{inpath}/{dist}/tree.nwk.csv",
+    #     "-e", "benchmark_pipeline/sim_encoding.txt",
+    #     "--fasta", f"{inpath}/{dist}/seq.fasta",
+    #     "--iso_infer", f"{inpath}/{dist}/isotype.csv",
+    #     "--pickle_all", f"{inpath}/{dist}/all_results.pkl",
+    #     "--compute-seq"
+    # ]
+
+    # )
   
     
     iso_encoding = {}
@@ -421,10 +457,22 @@ if __name__ == "__main__":
 
 
     if args.candidates is not None:
-        cand = create_trees(args.candidates)
+        cand = create_trees(args.candidates, args.nwk_format)
         lin_forest = LineageForest(alignment=alignment, isotypes=isotypes_filt)
         lin_forest.generate_from_list(cand, args.root)
       
+    elif args.edge_list is not None:
+        edge_list = []
+        with open(args.edge_list, "r+" ) as file:
+            for line in file:
+                edge = line.strip().split(",")
+                edge_list.append((edge[0],edge[1]))
+        T = expand_tree(nx.DiGraph(edge_list), set(alignment.keys()) - set([args.root]))
+        lin_forest = LineageForest(alignment=alignment, isotypes=isotypes_filt)
+        lin_forest.generate_from_list([T], args.root)
+
+
+        
 
     else:
         if args.clonotype is not None and args.input_forest is not None:
@@ -450,7 +498,9 @@ if __name__ == "__main__":
     ncells = len(lin_forest.alignment)
     print(f"\nInput:\nncells: {ncells}\nforest size: {lin_forest.size()}\nmode: {args.mode}\n")
 
-    tr = TribalSub(isotype_weights, 0.9, timeout=args.timeout, nworkers=args.nworkers, root_id=args.root, reversible=args.reversible)
+    tr = TribalSub(isotype_weights, 0.9, timeout=args.timeout, 
+                   nworkers=args.nworkers, root_id=args.root,
+                     reversible=args.reversible, compute_seq = args.compute_seq)
 
     all_results =  tr.forest_mode(lin_forest, mode =args.mode)
 
@@ -468,7 +518,7 @@ if __name__ == "__main__":
             file.write("tree,alpha,objective,sequence,isotype,\n")
             
             for res in all_results:
-                file.write(f"{res.tree.id},{args.alpha},{res.objective},{res.seq_obj},{res.iso_obj}\n")
+                file.write(f"{res.tree.id},0.9,{res.objective},{res.seq_obj},{res.iso_obj}\n")
     best_result = best_results[0]
     
     best_tree= best_result.tree

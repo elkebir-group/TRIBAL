@@ -6,7 +6,6 @@ from draw_tree import DrawTree
 from utils import save_dict
 import os 
 import pickle 
-import pygraphviz as pgv
 from pandas import DataFrame
 from utils import hamming_distance, read_fasta
 from collections import Counter
@@ -88,7 +87,11 @@ class LineageTree:
                 self.T.remove_edge(self.root, k)
             self.T.add_edge(new_root, self.root)
         else:
-            raise ValueError("Expecting a root node with a single child!")
+            for k in kids:
+                self.T.add_edge(new_root, k)
+                self.T.remove_edge(self.root, k)
+            self.T.add_edge(new_root, self.root)
+            # raise ValueError("Expecting a root node with a single child!")
 
     def root_outgroup(self, outgroup):
         self.T.remove_node(outgroup)

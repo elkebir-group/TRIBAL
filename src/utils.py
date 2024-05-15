@@ -3,12 +3,16 @@ import sys, re
 import numpy as np
 import networkx as nx
 import pickle 
-
-def read_fasta(fname):
+from io import StringIO
+def read_fasta(fasta_input ):
     '''read a fasta file into a dictionary 
     https://coding4medicine.com/backup/Python/reading-fasta-files.html '''
     seq = {}
-    f=open(fname,'r')
+    if isinstance(fasta_input, str) and "\n" in fasta_input:
+       f = StringIO(fasta_input)
+    else:
+        f = open(fasta_input, 'r+')
+    # f=open(fname,'r+')
     lines=f.readlines()
 
     hre=re.compile('>(\S+)')

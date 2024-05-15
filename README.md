@@ -210,7 +210,7 @@ optional arguments:
 <a name="example"></a>
 
 
-We will use the [NP-KLH-2b](NP-KLH-2b) as an example to demonstrate the usage of TRIBAL. First, navigate to the [NP-KLH](NP-KLH) directory. 
+We will use the [NP-KLH-2b](NP-KLH-2b) as an example to demonstrate the usage of TRIBAL. First, navigate to the [NP-KLH](NP-KLH) directory via the command line:
 
 ```
 cd NP-KLH
