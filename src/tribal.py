@@ -7,7 +7,7 @@ import pickle
 from copy import deepcopy
 import utils as ut
 from ete3 import Tree
-from em_weight_matrix import EMProbs
+# from em_weight_matrix import EMProbs
 from max_likelihood_trans_probs import MaxLike
 from lineage_tree import LineageForest
 import init_transmat as tm
