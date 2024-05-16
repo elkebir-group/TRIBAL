@@ -202,7 +202,7 @@ def create_isotype_encoding(fname):
             counter += 1
     return iso_encoding
 
-def preprocess(df, roots, isotype_encoding, min_size=4, verbose=True):
+def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, min_size:int=4, verbose:bool=True):
     #first filter out clonotypes smaller than min size
     if verbose:
         print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
@@ -219,6 +219,9 @@ def preprocess(df, roots, isotype_encoding, min_size=4, verbose=True):
     df.columns.values[0] = "cellid"
     roots.columns.values[0] = "Clonotype"
     df["isotype"] = df['Heavy Chain Isotype'].map(isotype_encoding)
+
+
+ 
     # print(df["Clonotype"].unique())
     
     
@@ -262,7 +265,7 @@ def preprocess(df, roots, isotype_encoding, min_size=4, verbose=True):
         clonodict[j] = linforest
     
     
-    return clonodict
+    return clonodict, df
 
 
         #convert the alignment back to a fasta file
@@ -272,9 +275,17 @@ def main(args):
     df  =pd.read_csv(args.file)
     roots =pd.read_csv(args.roots)
     iso_encoding = create_isotype_encoding(args.encoding)
-    clonodict = preprocess(df, roots, isotype_encoding = iso_encoding, min_size=args.min_size)
+    clonodict, df = preprocess(df, roots, isotype_encoding = iso_encoding, min_size=args.min_size)
     if args.pickle is not None:
         pd.to_pickle(clonodict, args.pickle)
+    
+    if args.dataframe is not None:
+        df.to_csv("Human/human_data.filtered.csv", index=False)
+
+    if args.clonotypes is not None:
+        with open(args.clonotypes) as file:
+            for j in df["Clonotype"].unique():
+                file.write(j + "\n")
 
 
 
@@ -287,21 +298,24 @@ if __name__ == "__main__":
         help="filename of csv file with the root sequences")
     parser.add_argument("-e", "--encoding", type=str,
         help="filename isotype encodings")
-    
     parser.add_argument( "--min-size", type=int, default=4,
         help="minimum clonotype size")
+    parser.add_argument("--dataframe",  type=str,
+        help="path to where the filtered dataframe with additional sequenc and isotype encodings should be saved.")
+    parser.add_argument("--clonotypes",  type=str,
+        help="path to where a list of the included clontoypes should be saved.")
     parser.add_argument("-P", "--pickle", type=str,
         help="path to where pickled clonotype dictionary input should be saved")
 
 
     args= parser.parse_args()
-    args = parser.parse_args([
-        "-f", "Human/human_data.csv",
-        "-r", "Human/human_data_root_seq.csv",
-        "-e", "human_encoding.txt",
-        "-P", "Human/clonotypes.pkl"
+    # args = parser.parse_args([
+    #     "-f", "Human/human_data.csv",
+    #     "-r", "Human/human_data_root_seq.csv",
+    #     "-e", "Human/human_encoding.txt",
+    #     "-P", "Human/clonotypes.pkl"
 
-    ])
+    # ])
 
     main(args)
 
