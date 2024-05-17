@@ -32,14 +32,18 @@ rule prep_input:
         encoding = "human_encoding.txt",
     params:
         min_size = 4
-    output: "clonotypes.pkl"
+    output: 
+        clonodict = "clonotypes.pkl",
+        df_filtered = "human_data.filtered.csv",
+        clonotype_list = "clonotypes.txt"
     log:
         std = "preprocess.log",
         err = "preprocess.err.log"
     shell:
         "python ../src/preprocess.py -f {input.data} -r {input.roots} "
         "--encoding {input.encoding} --min-size {params.min_size} "
-        "-P {output} "
+        "--dataframe {output.df_filtered} --clonotypes {output.clonotype_list} "
+        "-P {output.clonodict} > {log.std} 2> {log.err} "
 
 
 rule tribal:

@@ -202,12 +202,32 @@ def create_isotype_encoding(fname):
             counter += 1
     return iso_encoding
 
-def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, min_size:int=4, verbose:bool=True):
+
+def filter_alleles(df, col):
+    grouped = df.groupby(['Clonotype', col]).size().reset_index(name='count')
+
+    # # Identify the allele with the highest count for each Clonotype
+    idx = grouped.groupby('Clonotype')['count'].idxmax()
+    max_alleles = grouped.loc[idx]
+
+    # # Merge with the original dataframe to filter the desired rows
+    filtered_df = pd.merge(df, max_alleles[['Clonotype', col]], on=['Clonotype', col])
+
+    return filtered_df
+
+def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, min_size:int=4, verbose:bool=False):
     #first filter out clonotypes smaller than min size
     if verbose:
         print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
-    df = df.groupby("Clonotype").filter(lambda x: len(x) >= min_size)
+    
+   
+    df = filter_alleles(df, "Heavy Chain V Allele")
+    df = filter_alleles(df, "Light Chain V Allele")
     df = df[ df['Heavy Chain Isotype'].notna()]
+    df = df.groupby("Clonotype").filter(lambda x: len(x) >= min_size)
+
+
+
     # print(df[df['Heavy Chain Isotype']=="IGHD"])
     if verbose:
         print(f"After filtering, the number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
@@ -228,8 +248,10 @@ def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, mi
     #create the dictionary of alignments 
     # alignments = align_clonotypes(df[df["Clonotype"].isin(["Clonotype_44","Clonotype_9239","Clonotype_7747"])], roots)
     clonodict = {}
+    tree_size_dict = {}
     #TODO: add a parallel version 
     for j in df["Clonotype"].unique():
+    # for j in ["Clonotype_1008"]:
         clono = df[df["Clonotype"]== j]
         isotypes = dict(zip(clono["seq"], clono["isotype"]))
         isotypes["naive"] = 0
@@ -241,7 +263,13 @@ def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, mi
         light_seqs = dict(zip(clono["seq"],clono["Light Chain Variable Seq"]))
     
         light_root = roots[roots["Clonotype"]==j]["Light Chain Root"].values[0]
+        # print(f"{len(light_root)}, {len(light_seqs['seq1'])}")
+        # print(f"{len(heavy_root)}, {len(heavy_seqs['seq1'])}")
+
+
         light_chain_align = align(light_seqs, light_root)
+        # pd.DataFrame(list(light_chain_align.items()), columns=["id", "sequence"]).to_csv(f"Human/tribal/{j}/light_chain_alignment.csv")
+        # pd.DataFrame(list(heavy_chain_align.items()), columns=["id", "sequence"]).to_csv(f"Human/tribal/{j}/heavy_chain_alignment.csv")
         alignment = {}
         for key in heavy_chain_align:
             alignment[key] = heavy_chain_align[key].upper() + light_chain_align[key].upper()
@@ -258,13 +286,15 @@ def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, mi
         tree_list = create_trees(outtrees)
 
 
-            
+        tree_size_dict [j] =len(tree_list)   
         linforest = LineageForest(alignment=alignment, isotypes=isotypes, mapping=mapping)
-        print(f"Clonotype {j} has {len(tree_list)} max parsimony trees.")
+        if verbose:
+            print(f"Clonotype {j} has {len(tree_list)} max parsimony trees.")
         linforest.generate_from_list(tree_list, root="naive")
         clonodict[j] = linforest
     
     
+    df["ntrees"] = df["Clonotype"].map(tree_size_dict)
     return clonodict, df
 
 
@@ -275,12 +305,14 @@ def main(args):
     df  =pd.read_csv(args.file)
     roots =pd.read_csv(args.roots)
     iso_encoding = create_isotype_encoding(args.encoding)
-    clonodict, df = preprocess(df, roots, isotype_encoding = iso_encoding, min_size=args.min_size)
+    clonodict, df = preprocess(df, roots, isotype_encoding = iso_encoding,
+                                 min_size=args.min_size,
+                                 verbose = args.verbose)
     if args.pickle is not None:
         pd.to_pickle(clonodict, args.pickle)
     
     if args.dataframe is not None:
-        df.to_csv("Human/human_data.filtered.csv", index=False)
+        df.to_csv(args.dataframe, index=False)
 
     if args.clonotypes is not None:
         with open(args.clonotypes) as file:
@@ -301,9 +333,11 @@ if __name__ == "__main__":
     parser.add_argument( "--min-size", type=int, default=4,
         help="minimum clonotype size")
     parser.add_argument("--dataframe",  type=str,
-        help="path to where the filtered dataframe with additional sequenc and isotype encodings should be saved.")
+        help="path to where the filtered dataframe with additional sequences and isotype encodings should be saved.")
     parser.add_argument("--clonotypes",  type=str,
         help="path to where a list of the included clontoypes should be saved.")
+    parser.add_argument("--verbose", action="store_true",
+        help="print additional messages.")
     parser.add_argument("-P", "--pickle", type=str,
         help="path to where pickled clonotype dictionary input should be saved")
 
@@ -313,7 +347,8 @@ if __name__ == "__main__":
     #     "-f", "Human/human_data.csv",
     #     "-r", "Human/human_data_root_seq.csv",
     #     "-e", "Human/human_encoding.txt",
-    #     "-P", "Human/clonotypes.pkl"
+    #     "-P", "Human/clonotypes.pkl",
+    #     "--verbose"
 
     # ])
 
