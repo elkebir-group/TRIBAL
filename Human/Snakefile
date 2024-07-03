@@ -21,7 +21,9 @@ def get_files(dirn, fname):
 #         get_files("tribal", "scores.csv")
 
 rule all:
-    input: "tribal/transmat.txt",
+    input: 
+        # "clonotypes.txt"
+        "tribal/transmat.txt",
         get_files("tribal", "scores.csv")
 
 

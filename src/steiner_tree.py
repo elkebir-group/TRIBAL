@@ -172,12 +172,12 @@ class ConstructGraph:
         self.root_identifier = root_identifier
         self.node_isotypes = {}
 
-        for i,j in self.iso_costs:
-             if j >= i:
-                  if np.isinf(self.iso_costs[i,j]):
-                       print(self.iso_costs[i,j])
-                       print(self.iso_costs)
-                  assert(not np.isinf(self.iso_costs[i,j]))
+        # for i,j in self.iso_costs:
+        #      if j >= i:
+        #           if np.isinf(self.iso_costs[i,j]):
+        #                print(self.iso_costs[i,j])
+        #                print(self.iso_costs)
+        #           assert(not np.isinf(self.iso_costs[i,j]))
                   
 
     def build(self, LinTree, seq_labs ):

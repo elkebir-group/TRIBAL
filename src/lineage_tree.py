@@ -336,6 +336,32 @@ class LineageTree:
         return self.avg_node_score(self.compute_entropy, labels)
 
     
+
+    def entropy_permutation_test(self, labels, reps=1000, seed=10):
+        ent_vals = []
+        rng = np.random.default_rng(seed)
+        labels = {key: val for key,val in labels.items()if self.is_leaf(key)}
+        # print(labels)
+        for i in range(reps):
+            vals = [val for key, val in labels.items() if key != self.root]
+     
+            perm = rng.permutation(vals)
+            new_labels = {}
+
+            assert perm.shape[0] == len(labels)
+            for key, lab in zip(list(labels.keys()),perm):
+                new_labels[key] = lab 
+       
+            avg_score, clade_scores = self.avg_entropy(new_labels)
+            cvals = np.array([v for k, v in clade_scores.items() if not self.is_leaf(k) and k != self.root])
+     
+            ent_vals.append(cvals.mean())
+        return ent_vals
+            
+
+
+
+
     def get_node_degrees(self):
         return {n: self.T.out_degree[n] for n in self.T}
     
@@ -369,6 +395,7 @@ class LineageForest:
     alignment: dict = None
     isotypes: dict = None
     forest: list = field(default_factory=list)
+    mapping: dict = field(default_factory=dict)
  
  
     def generate_from_list(self, tree_list, root=None):

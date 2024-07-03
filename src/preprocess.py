@@ -9,7 +9,7 @@ import os, re
 from lineage_tree import LineageForest
 import networkx as nx
 from ete3 import Tree
-
+import multiprocessing as mp
 
 CONFIG = """
 J
@@ -186,8 +186,51 @@ def create_trees(outtrees):
         nx_tree= convert_to_nx(ete_tree, "naive")
         
         cand_trees.append(nx_tree)
-        return cand_trees
+    return cand_trees
+
+def run(j, df, roots, heavy=False):
+    clono = df[df["Clonotype"]== j]
+    isotypes = dict(zip(clono["seq"], clono["isotype"]))
+    isotypes["naive"] = 0
+    heavy_seqs = dict(zip(clono["seq"],clono["Heavy Chain Variable Seq"]))
+
+    heavy_root = roots[roots["Clonotype"]==j]["Heavy Chain Root"].values[0]
+
+    heavy_chain_align = align(heavy_seqs, heavy_root)
+    if not heavy:
+        light_seqs = dict(zip(clono["seq"],clono["Light Chain Variable Seq"]))
+
+        light_root = roots[roots["Clonotype"]==j]["Light Chain Root"].values[0]
+
+
+
+        light_chain_align = align(light_seqs, light_root)
+    alignment = {}
+    for key in heavy_chain_align:
+        if not heavy:
+            alignment[key] = heavy_chain_align[key].upper() + light_chain_align[key].upper()
+        else:
+            alignment[key] = heavy_chain_align[key].upper()
+
     
+
+    mapping = dict(zip(clono["seq"].values,clono['cellid'].values ))
+
+    print(f"Running dnapars for clonotype {j} with {len(alignment)} sequences...")
+    align_str = convert_to_string(alignment)
+    phylip_str = convert_alignment_to_phylip(alignment_str=align_str, input_format="fasta")
+
+    outtrees = run_dnapars(phylip_str)
+    tree_list = create_trees(outtrees)
+
+
+   
+    linforest = LineageForest(alignment=alignment, isotypes=isotypes, mapping=mapping)
+
+    print(f"Clonotype {j} has {len(tree_list)} max parsimony trees.")
+    linforest.generate_from_list(tree_list, root="naive")
+    return j,linforest
+        
 def create_isotype_encoding(fname):
 
     iso_encoding = {}
@@ -215,16 +258,28 @@ def filter_alleles(df, col):
 
     return filtered_df
 
-def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, min_size:int=4, verbose:bool=False):
+def preprocess(df: pd.DataFrame, roots: pd.DataFrame, 
+               isotype_encoding: dict, min_size:int=4, verbose:bool=False, cores:int =1,
+               heavy = False):
     #first filter out clonotypes smaller than min size
     if verbose:
         print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
     
+    df = df.groupby("Clonotype").filter(lambda x: len(x) >= min_size)
+
+    if verbose:
+        print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
    
     df = filter_alleles(df, "Heavy Chain V Allele")
-    df = filter_alleles(df, "Light Chain V Allele")
+    if not heavy:
+        df = filter_alleles(df, "Light Chain V Allele")
     df = df[ df['Heavy Chain Isotype'].notna()]
+
     df = df.groupby("Clonotype").filter(lambda x: len(x) >= min_size)
+
+    if verbose:
+        print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['Clonotype'].nunique()}.")
+   
 
 
 
@@ -249,56 +304,24 @@ def preprocess(df: pd.DataFrame, roots: pd.DataFrame, isotype_encoding: dict, mi
     # alignments = align_clonotypes(df[df["Clonotype"].isin(["Clonotype_44","Clonotype_9239","Clonotype_7747"])], roots)
     clonodict = {}
     tree_size_dict = {}
-    #TODO: add a parallel version 
-    for j in df["Clonotype"].unique():
-    # for j in ["Clonotype_1008"]:
-        clono = df[df["Clonotype"]== j]
-        isotypes = dict(zip(clono["seq"], clono["isotype"]))
-        isotypes["naive"] = 0
-        heavy_seqs = dict(zip(clono["seq"],clono["Heavy Chain Variable Seq"]))
-    
-        heavy_root = roots[roots["Clonotype"]==j]["Heavy Chain Root"].values[0]
-  
-        heavy_chain_align = align(heavy_seqs, heavy_root)
-        light_seqs = dict(zip(clono["seq"],clono["Light Chain Variable Seq"]))
-    
-        light_root = roots[roots["Clonotype"]==j]["Light Chain Root"].values[0]
-        # print(f"{len(light_root)}, {len(light_seqs['seq1'])}")
-        # print(f"{len(heavy_root)}, {len(heavy_seqs['seq1'])}")
 
-
-        light_chain_align = align(light_seqs, light_root)
-        # pd.DataFrame(list(light_chain_align.items()), columns=["id", "sequence"]).to_csv(f"Human/tribal/{j}/light_chain_alignment.csv")
-        # pd.DataFrame(list(heavy_chain_align.items()), columns=["id", "sequence"]).to_csv(f"Human/tribal/{j}/heavy_chain_alignment.csv")
-        alignment = {}
-        for key in heavy_chain_align:
-            alignment[key] = heavy_chain_align[key].upper() + light_chain_align[key].upper()
+    
+    instances  = [ (j, df.copy(), roots.copy(), heavy) for j in df["Clonotype"].unique()]
+    # instances  = [ ("Clonotype_28091", df.copy(), roots.copy())]
+    # instances= [instances[i] for i in [12, 20, 30]]
+    with mp.Pool(cores) as pool:
+   
+        results = pool.starmap(run, instances)
+    
+    for j, linforest in results:
+        clonodict[j] = linforest
+        tree_size_dict[j] = linforest.size()
     
         
- 
-        mapping = dict(zip(clono["seq"].values,clono['cellid'].values ))
-        if verbose:
-            print(f"Running dnapars for clonotype {j} with {len(alignment)} sequences...")
-        align_str = convert_to_string(alignment)
-        phylip_str = convert_alignment_to_phylip(alignment_str=align_str, input_format="fasta")
-  
-        outtrees = run_dnapars(phylip_str)
-        tree_list = create_trees(outtrees)
-
-
-        tree_size_dict [j] =len(tree_list)   
-        linforest = LineageForest(alignment=alignment, isotypes=isotypes, mapping=mapping)
-        if verbose:
-            print(f"Clonotype {j} has {len(tree_list)} max parsimony trees.")
-        linforest.generate_from_list(tree_list, root="naive")
-        clonodict[j] = linforest
-    
-    
     df["ntrees"] = df["Clonotype"].map(tree_size_dict)
     return clonodict, df
 
-
-        #convert the alignment back to a fasta file
+  
     
 
 def main(args):
@@ -307,7 +330,7 @@ def main(args):
     iso_encoding = create_isotype_encoding(args.encoding)
     clonodict, df = preprocess(df, roots, isotype_encoding = iso_encoding,
                                  min_size=args.min_size,
-                                 verbose = args.verbose)
+                                 verbose = args.verbose, heavy=args.heavy)
     if args.pickle is not None:
         pd.to_pickle(clonodict, args.pickle)
     
@@ -315,7 +338,7 @@ def main(args):
         df.to_csv(args.dataframe, index=False)
 
     if args.clonotypes is not None:
-        with open(args.clonotypes) as file:
+        with open(args.clonotypes, "w+") as file:
             for j in df["Clonotype"].unique():
                 file.write(j + "\n")
 
@@ -330,7 +353,7 @@ if __name__ == "__main__":
         help="filename of csv file with the root sequences")
     parser.add_argument("-e", "--encoding", type=str,
         help="filename isotype encodings")
-    parser.add_argument( "--min-size", type=int, default=4,
+    parser.add_argument( "--min-size", type=int, default=5,
         help="minimum clonotype size")
     parser.add_argument("--dataframe",  type=str,
         help="path to where the filtered dataframe with additional sequences and isotype encodings should be saved.")
@@ -340,14 +363,19 @@ if __name__ == "__main__":
         help="print additional messages.")
     parser.add_argument("-P", "--pickle", type=str,
         help="path to where pickled clonotype dictionary input should be saved")
+    parser.add_argument("-j", "--cores", type=int, default=1,
+        help="number of cores to use")
+    parser.add_argument("--heavy", action="store_true", 
+        help= "only use the heavy chain and ignore the light chain")
+ 
 
 
     args= parser.parse_args()
     # args = parser.parse_args([
-    #     "-f", "Human/human_data.csv",
-    #     "-r", "Human/human_data_root_seq.csv",
-    #     "-e", "Human/human_encoding.txt",
-    #     "-P", "Human/clonotypes.pkl",
+    #     "-f", "Human2/human_data.csv",
+    #     "-r", "Human2/human_data_root_seq.csv",
+    #     "-e", "Human2/human_encoding.txt",
+    #     # "-P", "Human/clonotypes.pkl",
     #     "--verbose"
 
     # ])

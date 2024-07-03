@@ -119,9 +119,12 @@ class TribalSub:
 
             out_lt = LineageTree(out_tree, "naive", lin_tree.id, lin_tree.name)
     
-
-            seq_score, seq_labels = out_lt.sequence_parismony(alignment)
-            assert seq_score_prior ==seq_score
+            if len(alignment) > 0:
+                seq_score, seq_labels = out_lt.sequence_parismony(alignment)
+                assert seq_score_prior ==seq_score
+            else:
+                seq_labels = {}
+                seq_score = 0
 
 
 
@@ -518,11 +521,7 @@ if __name__ == "__main__":
             file.write("tree,alpha,objective,sequence,isotype,\n")
             
             for res in all_results:
-<<<<<<< HEAD
-                file.write(f"{res.tree.id},0.9,{res.objective},{res.seq_obj},{res.iso_obj}\n")
-=======
                 file.write(f"{res.tree.id},{res.objective},{res.seq_obj},{res.iso_obj}\n")
->>>>>>> 194140e2c8ed7bef1d8744a899872b725cf10958
     best_result = best_results[0]
     
     best_tree= best_result.tree
