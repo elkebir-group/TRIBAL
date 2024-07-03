@@ -9,3 +9,4 @@ mouse_data/
 */.snakemake/
 *.log
 */*.log
+site/
