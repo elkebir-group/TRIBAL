@@ -1,0 +1,81 @@
+site_name: TRIBAL
+# site_url: https://dowser.readthedocs.io
+repo_url: https://github.com/elkebir-group/TRIBAL
+# edit_uri: src/master/docs/
+theme:
+  name: readthedocs
+  navigation_depth: 2
+  collapse_navigation: False
+  sticky_navigation: False
+  locale: en
+  titles_only: False
+  logo: img/logo.png
+markdown_extensions:
+  - def_list
+  - sane_lists
+  - smarty
+  - toc:
+      baselevel: 1
+      toc_depth: 1-4
+      permalink: True
+docs_dir: 'docs'
+nav:
+  - 'About' : index.md
+  - 'Getting Started': 
+    - 'Download & Installation': setup/install.md
+    - 'Package Overview' : setup/package.md
+
+# nav:
+#   - 'Immcantation Portal': https://immcantation.readthedocs.io/
+#   - 'About':
+#     - 'Introduction': index.md
+#     - 'Download & Installation': install.md
+#     - 'Package Overview': topics/dowser.md
+#     - 'Release Notes': news.md
+#     - 'Related Projects': projects.md
+#   - 'Vignettes':
+#     - 'Quickstart': vignettes/Quickstart-Vignette.md
+#     - 'Reconstruct clonal germlines': vignettes/Germlines-Vignette.md
+#     - 'Build lineage trees': vignettes/Building-Trees-Vignette.md
+#     - 'Plot lineage trees': vignettes/Plotting-Trees-Vignette.md
+#     - 'Heavy+light chain tree building': vignettes/Resolve-Light-Chains-Vignette.md
+#     - 'Reconstruct intermediate sequences': vignettes/Sequences-Vignette.md
+#     - 'Detecting evolution over time': vignettes/Measurable-Evolution.md
+#     - 'Migration, differentiation, and isotype switching': vignettes/Discrete-Trait-Vignette.md
+#   - 'Function Documentation':
+#     #- 'Germline construction functions':
+#     - topics/readIMGT.md
+#     - topics/createGermlines.md
+#     #- 'Clone formating functions':
+#     - topics/formatClones.md
+#     - topics/makeAirrClone.md
+#     - topics/airrClone-class.md
+#     - topics/resolveLightChains.md
+#     #- 'Tree building functions':
+#     - topics/getTrees.md
+#     - topics/buildIgphyml.md
+#     - topics/buildPML.md
+#     - topics/buildPhylo.md
+#     - topics/buildPratchet.md
+#     - topics/buildRAxML.md
+#     #- 'Visualization functions':
+#     - topics/plotTrees.md
+#     - topics/treesToPDF.md
+#     - topics/colorTrees.md
+#     - topics/getPalette.md
+#     - topics/collapseNodes.md
+#     - topics/scaleBranches.md
+#     - topics/rerootTree.md
+#     #- 'Intermediate sequence functions':
+#     - topics/getNodeSeq.md
+#     - topics/getSubTaxa.md
+#     #- 'Discrete trait analysis functions':
+#     - topics/findSwitches.md
+#     - topics/testPS.md
+#     - topics/testSC.md
+#     - topics/testSP.md
+#     #- 'Tree based statitsitcs':
+#     - topics/calcRF.md
+#     - topics/correlationTest.md
+#     - topics/getBootstraps.md
+#     - topics/getDivergence.md
