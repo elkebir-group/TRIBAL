@@ -125,7 +125,7 @@ class LineageTree:
         self.csr_obj, self.isotypes = sp.sankoff(iso_leaves)
     
 
-    def refinment(self, isotype_labels, cost, threads=1):
+    def refinement(self, isotype_labels, cost, threads=1):
         #TODO: Refactor ConstructGraph & SteinerTree
         cg = ConstructGraph(cost, isotype_labels, root_identifier=self.root)
         fg = cg.build(self.tree)
