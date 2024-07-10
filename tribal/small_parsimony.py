@@ -6,10 +6,10 @@ import numpy as np
 np.seterr(all="ignore")
 
 class SmallParsimony:
-    def __init__(self, T,  root,  alphabet=None, cost=None):
+    def __init__(self, basetree,  alphabet=None, cost=None):
         
-        self.T = T
-        self.root = root
+        self.T = basetree.T
+        self.root = basetree.root
         self.cost = cost
         if alphabet is None:
             self.alphabet = ["A", "C", "G", "T", "N", "-"]
@@ -304,36 +304,8 @@ class SmallParsimony:
         
         return score
     
-    # def likelihood_score(self, isotypes, transMat):
-    #     likelihood = {}
-    #     #likelihood n, s is the likelihood of the subtree rooted at node n when taking character state s
-  
-    #     isotype_states = np.arange(6)
-  
-   
 
-
-    #     for n in self.postorder:
-
-    #         for s in isotype_states:
-
-    #             #initialize the base case
-    #             if len(list(self.T.neighbors(n))) ==0:
-    #                     likelihood[n,s] = np.log(1*(s==isotypes[n]))
-                       
-    #             else:
-    #                 partial_total = 0
-    #                 for u in self.T.neighbors(n):
-    #                     state_val = []
-    #                     for t in isotype_states:
-    #                         state_val.append( np.log(transMat[s,t])  + likelihood[u,t])
-    #                     partial_total += logsumexp(state_val)
-    #                 likelihood[n,s] = partial_total
-        
-    #     return likelihood[0,0], likelihood
-                
-
-
+            
     
     def fastml_dp(self, transMat):
         Ldict = {n : {} for n in self.postorder}
@@ -418,86 +390,3 @@ class SmallParsimony:
         
 
 
-# tree = nx.DiGraph()
-
-# tree.add_edges_from([  (0,1), (0,2), (0,3), (1,4), (1,5), (2,6), (2,7), (3,8), (3,9)])
-
-# states = [0,1,2]
-# isotypes = {4:1, 5:2, 6:1, 7:2, 8:2, 9:2}
-
-# weights = {}
-# for s in states:
-#     for t in states:
-#         if s > t:
-#             weights[s,t] = np.Inf
-#         elif s==t:
-#             weights[s,t] =0
-#         else:
-#             weights[s,t] =1
-
-# sp = SmallParsimony(tree, 0, states, weights)
-# score, labels, tree = sp.sankoff_poly(isotypes, weights, states)
-# # score,labels, tree = sp.polytomy_backtrace(dp_mat, dp_bt, dp_poly)
-# print(score)
-# for key, value in labels.items():
-#     print(f"node: {key} label: {value}")
-        
-
-
-
-# if __name__ == "__main__":
-
-#     tree = nx.DiGraph()
-#     tree.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
-
-#     cost_mat = {}
-#     alphabet = ("a", "g", "c", "t")
-#     seq = {2: "cc", 3: "gg", 4: "tt", 0:"cc"}
-#     for a in alphabet:
-#         for b in alphabet:
-#             if a == b:
-#                 cost_mat[a,b] =0
-#             elif a in ["a", "g"] and b in ["a", "g"]:
-#                 cost_mat[a,  b] = 1
-#             elif a in ["c", "t"] and b in ["c", "t"]:
-#                 cost_mat[a,b] =1
-#             else:
-#                 cost_mat[a,b] =3
-#     nx.set_node_attributes(tree, seq, "sequence")
-
-#     sk = SmallParsimony(tree,  alphabet, 0, "sequence", cost_mat)
-#     opt_score, labels = sk.sankoff()
-#     print(f"Parisomony score: {opt_score}")
-
-#     tree2 = nx.DiGraph()
-#     tree2.add_edges_from([(0,1), (0,4), (1,2), (1,3)])
-
-#     cost_mat = {}
-#     for i in range(7):
-#         for j in range(7):
-#             if i < j:
-#                 cost_mat[str(i),str(j)] = 1
-#             elif i ==j:
-#                 cost_mat[str(i),str(j)] = 0
-#             else:
-#                 cost_mat[str(i),str(j)] = np.Inf
-#     alphabet = [str(i) for i in range(7)]
-#     seq = {2: "2", 3: "1", 4: "5", 0:"0"}
-
-
-    # nx.set_node_attributes(tree2, seq, "state")
-    # sk2 = SmallParsimony(tree2, alphabet, 0, "state", cost_mat)
-    # score, labels = sk2.fitch()
-    # print(labels)
-    # sk_score, sk_labels = sk2.sankoff()
-    # print(sk_labels)
-
-    # print(f"Fitch parisomony score: {score}\nSankoff parsimony score: {sk_score}")
-
-   
-
-
-
-    
-
-    

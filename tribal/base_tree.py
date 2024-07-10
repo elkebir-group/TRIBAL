@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 import networkx as nx
-from small_parsimony import SmallParsimony
+
 import numpy as np 
 from draw_tree import DrawTree
 from utils import save_dict
@@ -8,14 +8,16 @@ import os
 import pickle 
 from pandas import DataFrame
 from utils import hamming_distance, read_fasta
-from collections import Counter
+
 from ete3 import Tree 
 
 
 
 @dataclass
-class LineageTree:
-    """B cell lineage tree class"""
+class BaseTree:
+    """
+    B cell lineage tree class
+    """
     T: nx.DiGraph
     root: str
     id: int = 0
@@ -154,22 +156,12 @@ class LineageTree:
         return leaf_descendants
 
     def rf_distance(self, lintree):
-        if type(lintree) == LineageTree:
+        if type(lintree) == Tree:
             t1 = self.get_clade_set(self.T)
             t2 = self.get_clade_set(lintree.T)
             return (0.5*len(t1.symmetric_difference(t2)))
 
 
-    def get_state_changes(self, node, labels, nisotypes):
-        counts =np.zeros(shape=(nisotypes, nisotypes))
-        path = nx.shortest_path(self.T, source=self.root, target=node)
-        for i,n in enumerate(path):
-            if i ==len(path)-1:
-                break
-            iso_par = labels[n]    
-            iso_child = labels[path[i+1]] 
-            counts[iso_par, iso_child] += (iso_child != iso_par)
-        return counts 
 
 
 
@@ -200,32 +192,7 @@ class LineageTree:
                     queue.append((neighbor, level + 1))
         return node_levels 
 
-    def sequence_parismony(self, alignment, 
-                           alphabet=None, 
-                           cost_function=None,
-                           compute=False):
-        if not compute:
-            
-            return 0, alignment
-        
-        else:
-            sp = SmallParsimony(self.T, 
-                                self.root,
-                                alphabet= alphabet,
-                                cost = cost_function)
-            seq_score, labels = sp.sankoff(alignment)
-            return seq_score, labels
-    
-    
-    def parsimony(self, alignment, iso_leaves, transMat, alphabet=None, cost=None, convert=False):
-      
-        states =np.arange(transMat.shape[0]).tolist()
 
-        iso_score, iso_labels = self.isotype_parsimony_polytomy(iso_leaves, transMat,states, convert=convert)
-   
-        seq_score, anc_labels = self.sequence_parismony(alignment, alphabet, cost)
-    
-        return seq_score, iso_score, anc_labels, iso_labels
 
     def number_of_changes(self, labels):
 
@@ -284,114 +251,15 @@ class LineageTree:
         v_list = [v for u,v in self.T.edges]
         return DataFrame({'parent': u_list, 'child': v_list})
     
-    @staticmethod
-    def compute_purity(labels):
-        label_counts = Counter(labels)
-        majority_label = label_counts.most_common(1)[0][0]
-        total_samples = len(labels)
-        purity = label_counts[majority_label] / total_samples
-        return purity
-
-    @staticmethod
-    def compute_entropy(labels):
-        label_counts = Counter(labels)
-        total_samples = len(labels)
-        probabilities = np.array(list(label_counts.values())) / total_samples
-        entropy = -np.sum(probabilities * np.log2(probabilities))
-        return entropy
 
 
-    def get_clade_nodes(self, node):
-        clade_nodes = [node]  
-
-        successors = list(self.T.successors(node))
-        while successors:
-            clade_nodes.extend(successors)
-            successors = [child for successor in successors for child in self.T.successors(successor)]
-
-        return clade_nodes
-    
-    def avg_node_score(self, func,labels):
-        node_score =[]
-        clade_score = {}
-        for n in self.T:
-
-            nodes = self.find_leaf_descendants(n, self.T)
-            clade_labels = [labels[n] for n in nodes]
-            score = func(clade_labels)
-            clade_score[n] = score
-
-            if n == self.root or self.T.out_degree[n]==1:
-                continue
- 
-            node_score.append(score)
-        
-        return np.mean(node_score),clade_score
-    
-    def avg_purity(self, labels):
-        return self.avg_node_score(self.compute_purity, labels)
-
-
-    def avg_entropy(self, labels):
-        return self.avg_node_score(self.compute_entropy, labels)
-
-    
-
-    def entropy_permutation_test(self, labels, reps=1000, seed=10):
-        ent_vals = []
-        rng = np.random.default_rng(seed)
-        labels = {key: val for key,val in labels.items()if self.is_leaf(key)}
-        # print(labels)
-        for i in range(reps):
-            vals = [val for key, val in labels.items() if key != self.root]
-     
-            perm = rng.permutation(vals)
-            new_labels = {}
-
-            assert perm.shape[0] == len(labels)
-            for key, lab in zip(list(labels.keys()),perm):
-                new_labels[key] = lab 
-       
-            avg_score, clade_scores = self.avg_entropy(new_labels)
-            cvals = np.array([v for k, v in clade_scores.items() if not self.is_leaf(k) and k != self.root])
-     
-            ent_vals.append(cvals.mean())
-        return ent_vals
-            
-
-
-
-
-    def get_node_degrees(self):
-        return {n: self.T.out_degree[n] for n in self.T}
-    
-    def collapse(self, labels, ignore=[]):
-        leaves = [n for n in self.T if self.T.out_degree[n]==0]
-        ignore = ignore + leaves
-        if set(self.T.nodes) <= set(labels.keys()):
-
-            nodes = self.preorder_traversal()
-            for n in nodes:
-                if n==self.root or n in ignore:
-                    continue
-                children = list(self.T.neighbors(n))
-                
-                dist = sum([hamming_distance(labels[n], labels[c]) for c  in children])
-          
-                if dist ==0:
-                    print(f"collapsing node {n}")
-                    gp= list(self.T.predecessors(n))[0]
-                    self.T.remove_node(n)
-                    for c in children:
-              
-                        self.T.add_edge(gp, c)
-
+   
           
     
 
 
 @dataclass
-class LineageForest:
+class ParsimonyForest:
     alignment: dict = None
     isotypes: dict = None
     forest: list = field(default_factory=list)
@@ -401,12 +269,12 @@ class LineageForest:
     def generate_from_list(self, tree_list, root=None):
 
         for i,t in enumerate(tree_list):
-            if type(t) == LineageTree:
+            if type(t) == BaseTree:
                 t.set_id(i)
                 self.add(t)
                 
             else:
-                self.add(LineageTree(t,root,i))
+                self.add(BaseTree(t,root,i))
 
     def add(self, tree):
         self.forest.append(tree)
@@ -440,102 +308,5 @@ class LineageForest:
                 pickle.dump(tree, file)
 
 
-#####load scripts 
-from ete3 import Tree 
-import re
-def lintrees_from_newick(fname,root):
-    '''
-    takes in a filename containing line separated newick strings and returns a list of LineageTrees
-    '''
-    trees = read_trees(fname, root)
-    lin_trees = []
-    for i,t in enumerate(trees):
-        lin_trees.append(LineageTree(t,root,id=i))
-    
-    return lin_trees 
 
-def is_ancestral(self, u,v):
-    path = nx.shortest_path(self.T, source=u, target=v)
-    return len(path) > 0
-
-def load(fname):
-    with open(fname, "rb") as file:
-        lt = pickle.load(file)
-    
-    return lt 
-
-def read_trees(fname,root):
-    '''
-    Takes in a fname and a name of the root
-    returns a list of networkx trees 
-    '''
-    print(f"\nreading trees from {fname}....")
-
-    exp = '\[.*\]'
-    trees = []
-       
-    with open(fname, 'r+') as file:
-        nw_strings = []
-        nw_string = ""
-        for nw in file:
-                line = nw.strip()
-                nw_string += line
-                if ";" in line:
-                    
-                    nw_strings.append(nw_string)
-                    nw_string = ""
-
-        for nw in nw_strings:
-
-            nw = re.sub(exp, '', nw)
-            
-
-            ete_tree = Tree(nw, format=0)
-
-            nx_tree= convert_to_nx(ete_tree, root)
-          
-            trees.append(nx_tree)
-        print(f"\n{len(trees)} read from {fname}!")
-        return trees
-    
-def get_alignment(fname):
-    alignment = read_fasta(fname)
-    alignment = {key: list(value.strip()) for key,value in alignment.items()}
-    return alignment
-
-def convert_to_nx(ete_tree, root):
-    nx_tree = nx.DiGraph()
-    internal_node = 1
-    internal_node_count = 0
-    for node in ete_tree.traverse("preorder"):
-
-        if node.name == "":
-            node.name = internal_node
-            internal_node_count += 1
-            internal_node += 1
-        if node.is_root():
-            root_name =node.name
-
-
-        for c in node.children:
-            if c.name == "":
-                c.name = str(internal_node)
-                internal_node += 1
-                internal_node_count += 1
-    
-
-            nx_tree.add_edge(node.name, c.name)
-
-    
-    if len(list(nx_tree.neighbors(root))) == 0:
-
-
-        G = nx_tree.to_undirected()
-        H = nx.dfs_tree(G,source=root)
-   
-
-        if H.out_degree[root_name]==0:
-            H.remove(root_name)
-
-    return H
 

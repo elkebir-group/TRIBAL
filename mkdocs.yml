@@ -10,6 +10,9 @@ theme:
   locale: en
   titles_only: False
   logo: img/logo.png
+plugins:
+  - search
+  - mkdocstrings
 markdown_extensions:
   - def_list
   - sane_lists
@@ -24,6 +27,9 @@ nav:
   - 'Getting Started': 
     - 'Download & Installation': setup/install.md
     - 'Package Overview' : setup/package.md
+  - 'API':
+    - 'Preprocesssing': 'api/preprocess.md'
+
 
 # nav:
 #   - 'Immcantation Portal': https://immcantation.readthedocs.io/

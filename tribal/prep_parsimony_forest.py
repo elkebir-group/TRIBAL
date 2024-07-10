@@ -6,7 +6,7 @@ import pickle
 import utils as ut
 from ete3 import Tree
 from alignment import Alignment
-from lineage_tree import LineageForest
+from lineage_tree import ParimonyForest
 
 
 
@@ -89,7 +89,7 @@ def create_input( path,  tree_path, clonotype, root, seq_fasta_fname,
                 isotypes_filt[i] = iso_encoding[iso]
         isotypes = isotypes_filt
     
-    linforest = LineageForest(alignment=alignment, isotypes=isotypes)
+    linforest = ParimonyForest(alignment=alignment, isotypes=isotypes)
     linforest.generate_from_list(tree_list, root)
 
     return linforest

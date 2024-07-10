@@ -2,7 +2,7 @@ import gurobipy as gp
 from gurobipy import GRB
 import networkx as nx
 from utils import hamming_distance
-from lineage_tree import LineageTree
+from lineage_tree import Tree
 from dataclasses import dataclass 
 import numpy as np
 from itertools import combinations

@@ -1,13 +1,13 @@
 TRIBAL
 -------------------------------------------------------------------------------
 
-![image](../img/Overview.png)
+![image](img/Overview.png)
 
 TRIBAL (TRee Inference of B cell clonAl Lineages) is a method to infer B cell lineage trees from single-cell RNA sequencing data. TRIBAL trees jointly model the evolutionary 
 processes of somatic hypermutation and class switch recombination. 
 
 The input to TRIBAL is a multiple sequence alignment for each of the predetermined clonotypes aligned to the germline sequence and the isotype of each sequenced B cell. 
-The output is a B cell lineage tree with nodes labeled by BCR sequences (concatenated heavy and light chain) and the isotype of each B cell. 
+The output is forest of B cell lineage trees, one for each clonotype, with nodes labeled by BCR sequences (concatenated heavy and light chain) and the isotype of each B cell, as well as an isotype transition probability matrix. 
 
 
 Contact
