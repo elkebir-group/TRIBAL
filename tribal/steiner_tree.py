@@ -1,8 +1,6 @@
 import gurobipy as gp
 from gurobipy import GRB
 import networkx as nx
-from utils import hamming_distance
-from lineage_tree import Tree
 from dataclasses import dataclass 
 import numpy as np
 from itertools import combinations
@@ -180,7 +178,7 @@ class ConstructGraph:
         #           assert(not np.isinf(self.iso_costs[i,j]))
                   
 
-    def build(self, LinTree, seq_labs ):
+    def build(self, LinTree ):
 
         T = LinTree.T
         root = LinTree.root

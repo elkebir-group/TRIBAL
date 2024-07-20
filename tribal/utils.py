@@ -4,6 +4,7 @@ import numpy as np
 import networkx as nx
 import pickle 
 from io import StringIO
+
 def read_fasta(fasta_input ):
     '''read a fasta file into a dictionary 
     https://coding4medicine.com/backup/Python/reading-fasta-files.html '''
@@ -150,6 +151,10 @@ def update_labels(labels):
    labels = {key : "".join(value) for key, value in labels.items()}
    return labels 
 
+def get_alignment(fname):
+    alignment = ut.read_fasta(fname)
+    alignment = {key: list(value.strip()) for key,value in alignment.items()}
+    return alignment
 
 def pickle_save(obj, fname):
         with open(fname, 'wb') as handle:

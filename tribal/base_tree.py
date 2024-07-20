@@ -2,13 +2,11 @@ from dataclasses import dataclass, field
 import networkx as nx
 
 import numpy as np 
-from draw_tree import DrawTree
-from utils import save_dict
+from .draw_tree import DrawTree
 import os 
 import pickle 
 from pandas import DataFrame
-from utils import hamming_distance, read_fasta
-
+from .utils import hamming_distance, save_dict
 from ete3 import Tree 
 
 
@@ -205,23 +203,17 @@ class BaseTree:
             print("Warning: labels were not provided for all nodes!")
             return np.NAN
     
-    def isotype_parsimony(self, iso_leaves, weights, states):
-   
-        
-        
-        sp = SmallParsimony(self.T, self.root, alphabet=states, cost=weights)
-        iso_score, iso_labels = sp.sankoff(iso_leaves)
-        return iso_score, iso_labels 
 
-    def isotype_parsimony_polytomy(self, iso_leaves, weights, states):
+
+    # def isotype_parsimony_polytomy(self, iso_leaves, weights, states):
 
     
 
-        sp = SmallParsimony(self.T, self.root)
-        iso_score, labels, tree = sp.polytomy_resolver(iso_leaves,weights, states)
+    #     sp = SmallParsimony(self.T, self.root)
+    #     iso_score, labels, tree = sp.polytomy_resolver(iso_leaves,weights, states)
 
        
-        return iso_score, labels 
+    #     return iso_score, labels 
     
 
     def save_png(self,fname, isotypes=None, iso_encoding=None, 
@@ -259,13 +251,39 @@ class BaseTree:
 
 
 @dataclass
-class ParsimonyForest:
-    alignment: dict = None
+class Clonotype:
+    """
+    Clonotype data 
+
+    Attributes
+    ----------
+
+    id: str
+        the label of the clonotype
+    
+    alignment: dict
+        the multiple sequence alignment for the BCR sequences
+
+    isotypes: dict
+        the encoded isotypes of the sequenced B cells
+    
+    forest: list
+        a list of networkx.Digraphs containing the maximum parsimony forest for a 
+        the multiple sequence alignment
+    
+    mapping: dict
+        a mapping of the internal ids to the original cell ids
+
+    """
+    id: str   #id label of the clonotype
+    alignment: dict = None #dictiona
     isotypes: dict = None
     forest: list = field(default_factory=list)
     mapping: dict = field(default_factory=dict)
  
- 
+    def __post_init__(self):
+        self.alignment = {k: list(self.alignment[k]) for k in self.alignment}
+        
     def generate_from_list(self, tree_list, root=None):
 
         for i,t in enumerate(tree_list):

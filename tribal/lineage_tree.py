@@ -1,11 +1,13 @@
 from dataclasses import dataclass, field
-from base_tree import BaseTree
+from .base_tree import BaseTree
 from functools import total_ordering
 import pickle
 import numpy as np
 from collections import Counter
-from small_parsimony import SmallParsimony
-from steiner_tree import ConstructGraph, SteinerTree
+from .small_parsimony import SmallParsimony
+from .steiner_tree import ConstructGraph, SteinerTree
+from .utils import hamming_distance
+import networkx as nx 
 
 @dataclass
 @total_ordering
@@ -58,6 +60,17 @@ class LineageTree:
         all_data = sep.join(dat)
         return f"{all_data}\n"
 
+    def update_labels(self, mapping=None):
+        labels = {key : "".join(value) for key, value in self.sequences.items()}
+        if mapping is not None:
+            remapped_labels = {}
+            for id in labels:
+                if id in mapping:
+                    remapped_labels[mapping[id]] = labels[id]
+                else:
+                    remapped_labels[id] = labels[id]
+            return labels 
+
     
     def pickle_score(self, fname):
         with open(fname, 'wb') as file:
@@ -102,13 +115,14 @@ class LineageTree:
         return score
     
 
+    def get_id(self):
+        return self.tree.id
 
     def ancestral_sequence_reconstruction(self, alignment, 
                            alphabet=None, 
                            cost_function=None):
 
         sp = SmallParsimony(self.tree, 
-                            self.root,
                             alphabet= alphabet,
                             cost = cost_function)
         self.shm_obj, self.sequences = sp.sankoff(alignment)
@@ -157,18 +171,19 @@ class LineageTreeList(list):
             
                 file.write(f"{score.tree.id}{sep}{score.objective}{sep}{score.seq_score}{sep}{score.iso_score}{sep}\n")
     
-    def find_best_scores(self):
-        min_score = min(self, key=lambda x: x.iso_obj).iso_obj
+    def find_best_tree(self):
+        min_score = min(self, key=lambda x: x.csr_obj).csr_obj
 
         # Filter objects with the minimum score
-        min_score_object = [obj for obj in self if round(obj.iso_obj, 5) == round(min_score,5)][0]
+        min_score_object = [obj for obj in self if round(obj.csr_obj, 5) == round(min_score,5)][0]
         return min_score, [min_score_object]
     
-    def find_all_best_scores(self):
-        min_score = min(self, key=lambda x: x.iso_obj).iso_obj
+    def find_all_best_trees(self):
+        min_score = min(self, key=lambda x: x.csr_obj).csr_obj
 
         # Filter objects with the minimum score
-        min_score_object = [obj for obj in self if round(obj.iso_obj, 5) == round(min_score,5)]
+        min_score_object = [obj for obj in self if round(obj.csr_obj, 5) == round(min_score,5)]
+        min_score_object = LineageTreeList(min_score_object)
         return min_score, min_score_object
     
     def get_all_trees(self):
@@ -176,7 +191,7 @@ class LineageTreeList(list):
         return [x.tree for x in self]
     
     def get_ids(self):
-        return [x.tree.id for x in self]
+        return [x.get_id() for x in self]
     
     def pickle_scores(self, fname):
         with open(fname, 'wb') as file:

@@ -12,7 +12,14 @@ theme:
   logo: img/logo.png
 plugins:
   - search
-  - mkdocstrings
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: true
+            selection:
+              members: 
+                - "!^_"
 markdown_extensions:
   - def_list
   - sane_lists
@@ -29,6 +36,7 @@ nav:
     - 'Package Overview' : setup/package.md
   - 'API':
     - 'Preprocesssing': 'api/preprocess.md'
+    - 'Tribal': 'api/tribal.md'
 
 
 # nav:

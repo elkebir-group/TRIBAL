@@ -1,15 +1,15 @@
 import numpy as np
 from copy import deepcopy
-from max_likelihood_trans_probs import MaxLike
-import init_transmat as tm
-from lineage_tree import LineageTree, LineageTreeList
-from base_tree import ParsimonyForest
+from .max_likelihood_trans_probs import MaxLike
+from .init_transmat import gen_trans_mat
+from .lineage_tree import LineageTree, LineageTreeList
+from .base_tree import Clonotype
 from multiprocessing import Pool
 
 
 class Tribal:
     """
-    Infer a B cell lineage tree for each clonotype and shared isotype transition probabilities. 
+    A class to infer a B cell lineage tree for each clonotype and shared isotype transition probabilities. 
 
     Attributes
     ----------
@@ -112,69 +112,60 @@ class Tribal:
                 threshold=0.5, 
                 restarts=5,
                 stay_probs=(0.55,0.95), 
-                mode="refinement",
                 verbose =False ):
 
-        self.mode = mode
+
         self.n_isotypes = n_isotypes 
         self.alphabet = alphabet
         self.sankoff_cost_function = sankoff_cost_function
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.stay_probs = stay_probs 
-        self.min_iterations = min(4, niter)
         self.max_cand = max_cand
         self.states = np.arange(self.n_isotypes)
         self.threshold = threshold
         self.niterations = niter
         self.restarts = restarts 
-        self.verbsose = verbose 
+        self.verbose  = verbose 
 
 
 
     
-
-        #don't remember if I need these or not
-        self.candidates = {}
-       
-        self.obs_states = {key: val.isotypes for key,val in self.clonotypes.items()}
-
-
-
 
      
     
 
-    def intialize_candidates(self, best_tree_ids=None):
-        '''
-        randomly initialize a set of candidate trees up to max_cands 
-        for each clonotype, including the best trees found so far is dictionary
-        is given.'''
+    def _intialize_candidates(self, clonotypes, best_tree_ids=None):
+        # '''
+        # randomly initialize a set of candidate trees up to max_cands 
+        # for each clonotype, including the best trees found so far is dictionary
+        # is given.'''
         candidates = {}
-        for c in self.clonotypes:
+        for c in clonotypes:
             # print(f"clontoype {c}: size: {self.clonotypes[c].size()}")
-            if self.clonotypes[c].size() > self.max_cand:
-                cand = self.rng.choice(self.clonotypes[c].size(), self.max_cand, replace=False).tolist()
+            if clonotypes[c].size() > self.max_cand:
+                cand = self.rng.choice(clonotypes[c].size(), self.max_cand, replace=False).tolist()
             else:
-                cand = [i for i in range(self.clonotypes[c].size())]
+                cand = [i for i in range(clonotypes[c].size())]
             
-            candidates[c]= ParsimonyForest( alignment=self.clonotypes[c].alignment, isotypes=self.clonotypes[c].isotypes)
+            candidates[c]= Clonotype(id = clonotypes[c].id, alignment=clonotypes[c].alignment, isotypes=clonotypes[c].isotypes)
+            
+            #TODO: remove deep copy
             for index in cand:
-                candidates[c].add(deepcopy(self.clonotypes[c][index]))
+                candidates[c].add(deepcopy(clonotypes[c][index]))
             if best_tree_ids is not None:
                 for i in best_tree_ids[c]:
                     if i not in cand:
-                        candidates[c].add(deepcopy(self.clonotypes[c][i]))
+                        candidates[c].add(deepcopy(clonotypes[c][i]))
 
         return candidates 
     
 
-    def csr_optimize(self, candidates, transmat=None, mode=None):
-            if mode is None:
-                mode = self.mode 
+    def _csr_optimize(self, candidates, transmat=None, mode=None):
+
       
             #forest returns dict with clonotype as key and LineageTreeList as value
-            all_scores = self.forest_mode(candidates, transmat, mode=mode)
+            all_scores = self._forest_mode(candidates, transmat)
 
             top_scores = {}
             total_likelihood = 0
@@ -186,33 +177,104 @@ class Tribal:
           
     
     @staticmethod
-    def check_convergence(old, new, threshold):
+    def _check_convergence(old, new, threshold):
         return np.abs(old -new) < threshold
 
 
-    def fit(self, clonotypes, mode="refinement", nproc=1, threads=1):
+    def fit(self, clonotypes, mode="refinement", transmat=None, cores=1):
         """
-        Run TRIBAL on an input data
+        Run TRIBAL on a dictionary of clonotypes and infer B cell lineage tree(s)
+        for each clonotype and a shared istoype transition probability matrix. 
+
+        Parameters
+        ----------
+
+        clonotypes: dict
+            a dictionary of Clonotypes each containing a parsimony forest, isotypes and multiple sequence alignment
+            
+        mode: str
+            the mode for optimizing the class switch recombination (CSR) likelihood, one of ["refinement", "score"]. In
+            'refinement' mode, TRIBAL solves the most parsiminious tree refinement (MPTR) problem for each 
+            candidate tree in the parsimony forest. In 'score' mode, TRIBAL  infers the ancestral isotypes using
+            the Sankoff algorithm with the weights coming from the isotype transition probabilities. 
+
+        transmat: list
+            a optional isotype transition probabilty matrix to infer a B cell lineage
+            tree(s) for each clonotype. If not provided, the isotype transition probabilites
+            are inferred from the data. 
+            
+        cores: int
+            The number of cores to use (default 1)
+
+
+
+        Examples
+        --------
+        Here is an example of how to use the Preprocessor class::
+
+            from tribal import Tribal, clonotypes
+            
+            isotypes = ['IGHM', 'IGHA2' , 'IGHG2', 'IGHG1', 'IGHA1' ,'IGHG4', 'IGHG3' , 'IGHE']
+            tr = Tribal(n_isotypes=len(isotypes), verbose=True, restarts=2, niter=2)
+            shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="refinement", cores=1)
+
+
+                
+        Returns
+        -------
+
+        shm_score: float
+            a float with the total somatic hypermutation (SHM) parsimony score for all clonotypes
+        
+        csr_likelihood: float
+            a float with the total class switch recombination (CSR) likelihood score for all clonotypes
+
+        best_scores: dict 
+            a dictionary of LineageTreeLists containing all optimal LineageTrees per clonotype
+
+        transmat: np.array
+            a numpy array of isotype transition probabilities
 
 
         """
+
+
+
        
-        self.nproc = nproc
-        transmat = self.infer_probabilities(clonotypes, mode)
-        csr_likelihood, best_scores = self.csr_optimize(clonotypes, transmat, mode)
+        self.mode = mode 
+        self.nproc = cores
+        if transmat is None:
+            if self.verbose:
+                print("Inferring isotype transition probabilities...")
+            transmat = self._infer_probabilities(clonotypes)
+        
+        else:
+        
+            if transmat.shape[0] != self.n_isotypes or transmat.shape[1] != self.n_isotypes:
+                raise ValueError("User provided isotype transition probability matrix does not match the number of isotype states")
+        if self.verbose:
+            print("Optimizing the CSR likelihood...")
+        csr_likelihood, best_scores = self._csr_optimize(clonotypes, transmat)
+        
+        if self.verbose:
+            print("Reconstructing the ancestral sequences...")
+        
         shm_score = 0
         for c, bst_lst in best_scores.items():
             alignment = clonotypes[c].alignment
             for lt in bst_lst:
                 lt.ancestral_sequence_reconstruction(alignment, self.alphabet)
             shm_score += min(lt.shm_obj for lt in bst_lst)
+        
+        if self.verbose:
+            print("The tribe has spoken!")
         return  shm_score, csr_likelihood, best_scores, transmat
 
 
     
 
 
-    def infer_probabilities(self):
+    def _infer_probabilities(self, clonotypes):
   
      
         ''' 
@@ -227,55 +289,43 @@ class Tribal:
         stay_probs = np.linspace(*self.stay_probs, self.restarts)
         for i in range(self.restarts):
             if self.verbose:
-                print(f"\nStarting Cycle {i}...")
+                print(f"\nStarting restart {i}...")
 
-            transmat =  tm.gen_trans_mat(stay_probs[i], self.n_isotypes)
+            transmat =  gen_trans_mat(stay_probs[i], self.n_isotypes)
             best_tree_ids = None 
             old_score = np.Inf
             
             for j in range(self.niterations):
  
-                candidates = self.intialize_candidates(best_tree_ids)
-                current_score, best_scores, best_tree_ids, _ = self.score_candidates(candidates, transmat=transmat)
-                all_best_scores.append(best_scores)
+                candidates = self._intialize_candidates(clonotypes, best_tree_ids)
+                current_score, all_best_scores = self._csr_optimize(candidates, transmat=transmat)
+                # all_best_scores.append(best_scores)
             
 
-                best_tree_ids[c] = [score.tree.id for score in best_scores]
+                best_tree_ids =  {c: all_best_scores[c].get_ids() for c in all_best_scores}
         
-                bs = best_scores[0]
-                lin_tree = bs.tree
-                leaf_isotypes = {l: bs.isotypes[l] for l in lin_tree.get_leafs() }
-                msa = {l: bs.labels[l] for l in lin_tree.get_leafs() }
-                leaf_isotypes[lin_tree.root] = bs.isotypes[lin_tree.root]
-                msa[lin_tree.root] = bs.labels[lin_tree.root]
-                refined_cands[c] = ParsimonyForest(msa, leaf_isotypes, [lin_tree])
-               
-
-                #return total_likelihood,all_best_scores, best_tree_ids, refined_cands 
                 if self.verbose:
                     print(f"iteration: {j} old score: {old_score} current score: {current_score}")
 
-                if self.check_convergence(current_score, old_score, self.threshold):
-                        cand_tmat.append((transmat, state_probs))
+                if self._check_convergence(current_score, old_score, self.threshold) or j == self.niterations -1:
+                        cand_tmat.append(transmat)
                         cand_scores.append(current_score)
-                        best_trees.append(best_scores)
+                        best_trees.append(all_best_scores)
                         break
                 else:
                     old_score = current_score
-                    transmat, state_probs = MaxLike(self.n_isotypes).infer(best_scores) 
+                    transmat, _ = MaxLike(self.n_isotypes).infer(all_best_scores) 
         
         min_value = min(cand_scores)
         min_index = cand_scores.index(min_value)
-        transmat, state_probs = cand_tmat[min_index]
-        best_scores = best_trees[min_index]
-        best_scores = LineageTreeList([b[0] for b in best_scores])
+        transmat = cand_tmat[min_index]
         
-        return min_value, transmat, state_probs, best_scores
+        return  transmat
 
          
 
     #candidates should be a dict of lineage forests with clonotypes as key
-    def forest_mode(self, transmat, candidates, mode="refinement"):
+    def _forest_mode(self,  candidates, transmat):
             
             arg_vals = []
             for c in candidates:
@@ -286,10 +336,10 @@ class Tribal:
                     arg_vals.append((transmat, lt, isotype_labels ))
 
 
-            if mode == "refinement":
-                mode_func = self.refine
+            if self.mode == "refinement":
+                mode_func = self._refine
             else:
-                mode_func = self.score 
+                mode_func = self._score 
      
 
             if self.nproc <= 1:
@@ -307,14 +357,14 @@ class Tribal:
 
 
 
-    def score(self, transmat, lt, isotype_labels):
+    def _score(self, transmat, lt, isotype_labels):
         lt.isotype_parsimony(isotype_labels, cost=transmat, states=self.states)
         return lt 
 
 
 
 
-    def refine(self, transmat, lt, isotype_labels):
+    def _refine(self, transmat, lt, isotype_labels):
         lt.refinement(isotype_labels, cost=transmat)
         return lt
      

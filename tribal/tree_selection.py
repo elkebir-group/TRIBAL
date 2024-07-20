@@ -7,7 +7,7 @@ from copy import deepcopy
 import utils as ut
 from itertools import repeat
 from lineage_tree import LineageTree, LineageTreeList
-from base_tree import ParimonyForest, BaseTree
+from base_tree import Clonotype, BaseTree
 from multiprocessing import Pool
 from steiner_tree import ConstructGraph, SteinerTree
 

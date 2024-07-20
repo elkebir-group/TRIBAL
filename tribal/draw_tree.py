@@ -1,7 +1,6 @@
-import networkx as nx
 import pygraphviz as pgv
-from utils import read_dict 
-import argparse 
+
+
 
 class DrawTree:
     def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", 
@@ -59,7 +58,8 @@ class DrawTree:
        
             if not show_labels:
                 lab = ""
-            self.graph.add_node(str(p), label=lab, shape="circle", style='filled', penwidth="1", fillcolor=fill_color, color=outline_color)
+            self.graph.add_node(str(p), label=lab, shape="circle", style='filled',
+                                 penwidth="1", fillcolor=fill_color, color=outline_color)
 
 
         used_isotypes = []
@@ -90,7 +90,8 @@ class DrawTree:
                     if u < 0:
                         continue
                     # iso_name = self.color_encoding[u]
-                    self.graph.add_node(f"i_{u}", label=str(u), shape="circle", fillcolor=self.color_encoding[u], style='filled', color='black')
+                    self.graph.add_node(f"i_{u}", label=str(u), shape="circle",
+                                         fillcolor=self.color_encoding[u], style='filled', color='black')
                 
         #         for u,v in iso_trans:
         #             if iso_trans[u,v] > 0:
@@ -112,19 +113,19 @@ class DrawTree:
 # Or, save it as a DOT-file:
 # graph.write_raw("output_raw.dot")
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-t", "--tree", required=True, type=str,
-        help="filename of tree file in parent edge list form")
-    parser.add_argument("-i", "--isotypes", required=True, type=str,
-        help="filename of input file containing inferred isotypes")
-    parser.add_argument("-e", "--encoding", required=False, type=str,
-        help="filename of input transition matrix")
-    parser.add_argument("-l", "--legend", action="store_true")
-    parser.add_argument("-o", "--outfile", type=str)
-    parser.add_argument("--pdf", type=str)
-    args= parser.parse_args()
+#     parser.add_argument("-t", "--tree", required=True, type=str,
+#         help="filename of tree file in parent edge list form")
+#     parser.add_argument("-i", "--isotypes", required=True, type=str,
+#         help="filename of input file containing inferred isotypes")
+#     parser.add_argument("-e", "--encoding", required=False, type=str,
+#         help="filename of input transition matrix")
+#     parser.add_argument("-l", "--legend", action="store_true")
+#     parser.add_argument("-o", "--outfile", type=str)
+#     parser.add_argument("--pdf", type=str)
+#     args= parser.parse_args()
 
     # clono = "B_75_1_1_148_1_40"
     # encoding_fname = "/scratch/projects/tribal/real_data/mouse_isotype_encoding.txt"
@@ -151,24 +152,24 @@ if __name__ == "__main__":
 
     # ])
 
-    iso_labels = read_dict(args.isotypes)
-    parents = read_dict(args.tree)
-    if args.encoding is not None:
-        with open(args.encoding, 'r+') as file:
-            isotype_encoding = {}
-            counter = 0
-            for line in file:
-                isotype_encoding[counter] = line.strip()
-                counter += 1
-    else:
-        isotype_encoding = None
+    # iso_labels = read_dict(args.isotypes)
+    # parents = read_dict(args.tree)
+    # if args.encoding is not None:
+    #     with open(args.encoding, 'r+') as file:
+    #         isotype_encoding = {}
+    #         counter = 0
+    #         for line in file:
+    #             isotype_encoding[counter] = line.strip()
+    #             counter += 1
+    # else:
+    #     isotype_encoding = None
 
-    dt = DrawTree(parents, iso_labels, show_legend=args.legend,isotype_encoding=isotype_encoding )
+    # dt = DrawTree(parents, iso_labels, show_legend=args.legend,isotype_encoding=isotype_encoding )
     
-    dt.save(args.outfile)
+    # dt.save(args.outfile)
 
-    if args.pdf is not None:
-        dt.save_pdf(args.pdf)
+    # if args.pdf is not None:
+    #     dt.save_pdf(args.pdf)
 
 
 

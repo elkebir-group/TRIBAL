@@ -1,0 +1,3 @@
+# Tribal
+
+::: tribal.Tribal
