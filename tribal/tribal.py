@@ -90,12 +90,20 @@ class Tribal:
     Examples
     --------
     Here is an example of how to use the TRIBAL class::
+        
+        from tribal import Tribal, clonotypes
 
-        import tribal
-        clonotypes = tribal.load(np_klh_data)
+        #clonotypes dictionary includes the following clonotypes
+        #["Clonotype_1036", "Clonotype_1050", "Clonotype_10884","Clonotype_1457", "Clonotype_755", "Clonotype_322"]
+        
+        #the clonotype data contains the following isotypes encoded from 0 to 7
+        isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+        tr = Tribal(n_isotypes=len(isotypes), verbose=True, restarts=2, niter=15)
+        
+        #run in refinement mode
+        shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="refinement", cores=6)
 
-        tr = tribal.Tribal(7, max_cand=50, niter=1, restarts=3, theshold=1, mode='refinement')
-        shm_obj, csr_obj, lineage_trees, transmat = tr.fit(clonotypes, cores=10, threads=1)
+    
 
     """
 
@@ -122,11 +130,24 @@ class Tribal:
         self.rng = np.random.default_rng(seed)
         self.stay_probs = stay_probs 
         self.max_cand = max_cand
-        self.states = np.arange(self.n_isotypes)
         self.threshold = threshold
         self.niterations = niter
         self.restarts = restarts 
         self.verbose  = verbose 
+
+        if self.verbose:
+            param_str  = "\nTRIBAL parameters:\n"
+            param_str += f"number of isotypes: {self.n_isotypes}\n"
+            param_str += f"sequence alphabet: {self.alphabet}\n"
+            param_str += f"maximum candidates: {self.max_cand}\n"
+            param_str += f"stay probabilities: {self.stay_probs}\n"
+            param_str += f"random number seed: {self.seed}\n"
+            param_str += f"restarts: {self.restarts}\n"
+            param_str += f"iterations: {self.niterations}\n"
+            param_str += f"convergence threshold: {self.threshold}\n"
+            param_str += f"verbose: {self.verbose}\n"
+
+            print(param_str)
 
 
 
@@ -140,9 +161,10 @@ class Tribal:
         # randomly initialize a set of candidate trees up to max_cands 
         # for each clonotype, including the best trees found so far is dictionary
         # is given.'''
+       
         candidates = {}
         for c in clonotypes:
-            # print(f"clontoype {c}: size: {self.clonotypes[c].size()}")
+ 
             if clonotypes[c].size() > self.max_cand:
                 cand = self.rng.choice(clonotypes[c].size(), self.max_cand, replace=False).tolist()
             else:
@@ -152,11 +174,11 @@ class Tribal:
             
             #TODO: remove deep copy
             for index in cand:
-                candidates[c].add(deepcopy(clonotypes[c][index]))
+                candidates[c].add(clonotypes[c][index])
             if best_tree_ids is not None:
                 for i in best_tree_ids[c]:
                     if i not in cand:
-                        candidates[c].add(deepcopy(clonotypes[c][i]))
+                        candidates[c].add(clonotypes[c][i])
 
         return candidates 
     
@@ -210,13 +232,28 @@ class Tribal:
 
         Examples
         --------
-        Here is an example of how to use the Preprocessor class::
+        Here are examples of how to run the fit function::
 
             from tribal import Tribal, clonotypes
+
+            #clonotypes dictionary includes the following clonotypes
+            #["Clonotype_1036", "Clonotype_1050", "Clonotype_10884","Clonotype_1457", "Clonotype_755", "Clonotype_322"]
             
-            isotypes = ['IGHM', 'IGHA2' , 'IGHG2', 'IGHG1', 'IGHA1' ,'IGHG4', 'IGHG3' , 'IGHE']
-            tr = Tribal(n_isotypes=len(isotypes), verbose=True, restarts=2, niter=2)
-            shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="refinement", cores=1)
+            isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+            tr = Tribal(n_isotypes=len(isotypes), verbose=True, restarts=2, niter=15)
+            
+            #run in refinement mode
+            shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="refinement", cores=6)
+
+            #run in scoring mode
+            shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="score", cores=6)
+
+
+            #given a user-specified isotype transition probability matrix 
+            from tribal import probabilites
+            shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes =clonotypes,
+                                                                        transmat= probabilites,
+                                                                        mode="refinement", cores=6)
 
 
                 
@@ -243,31 +280,42 @@ class Tribal:
        
         self.mode = mode 
         self.nproc = cores
+        if len(clonotypes)==0:
+            raise ValueError("The number of clonotypes is 0. Recheck data and try again.")
+        if self.verbose:
+            print(f"\nStarting TRIBAL with {len(clonotypes)} clonotypes...")
+        
         if transmat is None:
             if self.verbose:
                 print("Inferring isotype transition probabilities...")
             transmat = self._infer_probabilities(clonotypes)
         
         else:
-        
+            if self.verbose:
+                print("Using provided isotype transition probabilities for CSR optimization...")
             if transmat.shape[0] != self.n_isotypes or transmat.shape[1] != self.n_isotypes:
                 raise ValueError("User provided isotype transition probability matrix does not match the number of isotype states")
         if self.verbose:
-            print("Optimizing the CSR likelihood...")
-        csr_likelihood, best_scores = self._csr_optimize(clonotypes, transmat)
-        
+            print("\nOptimizing the CSR Likelihood...")
+        csr_likelihood, best_scores = self._csr_optimize(clonotypes, transmat=transmat)
+
         if self.verbose:
+            
             print("Reconstructing the ancestral sequences...")
         
         shm_score = 0
         for c, bst_lst in best_scores.items():
             alignment = clonotypes[c].alignment
+            min_score = np.Inf
             for lt in bst_lst:
                 lt.ancestral_sequence_reconstruction(alignment, self.alphabet)
-            shm_score += min(lt.shm_obj for lt in bst_lst)
+                if lt.shm_obj < min_score:
+                    min_score = lt.shm_obj
+            shm_score += min_score
         
         if self.verbose:
-            print("The tribe has spoken!")
+            print(f"SHM Score: {shm_score} CSR Likelihood: {csr_likelihood}")
+            print("The TRIBE has spoken!")
         return  shm_score, csr_likelihood, best_scores, transmat
 
 
@@ -302,7 +350,7 @@ class Tribal:
                 # all_best_scores.append(best_scores)
             
 
-                best_tree_ids =  {c: all_best_scores[c].get_ids() for c in all_best_scores}
+                best_tree_ids =  {c: all_best_scores[c]._get_ids() for c in all_best_scores}
         
                 if self.verbose:
                     print(f"iteration: {j} old score: {old_score} current score: {current_score}")
@@ -331,7 +379,7 @@ class Tribal:
             for c in candidates:
                 lin_forest = candidates[c]
                 isotype_labels = lin_forest.isotypes 
-                for t in lin_forest.get_trees():
+                for t in lin_forest.get_forest():
                     lt = LineageTree(clonotype=c, tree=t)
                     arg_vals.append((transmat, lt, isotype_labels ))
 
@@ -358,14 +406,14 @@ class Tribal:
 
 
     def _score(self, transmat, lt, isotype_labels):
-        lt.isotype_parsimony(isotype_labels, cost=transmat, states=self.states)
+        lt.isotype_parsimony(isotype_labels, transmat=transmat)
         return lt 
 
 
 
 
     def _refine(self, transmat, lt, isotype_labels):
-        lt.refinement(isotype_labels, cost=transmat)
+        lt.refinement(isotype_labels, transmat=transmat)
         return lt
      
 

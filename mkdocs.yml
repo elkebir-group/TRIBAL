@@ -36,7 +36,11 @@ nav:
     - 'Package Overview' : setup/package.md
   - 'API':
     - 'Preprocesssing': 'api/preprocess.md'
+    - 'BaseTree': 'api/base_tree.md'
+    - 'Clonotype': 'api/clonotype.md'
     - 'Tribal': 'api/tribal.md'
+    - 'LineageTree': 'api/lineagetree.md'
+    - 'LineageTreeList': 'api/lineagetreelist.md'
 
 
 # nav:

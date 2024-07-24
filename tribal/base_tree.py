@@ -281,9 +281,8 @@ class Clonotype:
     forest: list = field(default_factory=list)
     mapping: dict = field(default_factory=dict)
  
-    def __post_init__(self):
-        self.alignment = {k: list(self.alignment[k]) for k in self.alignment}
-        
+
+
     def generate_from_list(self, tree_list, root=None):
 
         for i,t in enumerate(tree_list):
@@ -305,7 +304,7 @@ class Clonotype:
     def size(self):
         return len(self.forest)
     
-    def get_trees(self):
+    def get_forest(self):
         return self.forest
     
   

@@ -9,7 +9,7 @@ from .base_tree import Clonotype
 import networkx as nx
 from ete3 import Tree
 import multiprocessing as mp
-import concurrent.futures
+
 
 CONFIG = """
 J
@@ -138,8 +138,11 @@ def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,
             from tribal.preprocess import preprocess
             from tribal import df, roots 
 
-            clonotype_list = ["Clonotype_1036", "Clonotype_1050", "Clonotype_10884"]
-            isotypes = ['IGHM', 'IGHA2' , 'IGHG2', 'IGHG1', 'IGHA1' ,'IGHG4', 'IGHG3' , 'IGHE']
+            clonotype_list = ["Clonotype_1036", "Clonotype_1050", "Clonotype_10884", 
+                      "Clonotype_1457", "Clonotype_755", "Clonotype_322"]
+
+            isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+
 
             df = df[df['clonotype'].isin(clonotype_list)]
             clonotypes, df_filt = preprocess(df, roots,isotypes, cores=3, verbose=True )

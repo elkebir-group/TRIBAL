@@ -14,15 +14,17 @@ authors = [
 ]
 
 dependencies = [
-    "numpy",
+    "numpy==1.26.3",
     "networkx==3.1",
     "ete3==3.1.2",
-    # "graphviz>=7.1",
+    "glpk",
+    "pyomo==6.7.3",
     "pygraphviz>=1.10",
     "pandas==2.1.1",
-    "gurobipy==10.0.1",
     "biopython==1.81",
-]
+    "mafft>=7.526",
+    "phylip>=3.697"
+    ]
 
 [project.urls]
 "Homepage" = "https://github.com/elkebir-group/TRIBAL"
