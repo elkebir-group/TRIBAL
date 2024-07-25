@@ -23,7 +23,7 @@ if __name__ == "__main__":
     # import pandas as pd 
     # pd.to_pickle(clonotypes, "tribal/data/clonotypes.pkl")
     
-    print(len(clonotypes))
+
     tr = Tribal(n_isotypes=len(isotypes), verbose=True, restarts=1, niter=15)
             
     #run in refinement mode

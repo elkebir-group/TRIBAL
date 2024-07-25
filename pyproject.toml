@@ -22,8 +22,9 @@ dependencies = [
     "pygraphviz>=1.10",
     "pandas==2.1.1",
     "biopython==1.81",
-    "mafft>=7.526",
-    "phylip>=3.697"
+    # "mafft>=7.526",
+    # "phylip==3.697",
+    "mkdocstrings[python]>=0.18",
     ]
 
 [project.urls]
@@ -33,6 +34,7 @@ dependencies = [
 
 [project.scripts]
 tribal = "tribal.cli:main"
+
 
 
 [tool.hatch.build.targets.sdist]

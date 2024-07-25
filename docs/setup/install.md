@@ -1,21 +1,9 @@
 # Installation 
 
-`tribal` can be installed from [GitHub](https://github.com/elkebir-group/TRIBAL) or from `bioconda`.  We recommend installing from `bioconda`.
 
-### Installing from Bioconda
 
-```
-conda create -n tribal -c bioconda tribal
-```
-
-### Installing from GitHub
-
-```
-git clone https://github.com/elkebir-group/TRIBAL.git
-
-```
-
-`tribal` has the following dependencies.
+### Dependencies
+`tribal` has the following dependencies:
 ```
     python==3.9
     numpy=1.26.3
@@ -29,6 +17,23 @@ git clone https://github.com/elkebir-group/TRIBAL.git
     mafft>=7.526
     phylip>=3.697
 ```
+
+`tribal` can be installed from [Github](#installing-from-github) or from [bioconda](#installing-from-bioconda).  We recommend installing from [bioconda](#installing-from-bioconda).
+
+### Installing from bioconda
+
+```
+conda create -n tribal -c bioconda tribal
+conda activate tribal
+```
+
+### Installing from GitHub
+```
+git clone https://github.com/elkebir-group/TRIBAL.git
+
+```
+
+
 
 Dependencies can be installed using a package mangager such as `conda` `mamba` or `micromamba`, using the included `tribal.yml` file.
 
@@ -53,6 +58,7 @@ To build and install `tribal` into this environment, follow the instructions bel
 conda activate tribal
 pip install hatchling
 hatchling build
+pip install dist/tribal-0.1.0-py3-none-any.whl
 
 ```
 
@@ -83,16 +89,20 @@ pip install dist/tribal-0.1.0-py3-none-any.whl
 
 ```
 
-## Commands
+`tribal` can be imported as a package or run via a  command line interface
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+```
+import tribal
+```
 
-## Project layout
+```
+tribal preprocess --help
+```
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages images and other files.
+```
+tribal fit --help
+```
+
+See [Package Overivew](package.md) for more detailed usage intstructions. 
+
+

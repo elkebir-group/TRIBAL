@@ -161,11 +161,22 @@ def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,
         """
 
         isotype = {iso: i for i, iso in enumerate(isotypes)}
+        if verbose:
+            print("\nPreprocessing input data for tribal...")
+            print("\nIsotype ordering:")
+            for iso in isotypes:
+                print(iso)
+            print("\nParameter settings:")
+            print(f"minimum clonotype size: {min_size}")
+            print(f"include light chain: {use_light_chain}")
+            print(f"cores: {cores}")
+            print(f"verbose: {verbose}")
 
 
         #first filter out clonotypes smaller than min size
         if verbose:
-            print(f"Prior to filtering...")
+
+            print(f"\nPrior to filtering...")
             print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
         
         df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
@@ -173,7 +184,7 @@ def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,
         df = df[df["heavy_chain_isotype"].isin(isotype.keys())]
 
         if verbose:
-            print(f"Filtering clonotypes with fewer than {min_size} cells...")
+            print(f"\nFiltering clonotypes with fewer than {min_size} cells...")
             print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
     
         df = filter_alleles(df, "heavy_chain_v_allele")
@@ -184,12 +195,12 @@ def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,
         df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
 
         if verbose:
-            print(f"Filtering cells based on v_alleles {min_size}...")
+            print(f"\nFiltering cells based on v_alleles {min_size}...")
 
             print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
     
         if verbose:
-            print(f"After all filtering, the number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
+            print(f"\nAfter all filtering, the number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.\n")
         
         #prep dnapars sequence ids
         df['seq'] = df.groupby('clonotype').cumcount() + 1
@@ -220,6 +231,8 @@ def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,
         
             
         df["ntrees"] = df["clonotype"].map(tree_size_dict)
+        if verbose:
+            print("\nPreprocessing complete!")
         return clonodict, df
     
 
