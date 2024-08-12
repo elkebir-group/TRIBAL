@@ -22,8 +22,6 @@ dependencies = [
     "pygraphviz>=1.10",
     "pandas==2.1.1",
     "biopython==1.81",
-    # "mafft>=7.526",
-    # "phylip==3.697",
     "mkdocstrings[python]>=0.18",
     ]
 
@@ -37,7 +35,7 @@ tribal = "tribal.cli:main"
 
 [tool.hatch.build.hooks.custom]
 path = "tribal/backend.py"
-# path = "tribal_build_backend.backend.CustomBuildHook"
+
 
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "tribal/backend.py"
@@ -60,8 +58,6 @@ include = [
     "tribal/backend.py",
 ]
 
-# [tool.hatch.metadata.hooks.custom]
-# module = "tribal.post_install"
-# call = "download_and_install"
+
 
 
