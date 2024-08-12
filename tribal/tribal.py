@@ -1,10 +1,12 @@
+"""The TRIBAL algorithm."""
+
+from multiprocessing import Pool
 import numpy as np
-from copy import deepcopy
 from .max_likelihood_trans_probs import MaxLike
 from .init_transmat import gen_trans_mat
 from .lineage_tree import LineageTree, LineageTreeList
-from .base_tree import Clonotype
-from multiprocessing import Pool
+from .clonotype import Clonotype
+
 
 
 class Tribal:
@@ -13,47 +15,30 @@ class Tribal:
 
     Attributes
     ----------
-
-    n_isotypes: int
+    n_isotypes : int
        the number of isotype states
-    
-    alphabet: tuple
-        the valid alphabet for BCR sequences (default:  ("A", "C", "G", "T","N", "-"))
-
-    sankoff_cost_function: dict
+    alphabet : tuple
+        the valid alphabet for BCR sequences, defaults to  ("A", "C", "G", "T","N", "-")
+    sankoff_cost_function : dict
         the cost function to use for running the Sankoff algorithm during ancestral BCR sequence reconstruction.
         the keys must be all pairs from the provided alphabet. defaults to using the standard cost
-        function (1 for a mismatch, 0 for match) is no cost function provided.
-    
+        function (1 for a mismatch, 0 for match)
     seed: int
         random number seed used to randomly downsample candidate trees within each iterations when size of a parsimony forests
         is greater than max_cand
-        
     max_cand: int
         the maximum allowable size of a parsimony forest to consider within each coordinate descent iterations.
         if the size of each maximum parsimony forest is less than max_cand then downsampling does not occur.
-   
      niter: int
-        the maximum number of coordinate descent iterations to perform if convergence criteria is not met (default 10)
-    
-    threshold: float
-        The tolerance for convergence of the CSR objective (default 0.5)
-    
-    restarts: int
-        the number of restarts, i.e, different initialization of the isotype transition probabilities (default 5)
-
-    stay_probs: tuple
+        the maximum number of coordinate descent iterations to perform if convergence criteria is not met, defaults to 10)
+    threshold : float
+        The tolerance for convergence of the CSR objective, defaults to 0.5
+    restarts : int
+        the number of restarts, i.e, different initialization of the isotype transition probabilities, defaults to 10
+    stay_probs : tuple
         the lower bound and upper bound for the initialization of the probability of not class switching.
-        the initalization values of this parameter are determined by usined np.linspace on this range with the
-        restarts parameter. 
-
-    mode: str
-        One of 'refinement' or 'score' (default: 'refinement'). The mode determines how lineage trees 
-        and ancestral isotype stands are inferred when optimzing the class-switch recombination objective.
-        In 'refinment' mode, TRIBAL solves the Most Parsimonious Tree Refinement (MPTR) problem for each candidate
-        tree in the maximum parsimony forest given fixed isotype transition probabilities. In 'score' mode, TRIBAL
-        infers the ancestral isotype states using the Sankoff algorithm using a cost function with weights determined
-        by the isotype transition probability matrix. 
+        the initalization values of this parameter are determined by using np.linspace on this range with the
+        restarts parameter, defaults to (0.55, 0.95)
 
     Notes
     ----
@@ -85,8 +70,6 @@ class Tribal:
     in the next iteration to ensure convergence. 
 
 
-
-      
     Examples
     --------
     Here is an example of how to use the TRIBAL class::
@@ -104,20 +87,16 @@ class Tribal:
         shm_score, csr_likelihood, best_scores, transmat = tr.fit(clonotypes=clonotypes, mode="refinement", cores=6)
 
     
-
     """
 
-
-
-
-    def __init__(self, 
-                n_isotypes = 7, 
-                alphabet= ("A", "C", "G", "T","N", "-"), 
+    def __init__(self,
+                n_isotypes = 7,
+                alphabet= ("A", "C", "G", "T","N", "-"),
                 sankoff_cost_function = None, 
                 seed= 1026, 
                 max_cand=50, 
                 niter=10,
-                threshold=0.5, 
+                threshold=0.5,
                 restarts=5,
                 stay_probs=(0.55,0.95), 
                 verbose =False ):
@@ -210,16 +189,13 @@ class Tribal:
 
         Parameters
         ----------
-
         clonotypes: dict
-            a dictionary of Clonotypes each containing a parsimony forest, isotypes and multiple sequence alignment
-            
+            a dictionary of Clonotypes each containing a parsimony forest, isotypes and multiple sequence alignment    
         mode: str
             the mode for optimizing the class switch recombination (CSR) likelihood, one of ["refinement", "score"]. In
             'refinement' mode, TRIBAL solves the most parsiminious tree refinement (MPTR) problem for each 
             candidate tree in the parsimony forest. In 'score' mode, TRIBAL  infers the ancestral isotypes using
             the Sankoff algorithm with the weights coming from the isotype transition probabilities. 
-
         transmat: list
             a optional isotype transition probabilty matrix to infer a B cell lineage
             tree(s) for each clonotype. If not provided, the isotype transition probabilites

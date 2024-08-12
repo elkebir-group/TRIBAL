@@ -1,79 +1,87 @@
 # Package overview
 
 
-The `tribal` package can be imported as a package into a python script or jupyter notebookd or it can be used as a command line tool. 
+The `tribal` package can be imported as a package into a python script or jupyter notebookd or it can be used as a [command line tool](cli.md). 
 
-## The `tribal` package 
+The following functions and classes are accessible via the `tribal` package:  
 
-The `tribal` package provides the following:  
-- [example](#example) data to help you properly format your [input](#input) data and familarize yourself with the package.    
-- [preprocess](#preprocess) functionality to preare the data for input to tribal, i.e., filter clonotypes and cells, obtain a multiple sequence alignment (MSA) per clonotype and infer a parsimony forest for each clonotype.   
-- [Clonotype class](#clonotype) to store the formatted input data, including the MSA, parsimony forest, and isotype labels of the sequenced B cells. 
--  [fit](#fit) functionality to infer both a B cell lineage forest and isotype transition probabilites for a given dataset.    
-- [LineageTree class](#lineagetree) to interact with and visualize the inferred B cell lineage trees.     
+| Name               | Description | Type |  
+| ------------------ |------|---- |  
+| [preprocess](../api/preprocess.md) | preprocess the input data to the correct format for tribal by finding a multiple sequence aligment and parsimony forest for each clonotype | function |
+| [BaseTree](../api/base_tree.md) | a class to model the lineage tree topology | class |
+| [Clonotype](../api/clonotype.md)| a dataclass to structure the input data for `tribal`| class |
+| [Tribal](../api/tribal.md) | the main class to run the `tribal` algorithm and fit the input data |  class |
+| [LineageTree](../api/lineagetree.md) | a class to model an inferred B cell lineage tree| class |
+| [LineageTreeList](../api/lineagetree.md) | an extensions of class list to contain a list of B cell lineage trees | class |
 
 The API provides additional details on each of these items. 
 
+## Example data
+In addition to the above functions and class, the following example data can be imported to help users better understand the data formatting and package use. 
 
-### Input
+| Name | Description | Type |
+|------|-------------|------|
+| df   | input sequencing data | `pandas.DataFrame` |
+| roots | input germline roots for sequencing data | `pandas.DataFrame` |
+| probabilities | example isotype transition probability matrix |`numpy.ndarray` | 
+| clonotypes | dictionary of [Clonotype](../api/clonotype.md) objects | `dict` |
+| lineage_tree | an example inferred [B cell lineage tree](../api/lineagetree.md)| [LineageTree](../api/lineagetree.md) | 
+| lineage_tree_list | an example inferred [B cell lineage tree list](../api/lineagetreelist.md)| [LineageTreeList](../api/lineagetree.md) | 
+
+See [Data](data.md) for more details on the input format for the data. 
+
+Load and view the example input data:
+
+```python
+from tribal import df, roots
+
+print(df.head())
+print(roots.head())
+
+```
+
+Load and view the example output data from `preprocess`:
+
+```python
+from tribal import clonotypes
+for key, clonotype in clonptypes:
+    print(key)
+    print(clonotype)
+```
+
+Load and view the example output data from the `tribal` algorithm:
+
+```python
+from tribal import probabilities, lineage_tree, lineage_tree_list
+print(probabilities)
+print(lineage_tree)
+print(lineage_tree_list)
+```
 
 
-`tribal` requires two input files:  
-    - sequencing data saved in csv file with the following columns:  
-        * cell : the id or barcode of the sequnced B cell   
-        * clonotype: the clonotype id to which that cell belongs   
-        * heavy_chain_isotype: the isotype of the constant region of the heavy chain  
-        * heavy_chain_seq: the variable region sequence of the heavy chain
-        * heavy_chain_allele: the v allele of the heavy chain
-        * light_chain_seq:  the variable region sequence of the light chain
-        * light_chain_allele: the v allele of the light chain  
-    - gerlmine roots saved in csv with the folling columns:  
-        * clonotype: the clonotype id of the germline root  
-        * heavy_chain_root: the heavy chain variable region germline root sequence
-        * light_chain_root: the light chain variable region germline root sequence
 
-!!! note
-    The light chain columns may be omitted if the `use_light_chain` argument in `preprocess` is `False`. 
+## Using the package
 
+Here is a brief walkthrough of how to utilize the functionality of the `tribal` package.
+First, load the package:
 
-
-
-```py
+```python
 import tribal
 
 ```
 
+or, alternatively load specific functions, classes or example data.
 
-
-
-
-### Example
-
-The `tribal` package includes some example data in order help you get started.
-
-
-The sequencing data is stored in a [pandas.DataFrame](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) named `df`. 
-
-```python 
-from tribal import df
-
-print(df.columns)
-print(df.head())
+```python
+from tribal import preprocess, df, roots
 
 ```
 
-The corresponding germline roots for both the heavy and light are stored in a [pandas.DataFrame](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) named roots. 
-```python 
-from tribal import roots
 
-print(roots.columns)
-print(roots.head())
-```
+### Preprocessing
 
-## Preprocess 
-
-The preprocessing function will:  
-    -  filter out clonotypes that are below the minimum number of cells  
+The [preprocess](../api/preprocess.md) function will:  
+    -  filter out clonotypes that are below the minimum number of cells .
     -  filter out cells which have v alleles that differ from the majority of the clonotype  
     -  perform a multiple sequence alignment (MSA) for each valid clonotype using [mafft](https://mafft.cbrc.jp/alignment/software/)  
     -  infer a parsimony forest for each clonotype given the MSA using [dnapars](https://phylipweb.github.io/phylip/)  
@@ -82,16 +90,72 @@ The preprocessing function will:
 See [preprocess](../api/preprocess.md) for more details. 
 
 
-### Usage
+
 ```python
+    from tribal import preprocess, df, roots
+    isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+    clonotypes, df_filt = preprocess(df, roots,isotypes=isotypes, 
+                                    min_size=4, use_light_chain=True, 
+                                    cores=3, verbose=True)
+```
+
+The output dictionary `clonotypes` is the formatted input to `tribal`.  To view
+the formatted example data without running the preprocessing step, run the following.
+
+```python
+from tribal import clonotypes
+for key, clonotype in clonotypes:
+    print(clonotype)
+```
 
 
-   isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+### Running TRIBAL
 
-   clonotypes, df_filt = preprocess(df, roots,isotypes=isotypes, min_size=4, use_light_chain=True, cores=3, verbose=True )
+Tribal takes the dictionary of [Clonotype](../api/clonotype.md) objects as input and can be run in two modes.   
+1. `refinement` (recommended) : the full algorithm where the CSR likelihood is optimized by solving the most parsimonious tree refinement problem.  
+2. `score` : the input parsimony lineage trees are not refined and isotypes of the internal nodes are inferred using weighted parsimony via the Sankoff algorithm, with the isotype transition probabilities as weights.   
 
+```python
+from tribal import Tribal, clonotypes
+
+#the clonotype data contains the following isotypes encoded from 0 to 7
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+tr = Tribal(n_isotypes=len(isotypes), restarts=2, niter=15, verbose=True)
+        
+#run in refinement mode (recommended)
+shm_score, csr_likelihood, best_trees, probabilities = tr.fit(clonotypes=clonotypes, 
+                                                                mode="refinement", cores=3)
+
+#run in score mode to infer isotypes using weighted parsimony (Sankoff algorithm) w/o tree refinement
+shm_score, csr_likelihood, best_trees, probabilities = tr.fit(clonotypes=clonotypes, 
+                                                                mode="score", cores=3)
+```
+`shm_score` and `csr_likelihood` are floats representing the corresponding SHM or CSR objective values. 
+
+`probabilities` is a numpy array of shape `(n_isotypes, n_isotypes)` containing the inferred isotype transition probabilites. 
+
+`best_trees` is a dictionary with clonotype id as key and the value containing a [LineageTreeList](../api/lineagetreelist.md) with all inferred optimal B cell lineage trees for a given clonotype. 
+
+Additionally, `Tribal` can be `fit` with a user-provided isotype transition probability matrix:
+
+```python
+from tribal import Tribal, clonotypes, probabilities
+
+#the clonotype data contains the following isotypes encoded from 0 to 7
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+tr = Tribal(n_isotypes=len(isotypes), restarts=2, niter=15, verbose=True)
+
+#specifying the transmat argument will skip the step of inferring isotype transition probabilites
+shm_score, csr_likelihood, best_trees, probabilities = tr.fit(clonotypes=clonotypes,
+                                                                mode="refinement", transmat=probabilites, 
+                                                                cores=3)
 
 ```
 
 
-## LineageTree 
+### Exploring and visualizing the inferred B cell lineage trees
+
+`tribal fit` returns a list of all optimal B cell lineage trees for each clonotype. 
+Specifically, in the above examples `best_trees` is a dictionary, with clonotype as key, of [LineageTreeLists](../api/lineagetreelist.md). 
+
+A B cell lineage tree for tribal is a rooted tree with nodes labeled by BCR sequences (concentated heavy and optional light chains) and by isotypes. The [LineageTree](../api/lineagetree.md) class also holds the current  SHM parsimony score (`shm_obj`) and CSR likelihood (`csr_obj`). 

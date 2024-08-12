@@ -1,77 +1,165 @@
 site_name: TRIBAL
-# site_url: https://dowser.readthedocs.io
 repo_url: https://github.com/elkebir-group/TRIBAL
-# edit_uri: src/master/docs/
 theme:
-  # name: readthedocs
   name: material
-  navigation_depth: 4
+  language: en
+  navigation_depth: 5
   collapse_navigation: False
-  sticky_navigation: True 
+  sticky_navigation: True
   locale: en
   titles_only: False
   logo: img/logo.png
+  font:
+    code: Roboto Mono
   features:
     - navigation.tabs 
+    - navigation.tabs.sticky
     - navigation.sections
     - navigation.top
+    - navigation.path
     - toc.integrate
+    - toc.collapsible
     - search.suggest
+    - search.highlight
     - content.code.annotation
     - content.code.copy
     - content.tabs.link
   palette:
-    primary: deep purple
-    accent: deep orange
-    theme:
-    # Palette toggle for light mode
-    - scheme: default
-      toggle:
-        icon: material/brightness-7 
-        name: Switch to dark mode
-
-    # Palette toggle for dark mode
-    - scheme: slate
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-language: en
-
+    primary: brown
+    accent: deep purple
+  extra_css:
+    - css/logo.css
+    # theme:
+      # - scheme: default
+      #   toggle:
+      #     icon: material/brightness-7 
+      #     name: Switch to dark mode
+      # - scheme: slate
+      #   toggle:
+      #     icon: material/brightness-4
+      #     name: Switch to light mode
 plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            show_source: true
-            selection:
-              members:
-                - "!^_"  # Exclude private members starting with an underscore
+- mkdocstrings:
+    default_handler: python
+    handlers:
+      python:
+        selection:
+          docstring_style: numpy
+        rendering:
+          show_source: true
+- search
 markdown_extensions:
   - def_list
   - sane_lists
-  - smarty
+  # - smarty
   - toc:
       baselevel: 1
-      toc_depth: 1-6
+      toc_depth: 1-4
       permalink: True
   - admonition
   - pymdownx.snippets
   - pymdownx.details
+  - codehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed
+  - pymdownx.details
+  - tables
+
 docs_dir: 'docs'
 nav:
   - 'About' : index.md
-  - 'Getting Started': 
-    - 'Download & Installation': setup/install.md
-    - 'Package Overview' : setup/package.md
-    - 'Command Line Interface' : setup/cli.md
+  - 'Usage': 
+      - 'Download & Installation': setup/install.md
+      - 'Data' : setup/data.md
+      - 'Package Overview' : setup/package.md
+      - 'Command Line Interface' : setup/cli.md
   - 'API':
-    - 'Preprocesssing': 'api/preprocess.md'
-    - 'BaseTree': 'api/base_tree.md'
-    - 'Clonotype': 'api/clonotype.md'
-    - 'Tribal': 'api/tribal.md'
-    - 'LineageTree': 'api/lineagetree.md'
-    - 'LineageTreeList': 'api/lineagetreelist.md'
+      - 'Preprocesssing': 'api/preprocess.md'
+      - 'BaseTree': 'api/base_tree.md'
+      - 'Clonotype': 'api/clonotype.md'
+      - 'Tribal': 'api/tribal.md'
+      - 'LineageTree': 'api/lineagetree.md'
+      - 'LineageTreeList': 'api/lineagetreelist.md'
+
+# site_name: TRIBAL
+# # site_url: https://dowser.readthedocs.io
+# repo_url: https://github.com/elkebir-group/TRIBAL
+# # edit_uri: src/master/docs/
+# theme:
+#   # name: readthedocs
+#   name: material
+#   navigation_depth: 4
+#   collapse_navigation: False
+#   sticky_navigation: True 
+#   locale: en
+#   titles_only: False
+#   logo: img/logo.png
+#   features:
+#     - navigation.tabs 
+#     - navigation.sections
+#     - navigation.top
+#     - toc.integrate
+#     - search.suggest
+#     - content.code.annotation
+#     - content.code.copy
+#     - content.tabs.link
+#   palette:
+#     primary: deep purple
+#     accent: deep orange
+#     theme:
+#     # Palette toggle for light mode
+#     - scheme: default
+#       toggle:
+#         icon: material/brightness-7 
+#         name: Switch to dark mode
+
+#     # Palette toggle for dark mode
+#     - scheme: slate
+#       toggle:
+#         icon: material/brightness-4
+#         name: Switch to light mode
+# language: en
+
+# plugins:
+#   - search
+#   - mkdocstrings:
+#       handlers:
+#         python:
+#           docstring_style: numpy
+#           options:
+#             show_source: true
+#           #   selection:
+#           #     members:
+#           #       - "!^_"  # Exclude private members starting with an underscore
+# markdown_extensions:
+#   - def_list
+#   - sane_lists
+#   - smarty
+#   - toc:
+#       baselevel: 1
+#       toc_depth: 1-6
+#       permalink: True
+#   - admonition
+#   - pymdownx.snippets
+#   - pymdownx.details
+#   - codehilite
+#   - pymdownx.superfences
+#   - pymdownx.tabbed
+#   - pymdownx.details
+# docs_dir: 'docs'
+# nav:
+#   - 'About' : index.md
+#   - 'Getting Started': 
+#     - 'Download & Installation': setup/install.md
+#     - 'Package Overview' : setup/package.md
+#     - 'Command Line Interface' : setup/cli.md
+#   - 'API':
+#     - 'Preprocesssing': 'api/preprocess.md'
+#     - 'BaseTree': 'api/base_tree.md'
+#     - 'Clonotype': 'api/clonotype.md'
+#     - 'Tribal': 'api/tribal.md'
+#     - 'LineageTree': 'api/lineagetree.md'
+#     - 'LineageTreeList': 'api/lineagetreelist.md'
 
 
 # nav:

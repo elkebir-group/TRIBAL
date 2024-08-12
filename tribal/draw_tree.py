@@ -3,9 +3,14 @@ import pygraphviz as pgv
 
 
 class DrawTree:
-    def __init__(self, parents, isotypes=None, color_encoding=None, root="naive", 
-                 show_legend=False, isotype_encoding=None, 
-                 show_labels=True, hide_underscore=True, use_dashed=False) -> None:
+    def __init__(self, parents, isotypes=None, 
+                 color_encoding=None, 
+                 root="naive", 
+                 show_legend=False, 
+                 isotype_encoding=None, 
+                 show_labels=True, 
+                 hide_underscore=True, 
+                 use_dashed=False) -> None:
         self.parents = parents
         if isotypes is not None:
             self.isotypes = isotypes
@@ -13,10 +18,6 @@ class DrawTree:
             nodes = [key for key in parents] + [val for key, val in parents.items()]
             nodes =set(nodes)
             self.isotypes = {n: 0 for n in nodes }
-        
-    
-     
-        
 
         self.root= root
 
@@ -54,9 +55,9 @@ class DrawTree:
        
 
             if "_" in lab and hide_underscore:
-                    lab =lab.split("_")[0]
+                    lab =lab.split('_', maxsplit=1)[0]
        
-            if not show_labels:
+            if not show_labels:  
                 lab = ""
             self.graph.add_node(str(p), label=lab, shape="circle", style='filled',
                                  penwidth="1", fillcolor=fill_color, color=outline_color)
@@ -76,7 +77,7 @@ class DrawTree:
 
                         self.graph.add_edge(*new_edge, color="black")
                     else:
-                        if self.use_dashed:
+                        if use_dashed:
                             self.graph.add_edge(*new_edge, color="black", style="dashed")
                         else:
                             self.graph.add_edge(*new_edge, color="black")
@@ -90,8 +91,17 @@ class DrawTree:
                     if u < 0:
                         continue
                     # iso_name = self.color_encoding[u]
-                    self.graph.add_node(f"i_{u}", label=str(u), shape="circle",
-                                         fillcolor=self.color_encoding[u], style='filled', color='black')
+                    if isotype_encoding is None:
+                        lab = f"i_{u}"
+              
+                    else:
+                        if u < len(isotype_encoding):
+                            lab = f"{isotype_encoding[u]}"
+                    
+                    self.graph.add_node(f"i_{u}", label=lab, shape="circle",
+                                          fillcolor=self.color_encoding[u], style='filled', color='black')
+
+
                 
         #         for u,v in iso_trans:
         #             if iso_trans[u,v] > 0:
@@ -106,10 +116,10 @@ class DrawTree:
         self.graph.draw(fname, prog="dot")
     
 
-    def save_pdf(self, fname):
+    # def save_pdf(self, fname):
 
 
-         self.graph.draw(fname, prog="dot") 
+    #      self.graph.draw(fname, prog="dot") 
 # Or, save it as a DOT-file:
 # graph.write_raw("output_raw.dot")
 

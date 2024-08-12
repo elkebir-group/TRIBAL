@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "setuptools"]
 build-backend = "hatchling.build"
 
 [project]
@@ -35,20 +35,33 @@ dependencies = [
 [project.scripts]
 tribal = "tribal.cli:main"
 
+[tool.hatch.build.hooks.custom]
+path = "tribal/backend.py"
+# path = "tribal_build_backend.backend.CustomBuildHook"
 
+[tool.hatch.build.targets.wheel.hooks.custom]
+path = "tribal/backend.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
     "tribal/data/*.csv",
     "tribal/data/*.pkl",
+    "tribal/dnapars/*.c",
+    "tribal/dnapars/*.h",
+    "tribal/backend.py",
 ]
 
 [tool.hatch.build.targets.wheel]
 include = [
     "tribal/data/*.csv",
     "tribal/data/*.pkl",
+    "tribal/dnapars/*.c",
+    "tribal/dnapars/*.h",
+    "tribal/backend.py",
 ]
 
 # [tool.hatch.metadata.hooks.custom]
 # module = "tribal.post_install"
 # call = "download_and_install"
+
+

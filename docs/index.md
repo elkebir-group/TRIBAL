@@ -19,9 +19,9 @@ For help and questions please contact the [El-Kebir Lab](mailto:melkebir@illinoi
 
 ## Dependencies
 
-**Depends:** dnapars, mafft  
-**Imports:** networkx, pyomo, numpy, scipy, pandas, ete3  
-**Suggests:** pygrahviz  
+**Depends:** [dnapars](phylip_main.html), mafft, glpk  
+**Imports:** networkx, pyomo, numpy, pandas, ete3, Bio  
+
 
 
 ## Authors
@@ -45,4 +45,4 @@ Weber, L. L., Reiman, D., Roddur, M. S., Qi, Y., El-Kebir, M., & Khan, A. A. TRI
 
 ## License
 
-BSD-3
+[BSD-3](license.md)

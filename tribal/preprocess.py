@@ -1,14 +1,17 @@
-import pandas as pd
-from .utils import read_fasta 
+"""A module to preprocess data for TRIBAL."""
+
+import os
+import re
+import tempfile
 from io import StringIO
 import subprocess
+import multiprocessing as mp
+import pandas as pd
 from Bio import AlignIO
-import tempfile
-import os, re
-from .base_tree import Clonotype
 import networkx as nx
 from ete3 import Tree
-import multiprocessing as mp
+from .clonotype import Clonotype
+from .utils import read_fasta
 
 
 CONFIG = """
@@ -24,9 +27,12 @@ Y
 """
 
 
-import pandas as pd
+def _process_clonotype(j, df, roots, use_light_chain,isotype_encoding, verbose):
+    """Process each clonotype individually.
 
-def process_clonotype(j, df, roots, use_light_chain, verbose):
+    Finds a multiple sequence alignment and parsimony forest for a single clonotype.
+
+    """
     try:
         if verbose:
             print(f"Preprocessing clonotype {j}")
@@ -40,205 +46,178 @@ def process_clonotype(j, df, roots, use_light_chain, verbose):
 
         # Further processing
         clono = df[df["clonotype"] == j]
-        isotypes = dict(zip(clono["seq"], clono["isotype"]))
+        isotypes = dict(zip(clono["cellid"], clono["isotype"]))
         isotypes["naive"] = 0
         heavy_seqs = dict(zip(clono["seq"], clono["heavy_chain_seq"]))
 
 
         # Align heavy chain
-        heavy_chain_align = align(heavy_seqs, heavy_root)
+        heavy_chain_align = _align(heavy_seqs, heavy_root)
 
         if use_light_chain:
             light_seqs = dict(zip(clono["seq"], clono["light_chain_seq"]))
             light_root = roots.loc[roots["clonotype"] == j, "light_chain_root"].values[0]
-            light_chain_align = align(light_seqs, light_root)
+            light_chain_align = _align(light_seqs, light_root)
         else:
             light_chain_align = {}
 
         # Combine alignments
         alignment = {}
-        for key in heavy_chain_align:
+        for key, heavy in heavy_chain_align.items():
             if use_light_chain:
-                alignment[key] = heavy_chain_align[key].upper() + light_chain_align.get(key, "").upper()
+                alignment[key] = heavy.upper() + light_chain_align.get(key, "").upper()
             else:
-                alignment[key] = heavy_chain_align[key].upper()
+                alignment[key] = heavy.upper()
 
-
-        # Run DNAPARS
-        phylip_str = convert_alignment_to_phylip(convert_to_string(alignment))
-        outtrees = run_dnapars(phylip_str)
-
-        # Create trees
-        tree_list = create_trees(outtrees)
 
         # print(f"Generated {len(tree_list)} trees for clonotype {j}")
         mapping = dict(zip(clono["seq"].values,clono['cellid'].values ))
 
-        linforest = Clonotype(id=j, alignment=alignment, isotypes=isotypes, mapping=mapping)
+        # Run DNAPARS
+        phylip_str = _convert_alignment_to_phylip(_convert_to_string(alignment))
+        outtrees = _run_dnapars(phylip_str)
+
+        # Create trees
+        tree_list = _create_trees(outtrees, mapping)
+
+
+        alignment = _update_labels(alignment, mapping)
+
+        linforest = Clonotype(id=j,
+                                alignment=alignment,
+                                isotypes=isotypes,
+                            #   mapping=mapping,
+                                isotype_encoding=isotype_encoding)
         if verbose:
             print(f"Clonotype {j} has {len(tree_list)} max parsimony trees.")
         linforest.generate_from_list(tree_list, root="naive")
         return j,linforest
- 
 
-    except Exception as e:
+
+    except RuntimeError as e:
         print(f"An error occurred: {e}")
         return j, None
 
 
 
-def preprocess( df: pd.DataFrame, roots: pd.DataFrame, isotypes:list,  
-                   min_size=4, use_light_chain=True, 
-                   cores:int =1,verbose=False):
-        """
-        Preprocess the input data to prepare data for TRIBAL. The clonotypes will first be filtered to ensure each 
-        clontoype has at least min_size cells. Each retained clonotype is aligned to the root sequence and then maximum 
-        parsimony forest is enumerated for the B cells with that clonotype.
+def preprocess( df: pd.DataFrame,
+            roots: pd.DataFrame,
+            isotypes:list,
+            min_size=4,
+            use_light_chain=True,
+            cores:int =1,
+            verbose=False
+            ):
+    """
+    Preprocess the input data to prepare data for TRIBAL.
 
-        Parameters
-        ----------
+    The clonotypes will first be filtered to ensure each clonotype has at least `min_size` cells.
+    Each retained clonotype is aligned to the root sequence and then maximum parsimony forest is
+    enumerated for the B cells with that clonotype.
 
-        df: pd.Dataframe
-            A datframe with columns including 'clonotype', 'heavy_chain_seq', 'light_chain_seq',
-            'heavy_chain_v_allele', 'light_chain_v_allele', and 'heavy_chain_isotype'.  The 'Light Chain' columns are optional.
-            
-        roots: pd.Dataframe
-            A dataframe with columns including 'clonotype', 'heavy_chain_root', 'light_chain_root'
-             The 'light_chain_root' column is only required if use_light_chains is True.
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A dataframe with columns including 'clonotype', 'heavy_chain_seq', 'light_chain_seq',
+        'heavy_chain_v_allele', 'light_chain_v_allele', and 'heavy_chain_isotype'.
+        The 'Light Chain' columns are optional.
+    roots : pd.DataFrame
+        A dataframe containing the root sequences.
+    isotypes : list
+        A list of the ordered isotype labels, i.e., ['IghM', ...,'IghA']. These labels should
+        match the isotype labels in the input dataframe. See notes below.  
+    min_size : int, optional
+        The minimum number of B cells needed to form a clonotype (default is 4).  
+    use_light_chain : bool, optional
+        Should the light chain be included in the BCR sequences (default is True).  
+    cores : int, optional
+        The number of CPU cores to use (default is 1).  
+    verbose : bool, optional
+        Should verbose output be printed (default is False).  
 
-        isotypes: list
-            list of the ordered isotype labels, i.e., ['IghM', ...,'IghA']. These labels should match the 
-            the isotype labels in the input dataframe. See notes below. 
-
-        min_size: int
-            The mininum number of B cells needed to form a clonotype (default 4).
-
-        use_light_chain: bool
-            Should the light chain be included in the BCR sequences (default True)
-
-        cores: int
-            The number of cores to use (default 1)
-
-        verbose: bool  
-            Print more verbose output (default False)
-
-
-        Notes
-        -----
-        The isotype_encoding is an ordered list of the isotypes. Since there is no standard
-        snytax for isotype labels, e.g., IgM, IghM, M, IGM), this list must be provided. must
-        include all isotype labels expected in the input data and be ordered to reflect the linear
-        ordering of the heavy chain constant genes in the genome.
-
-
-        Examples
-        --------
-        Here is an example of how to use the Preprocessor class::
-
-            from tribal.preprocess import preprocess
-            from tribal import df, roots 
-
-            clonotype_list = ["Clonotype_1036", "Clonotype_1050", "Clonotype_10884", 
-                      "Clonotype_1457", "Clonotype_755", "Clonotype_322"]
-
-            isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
-
-
-            df = df[df['clonotype'].isin(clonotype_list)]
-            clonotypes, df_filt = preprocess(df, roots,isotypes, cores=3, verbose=True )
-            print(len(clonotypes))
-
-                
-        Returns
-        -------
-        dict
-            a dictionary containing the input data for TRIBAL
-        
-        df
-            a filtered dataframe with additional column annotations for isotype encoding
-            and internal sequence label
-
-        """
-
-        isotype = {iso: i for i, iso in enumerate(isotypes)}
-        if verbose:
-            print("\nPreprocessing input data for tribal...")
-            print("\nIsotype ordering:")
-            for iso in isotypes:
-                print(iso)
-            print("\nParameter settings:")
-            print(f"minimum clonotype size: {min_size}")
-            print(f"include light chain: {use_light_chain}")
-            print(f"cores: {cores}")
-            print(f"verbose: {verbose}")
-
-
-        #first filter out clonotypes smaller than min size
-        if verbose:
-
-            print(f"\nPrior to filtering...")
-            print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
-        
-        df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
-
-        df = df[df["heavy_chain_isotype"].isin(isotype.keys())]
-
-        if verbose:
-            print(f"\nFiltering clonotypes with fewer than {min_size} cells...")
-            print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
+    Returns
+    -------
+    dict 
+        A dictionary of clonotype objects formatted for input to tribal with clonotype id as key
+    pd.DataFrame
+        A dataframe that is filtered to contain only unfiltered B cells
     
-        df = filter_alleles(df, "heavy_chain_v_allele")
-        if use_light_chain:
-            df = filter_alleles(df, "light_chain_v_allele")
-        df = df[ df['heavy_chain_isotype'].notna()]
+    Notes
+    -----
+    Ensure that the isotype labels in `isotypes` match the labels in the input dataframe.
+    """
+    isotype = {iso: i for i, iso in enumerate(isotypes)}
+    if verbose:
+        print("\nPreprocessing input data for tribal...")
+        print("\nIsotype ordering:")
+        for iso in isotypes:
+            print(iso)
+        print("\nParameter settings:")
+        print(f"minimum clonotype size: {min_size}")
+        print(f"include light chain: {use_light_chain}")
+        print(f"cores: {cores}")
+        print(f"verbose: {verbose}")
 
-        df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
 
-        if verbose:
-            print(f"\nFiltering cells based on v_alleles {min_size}...")
+    #first filter out clonotypes smaller than min size
+    if verbose:
 
-            print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
+        print("\nPrior to filtering...")
+        print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
     
-        if verbose:
-            print(f"\nAfter all filtering, the number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.\n")
-        
-        #prep dnapars sequence ids
-        df['seq'] = df.groupby('clonotype').cumcount() + 1
-        df['seq'] = 'seq' + df['seq'].astype(str)
+    df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
 
-        df.columns.values[0] = "cellid"
-        roots.columns.values[0] = "clonotype"
-        df["isotype"] = df['heavy_chain_isotype'].map(isotype)
+    df = df[df["heavy_chain_isotype"].isin(isotype.keys())]
 
+    if verbose:
+        print(f"\nFiltering clonotypes with fewer than {min_size} cells...")
+        print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
 
+    df = _filter_alleles(df, "heavy_chain_v_allele")
+    if use_light_chain:
+        df = _filter_alleles(df, "light_chain_v_allele")
+    df = df[ df['heavy_chain_isotype'].notna()]
+
+    df = df.groupby("clonotype").filter(lambda x: len(x) >= min_size)
+
+    if verbose:
+        print(f"\nFiltering cells based on v_alleles {min_size}...")
+
+        print(f"The number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.")
+
+    if verbose:
+        print(f"\nAfter all filtering, the number of cells is {df.shape[0]} and the number of clonotypes is {df['clonotype'].nunique()}.\n")
     
-        clonodict = {}
-        tree_size_dict = {}
+    #prep dnapars sequence ids
+    df['seq'] = df.groupby('clonotype').cumcount() + 1
+    df['seq'] = 'seq' + df['seq'].astype(str)
 
-        
-        instances  = [ (j, df.copy(), roots.copy(), use_light_chain, verbose) for j in df["clonotype"].unique()]
-        if cores > 1:
-            with mp.Pool(cores) as pool:
-                results = pool.starmap(process_clonotype, instances)
-        else:
-            results = []
-            for inst in instances:
-                results.append(process_clonotype(*inst))
-        
-        for j, linforest in results:
-            clonodict[j] = linforest
-            tree_size_dict[j] = linforest.size()
-        
-            
-        df["ntrees"] = df["clonotype"].map(tree_size_dict)
-        if verbose:
-            print("\nPreprocessing complete!")
-        return clonodict, df
+    df.columns.values[0] = "cellid"
+    roots.columns.values[0] = "clonotype"
+    df["isotype"] = df['heavy_chain_isotype'].map(isotype)
+
+    clonodict = {}    
+    instances  = [ (j, df.copy(), roots.copy(), use_light_chain, isotypes, verbose)
+                   for j in df["clonotype"].unique()]
+    if cores > 1:
+        with mp.Pool(cores) as pool:
+            results = pool.starmap(_process_clonotype, instances)
+    else:
+        results = []
+        for inst in instances:
+            results.append(_process_clonotype(*inst))
+    
+    for j, linforest in results:
+        clonodict[j] = linforest
+
+    if verbose:
+        print("\nPreprocessing complete!")
+    return clonodict, df
     
 
     
 
-def filter_alleles( df, col):
+def _filter_alleles( df, col):
     grouped = df.groupby(['clonotype', col]).size().reset_index(name='count')
 
     # # Identify the allele with the highest count for each Clonotype
@@ -254,7 +233,7 @@ def filter_alleles( df, col):
   
 
 
-def run_dnapars(phylip_content):
+def _run_dnapars(phylip_content):
     # Create a temporary directory
     with tempfile.TemporaryDirectory() as temp_dir:
         # Write PHYLIP content to a temporary "infile"
@@ -269,7 +248,12 @@ def run_dnapars(phylip_content):
         # outfile = os.path.join(temp_dir, "outfile")
         # Run dnapars from the temporary directory
         # if dnapars_path is None:
-        dnapars_cline = ["dnapars"]
+        def get_dnapars_path():
+            # Determine the path to the dnapars executable within the package directory
+            return os.path.join(os.path.dirname(__file__), 'dnapars', 'dnapars')
+ 
+        dnapars_cline = [get_dnapars_path()]
+        # dnapars_cline = ["dnapars"]
         # else:
         #     dnapars_cline = [dnapars_path]
         # process = subprocess.Popen(dnapars_cline, cwd=temp_dir, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -285,7 +269,7 @@ def run_dnapars(phylip_content):
     return outtree_content
 
 
-def convert_to_string(seqs, root=None):
+def _convert_to_string(seqs, root=None):
     if root is not None:
         mystr = f">naive\n{root}\n"
     else:
@@ -295,9 +279,9 @@ def convert_to_string(seqs, root=None):
     return mystr
 
 
-def align(seqs, root):
+def _align(seqs, root):
     #!cat seqs.fasta mafft --quiet - > aligned.fasta
-    seq_str = convert_to_string(seqs, root)
+    seq_str = _convert_to_string(seqs, root)
     child = subprocess.Popen(["mafft", "--quiet", "-"], stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     child.stdin.write(seq_str.encode())
     child_out = child.communicate()[0].decode("utf8")
@@ -310,7 +294,7 @@ def align(seqs, root):
 
     
 
-def convert_alignment_to_phylip(alignment_str, input_format="fasta"):
+def _convert_alignment_to_phylip(alignment_str, input_format="fasta"):
     # Create a file-like object from the string
     input_handle = StringIO(alignment_str)
     
@@ -328,7 +312,7 @@ def convert_alignment_to_phylip(alignment_str, input_format="fasta"):
 
 
 
-def align_clonotypes(df, roots):
+def _align_clonotypes(df, roots):
     clonotype_alignments= {}
     for j in df["clonotype"].unique():
         clono = df[df["clonotype"]== j]
@@ -336,11 +320,11 @@ def align_clonotypes(df, roots):
     
         heavy_root = roots[roots["clonotype"]==j]["heavy_chain_root"].values[0]
 
-        heavy_chain_align = align(heavy_seqs, heavy_root)
+        heavy_chain_align = _align(heavy_seqs, heavy_root)
         light_seqs = dict(zip(clono["seq"],clono["light_chain_seq"]))
     
         light_root = roots[roots["clonotype"]==j]["light_chain_root"].values[0]
-        light_chain_align = align(light_seqs, light_root)
+        light_chain_align = _align(light_seqs, light_root)
         concat_seqs = {}
         for key in heavy_chain_align:
             concat_seqs[key] = heavy_chain_align[key].upper() + light_chain_align[key].upper()
@@ -349,7 +333,7 @@ def align_clonotypes(df, roots):
 
 
 
-def convert_to_nx( ete_tree, root):
+def _convert_to_nx( ete_tree, root, mapping):
     nx_tree = nx.DiGraph()
     internal_node = 1
     internal_node_count = 0
@@ -377,11 +361,11 @@ def convert_to_nx( ete_tree, root):
         nx_tree.remove_edge(root_name, root)
         nx_tree.add_edge(root, root_name)
     
-
+    nx_tree = nx.relabel_nodes(nx_tree, mapping=mapping)
     return nx_tree
     
 
-def create_trees(outtrees):
+def _create_trees(outtrees, mapping):
     cand_trees = []
     exp = '\[.*\]'
     file = StringIO(outtrees)
@@ -403,7 +387,7 @@ def create_trees(outtrees):
 
         ete_tree = Tree(nw, format=0)
 
-        nx_tree= convert_to_nx(ete_tree, "naive")
+        nx_tree= _convert_to_nx(ete_tree, "naive", mapping)
         
         cand_trees.append(nx_tree)
     return cand_trees
@@ -412,6 +396,20 @@ def create_trees(outtrees):
 
 
 
+def _update_labels(mydict, mapping):
+        # labels = {key : "".join(value) for key, value in self.sequences.items()}
+        remapped_labels = {}
+        for key, seq in mydict.items():
+            if key in mapping:
+          
+                    remapped_labels[mapping[key]] = seq
+           
+        
+            else:
+        
+                    remapped_labels[key] = seq
+        
+        return remapped_labels
 
 
 

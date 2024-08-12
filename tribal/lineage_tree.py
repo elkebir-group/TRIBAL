@@ -1,5 +1,5 @@
 """This module provides functions and classes to handle lineage trees."""
-
+import os
 from dataclasses import dataclass, field
 from functools import total_ordering
 import pickle
@@ -72,8 +72,9 @@ class LineageTree:
     def __str__(self):
         """To string method."""
         mystr = f"B cell lineage tree for {len(self.tree.get_leafs())} cells"
-        mystr += f"\nRoot ID: {self.root}"
-        mystr +=  f"\nObjectives\tSHM: {self.shm_obj} CSR: {self.csr_obj}"
+        mystr += f"\nRoot id: {self.root}"
+        mystr += f"# of nodes: {len(self.tree.T.nodes)}"
+        mystr +=  f"\nObjective\n----------\nSHM: {self.shm_obj}\nCSR: {self.csr_obj}"
         return mystr
 
     def to_pickle(self, fname):
@@ -274,7 +275,6 @@ class LineageTree:
 
         return self.csr_obj, self.isotypes
 
-
     def draw(self,
             fname,
             isotype_encoding=None,
@@ -415,7 +415,7 @@ class LineageTree:
             the path to file the files should be written.  
         clonotype : Clonotype, optional
             the corresponding clonotype object for the lineage tree.  
-        """       
+        """
         if tree_label is None:
             tree_label = ""
         else:
@@ -430,6 +430,9 @@ class LineageTree:
                     isotypes[key] = iso
         else:
             isotypes = self.isotypes
+        
+        if not os.path.exists(outpath):
+            os.makedirs(outpath)
 
         write_fasta(f"{outpath}/{clonotype.id}_sequences{tree_label}.fasta", self.sequences)
         save_dict(f"{outpath}/{clonotype.id}_isotypes{tree_label}.csv",isotypes)
@@ -442,6 +445,10 @@ class LineageTree:
 class LineageTreeList(list):
     """Extends class list in order to store and manipulate list of LineageTrees."""
 
+    def __str__(self) -> str:
+        """To string method."""
+        return f"{type(self)} with {len(self)} LineageTree(s)."
+    
     def append(self, item):
         """Append a LineageTree to the LineageTreeList."""
         super().append(self._validate_item(item))

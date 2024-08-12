@@ -42,7 +42,7 @@ class ConstructGraph:
 
                   
 
-    def build(self, LinTree ):
+    def build(self, LinTree):
 
         T = LinTree.T
         root = LinTree.root
@@ -75,7 +75,7 @@ class ConstructGraph:
               
 
                 out_degree_max[new_node] = T.out_degree[n]
-                node_out_degree
+                # node_out_degree
                 leafset.append(new_node)
                 self.node_isotypes[new_node] = iso
    

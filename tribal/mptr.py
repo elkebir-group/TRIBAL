@@ -24,14 +24,7 @@ class MPTR:
  
              
         self.m = pyo.ConcreteModel()
-        # self.m.node_set = pyo.Set(self.nodes )
-        # self.m.edge_set = pyo.Set(self.edges )
-        # self.m.flow_dest = pyo.Set(self.flow_dest)
-        # self.m.terminals = pyo.Set(self.terminals)
-        # self.m.tree_edges = pyo.Set(self.T.edges)
 
-        # self.m.edges = self.edges
-        # self.m.terminals = self.terminals
 
         self.m.f = pyo.Var(self.terminals, self.edges, domain=pyo.NonNegativeReals)
         self.m.x = pyo.Var(self.edges, domain=pyo.Binary)
@@ -144,22 +137,4 @@ class MPTR:
         
         
             return score,T
-            # self.m.optimize()
-            # if self.m.Status == GRB.OPTIMAL:
-            #     solution = self.m.getAttr('X', self.x)
-            #     flow = self.m.getAttr('X', self.f)
-            #     score = self.m.objVal
-   
-            #     for i,j in self.edges:
-            #         total_flow = sum(flow[t,i,j] for t in self.terminals)
-            #         if solution[i,j] > 0.5 and total_flow >0:
-            #             T.add_edge(i,j)
-            
-
-            # else:
-            #      print("Warning model infeasible")
-            #      score = np.Inf
-       
-     
-            # T = self.post_process(T)
-            # return score, T
+        
