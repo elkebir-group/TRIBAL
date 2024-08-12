@@ -838,9 +838,9 @@ IGHA2
 <p class="admonition-title">isotype labeling</p>
 <p>Be sure that the labels used in the encoding file exactly match the labeling syntax in the input data. There is no standard convention for isotype labels,  e.g., IgM, M, IghM and IGHM, and therefore the convention must be provided by the user. </p>
 </div>
-<p>### Output</p>
+<p>#### Output</p>
 <p>The main output from the <code>preprocess</code> sub-command is the a pickled dictionary storing <code>Clonotype</code> objects for each retained clonotype in the data. This output file will be used as the input to the <code>fit</code> sub-command. </p>
-<p>### Example</p>
+<p>#### Example</p>
 <p>Here is an example of how to run the preprocess sub-command.</p>
 <div class="highlight"><pre><span></span><code><span class="w"> </span>$<span class="w"> </span>tribal<span class="w"> </span>preprocess<span class="w"> </span>-d<span class="w"> </span>data.csv<span class="w"> </span>-r<span class="w"> </span>roots.csv<span class="w"> </span>-e<span class="w"> </span>isotypes.txt<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--min-size<span class="w"> </span><span class="m">4</span><span class="w"> </span>--dataframe<span class="w"> </span>filtered.csv<span class="w"> </span>-o<span class="w"> </span>clonotypes.pkl<span class="w"> </span>-v
 </code></pre></div>

@@ -1027,8 +1027,8 @@
 <span class="sd">        ----------</span>
 <span class="sd">        outpath : str</span>
 <span class="sd">            the path to where the files should be written.</span>
-<span class="sd">        clonotypes : dict</span>
-<span class="sd">            the corresponding Clonotype object for the LineageTreeList</span>
+<span class="sd">        isotype_encoding : list</span>
+<span class="sd">            the ordered isotype labeles</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">lt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="n">lt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">outpath</span><span class="p">,</span><span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotype_encoding</span><span class="p">,</span> <span class="n">tree_label</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
@@ -1623,17 +1623,17 @@ sample from among the optimal LineageTrees.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>clonotypes</code></td>
+            <td><code>isotype_encoding</code></td>
             <td>
-                  <code>dict</code>
+                  <code>list</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the corresponding Clonotype object for the LineageTreeList</p>
+                <p>the ordered isotype labeles</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -1659,8 +1659,8 @@ sample from among the optimal LineageTrees.</p>
 <span class="sd">    ----------</span>
 <span class="sd">    outpath : str</span>
 <span class="sd">        the path to where the files should be written.</span>
-<span class="sd">    clonotypes : dict</span>
-<span class="sd">        the corresponding Clonotype object for the LineageTreeList</span>
+<span class="sd">    isotype_encoding : list</span>
+<span class="sd">        the ordered isotype labeles</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">lt</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">lt</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">outpath</span><span class="p">,</span><span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotype_encoding</span><span class="p">,</span> <span class="n">tree_label</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>

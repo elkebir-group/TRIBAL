@@ -904,7 +904,7 @@ the formatted example data without running the preprocessing step, run the follo
 <p><code>tribal fit</code> returns a list of all optimal B cell lineage trees for each clonotype. 
 Specifically, in the above examples <code>best_trees</code> is a dictionary, with clonotype as key, of <a href="../../api/lineagetreelist/">LineageTreeLists</a>. </p>
 <p>A B cell lineage tree for tribal is a rooted tree with nodes labeled by BCR sequences (concentated heavy and optional light chains) and by isotypes. The <a href="../../api/lineagetree/">LineageTree</a> class also holds the current  SHM parsimony score (<code>shm_obj</code>) and CSR likelihood (<code>csr_obj</code>). </p>
-<p>A <code>LineageTree</code> can be visualized as a <code>png</code> or <code>pdf</code> via the <a href="../api/lineage_tree.md">draw</a> function.  Nodes are colored by the isotype via the default <code>color_encoding</code>. </p>
+<p>A <code>LineageTree</code> can be visualized as a <code>png</code> or <code>pdf</code> via the <a href="../../api/lineagetree/">draw</a> function.  Nodes are colored by the isotype via the default <code>color_encoding</code>. </p>
 <div class="highlight"><pre><span></span><code> <span class="n">color_encoding</span> <span class="o">=</span>  <span class="p">{</span>
                 <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span>
                 <span class="mi">0</span> <span class="p">:</span> <span class="s2">&quot;#808080&quot;</span><span class="p">,</span>
@@ -1052,7 +1052,8 @@ Specifically, in the above examples <code>best_trees</code> is a dictionary, wit
 </code></pre></div>
 <p>Lastly, a CSV file with the objective values of each <a href="../../api/lineagetree/">LineageTree</a> in the list can be written.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree_list</span>
-<span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;objectives.csv&quot;</span><span class="p">)</span>
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+<span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;objectives.csv&quot;</span><span class="p">,</span> <span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotypes</span><span class="p">)</span>
 </code></pre></div>
 
 

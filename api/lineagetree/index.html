@@ -1827,8 +1827,8 @@ the class switch (CSR) likelihood is the likelihood of the isotype labels given 
 <span class="sd">        ----------</span>
 <span class="sd">        outpath : str</span>
 <span class="sd">            the path to file the files should be written.  </span>
-<span class="sd">        clonotype : Clonotype, optional</span>
-<span class="sd">            the corresponding clonotype object for the lineage tree.  </span>
+<span class="sd">        isotype_encoding : list, optional</span>
+<span class="sd">            the ordered isotype labels  </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">tree_label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tree_label</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
@@ -3693,17 +3693,17 @@ as a png or pdf, depending on the file exentsion of fname</p>
             </td>
           </tr>
           <tr class="doc-section-item">
-            <td><code>clonotype</code></td>
+            <td><code>isotype_encoding</code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" title="tribal.clonotype.Clonotype" href="../clonotype/#tribal.Clonotype">Clonotype</a></code>
+                  <code>list</code>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>the corresponding clonotype object for the lineage tree.</p>
+                <p>the ordered isotype labels</p>
               </div>
             </td>
             <td>
-                <em>required</em>
+                  <code>None</code>
             </td>
           </tr>
       </tbody>
@@ -3756,8 +3756,8 @@ as a png or pdf, depending on the file exentsion of fname</p>
 <span class="sd">    ----------</span>
 <span class="sd">    outpath : str</span>
 <span class="sd">        the path to file the files should be written.  </span>
-<span class="sd">    clonotype : Clonotype, optional</span>
-<span class="sd">        the corresponding clonotype object for the lineage tree.  </span>
+<span class="sd">    isotype_encoding : list, optional</span>
+<span class="sd">        the ordered isotype labels  </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">tree_label</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">tree_label</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
