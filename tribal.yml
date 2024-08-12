@@ -3,16 +3,15 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python=3.9
-  - numpy
-  - pandas=2.1.1
-  - networkx=3.1
-  - pygraphviz=1.10
-  - ete3=3.1.2
-  - pip=22.3.1
-  - phylip==3.697
-  - mafft==7.526
-  - glpk==5.0
+  - python>=3.9
+  - numpy>=1.26.3
+  - pandas>=2.1.1
+  - networkx>=3.1
+  - pygraphviz>=1.10
+  - ete3>=3.1.2
+  - pip>=22.3.1
+  - conda-forge::mafft>=7.526
+  - glpk>=5.0
   - pip:
     - biopython==1.81
 
