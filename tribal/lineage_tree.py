@@ -419,8 +419,8 @@ class LineageTree:
         ----------
         outpath : str
             the path to file the files should be written.  
-        clonotype : Clonotype, optional
-            the corresponding clonotype object for the lineage tree.  
+        isotype_encoding : list, optional
+            the ordered isotype labels  
         """
         if tree_label is None:
             tree_label = ""
@@ -579,8 +579,8 @@ class LineageTreeList(list):
         ----------
         outpath : str
             the path to where the files should be written.
-        clonotypes : dict
-            the corresponding Clonotype object for the LineageTreeList
+        isotype_encoding : list
+            the ordered isotype labeles
         """
         for i,lt in enumerate(self):
             lt.write(outpath,isotype_encoding=isotype_encoding, tree_label=i)

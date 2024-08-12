@@ -160,7 +160,7 @@ Specifically, in the above examples `best_trees` is a dictionary, with clonotype
 
 A B cell lineage tree for tribal is a rooted tree with nodes labeled by BCR sequences (concentated heavy and optional light chains) and by isotypes. The [LineageTree](../api/lineagetree.md) class also holds the current  SHM parsimony score (`shm_obj`) and CSR likelihood (`csr_obj`). 
 
-A `LineageTree` can be visualized as a `png` or `pdf` via the [draw](../api/lineage_tree.md) function.  Nodes are colored by the isotype via the default `color_encoding`. 
+A `LineageTree` can be visualized as a `png` or `pdf` via the [draw](../api/lineagetree.md) function.  Nodes are colored by the isotype via the default `color_encoding`. 
 
 ```python
  color_encoding =  {
@@ -348,5 +348,6 @@ Lastly, a CSV file with the objective values of each [LineageTree](../api/lineag
 
 ```python
 from tribal import lineage_tree_list
-lineage_tree_list.write("objectives.csv")
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+lineage_tree_list.write("objectives.csv", isotype_encoding=isotypes)
 ```
