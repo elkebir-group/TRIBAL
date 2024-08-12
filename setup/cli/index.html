@@ -1,0 +1,962 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../package/">
+      
+      
+        <link rel="next" href="../../api/preprocess/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.30">
+    
+    
+      
+        <title>Command Line Interface - TRIBAL</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.3cba04c6.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="brown" data-md-color-accent="deep-purple">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#command-line-tool-cli" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="TRIBAL" class="md-header__button md-logo" aria-label="TRIBAL" data-md-component="logo">
+      
+  <img src="../../img/logo.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            TRIBAL
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Command Line Interface
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/elkebir-group/TRIBAL" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../install/" class="md-tabs__link">
+          
+  
+  Usage
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api/preprocess/" class="md-tabs__link">
+          
+  
+  API
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="TRIBAL" class="md-nav__button md-logo" aria-label="TRIBAL" data-md-component="logo">
+      
+  <img src="../../img/logo.png" alt="logo">
+
+    </a>
+    TRIBAL
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/elkebir-group/TRIBAL" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    About
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  <span class="md-ellipsis">
+    Usage
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Usage
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Download & Installation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../data/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Data
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../package/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Package Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Command Line Interface
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Command Line Interface
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#preprocess" class="md-nav__link">
+    <span class="md-ellipsis">
+      Preprocess
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Preprocess">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#input" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fit" class="md-nav__link">
+    <span class="md-ellipsis">
+      fit
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="fit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#usage_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Usage
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#input_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      Input
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    API
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            API
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/preprocess/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Preprocesssing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/base_tree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BaseTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/clonotype/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Clonotype
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/tribal/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tribal
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/lineagetree/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LineageTree
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/lineagetreelist/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    LineageTreeList
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<h1 id="command-line-tool-cli">Command line tool (cli)<a class="headerlink" href="#command-line-tool-cli" title="Permanent link">&para;</a></h1>
+<p><code>tribal</code> can also be run as a command line tool.</p>
+<div class="highlight"><pre><span></span><code>❯<span class="w"> </span>tribal<span class="w"> </span>-h
+usage:<span class="w"> </span>tribal<span class="w"> </span><span class="o">[</span>-h<span class="o">]</span><span class="w"> </span><span class="o">{</span>preprocess,fit<span class="o">}</span><span class="w"> </span>...
+
+Tribal<span class="w"> </span>CLI<span class="w"> </span>Tool
+
+positional<span class="w"> </span>arguments:
+<span class="w">  </span><span class="o">{</span>preprocess,fit<span class="o">}</span><span class="w">  </span>Sub-commands
+<span class="w">    </span>preprocess<span class="w">      </span>Preprocess<span class="w"> </span>data
+<span class="w">    </span>fit<span class="w">             </span>B<span class="w"> </span>cell<span class="w"> </span>lineage<span class="w"> </span>tree<span class="w"> </span>inference
+
+optional<span class="w"> </span>arguments:
+<span class="w">  </span>-h,<span class="w"> </span>--help<span class="w">        </span>show<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+</code></pre></div>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
+<p>The cli has two sub-commands:<br />
+  1. <a href="#preprocess">preprocess</a> - filter the data and find a multiple sequence alignment and parsimony forsest for each clonotype.<br />
+  2. <a href="#fit">fit</a> - infer a set of optimal B cell lineage trees per clonotype an a shared isotype transition probability matrix.  </p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>It is recommended to use the preprocessing tool to prepare the input data to the proper format for <code>tribal</code>.  </p>
+</div>
+<h2 id="preprocess">Preprocess<a class="headerlink" href="#preprocess" title="Permanent link">&para;</a></h2>
+<p>The preprocessing command will:
+    1. filter out clonotypes that are below the minimum number of cells 
+    2. filter out cells which have v alleles that differ from the majority of the clonotype
+    3. perform a multiple sequence alignment (MSA) for each valid clonotype using <a href="https://mafft.cbrc.jp/alignment/software/">mafft</a>
+    4. infer a parsimony forest for each clonotype given the MSA using <a href="https://phylipweb.github.io/phylip/">dnapars</a></p>
+<h3 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>❯<span class="w"> </span>tribal<span class="w"> </span>preprocess<span class="w"> </span>-h
+usage:<span class="w"> </span>tribal<span class="w"> </span>preprocess<span class="w"> </span><span class="o">[</span>-h<span class="o">]</span><span class="w"> </span>-d<span class="w"> </span>DATA<span class="w"> </span>-r<span class="w"> </span>ROOTS<span class="w"> </span>-e<span class="w"> </span>ENCODING<span class="w"> </span><span class="o">[</span>--min-size<span class="w"> </span>MIN_SIZE<span class="o">]</span><span class="w"> </span><span class="o">[</span>--dataframe<span class="w"> </span>DATAFRAME<span class="o">]</span><span class="w"> </span><span class="o">[</span>-o<span class="w"> </span>OUT<span class="o">]</span>
+<span class="w">                         </span><span class="o">[</span>-j<span class="w"> </span>CORES<span class="o">]</span><span class="w"> </span><span class="o">[</span>--heavy<span class="o">]</span><span class="w"> </span><span class="o">[</span>-v<span class="o">]</span>
+
+optional<span class="w"> </span>arguments:
+<span class="w">  </span>-h,<span class="w"> </span>--help<span class="w">            </span>show<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+<span class="w">  </span>-d<span class="w"> </span>DATA,<span class="w"> </span>--data<span class="w"> </span>DATA<span class="w">  </span>filename<span class="w"> </span>of<span class="w"> </span>csv<span class="w"> </span>file<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>sequencing<span class="w"> </span>data
+<span class="w">  </span>-r<span class="w"> </span>ROOTS,<span class="w"> </span>--roots<span class="w"> </span>ROOTS
+<span class="w">                        </span>filename<span class="w"> </span>of<span class="w"> </span>csv<span class="w"> </span>file<span class="w"> </span>with<span class="w"> </span>the<span class="w"> </span>root<span class="w"> </span>sequences
+<span class="w">  </span>-e<span class="w"> </span>ENCODING,<span class="w"> </span>--encoding<span class="w"> </span>ENCODING
+<span class="w">                        </span>filename<span class="w"> </span>isotype<span class="w"> </span>encodings
+<span class="w">  </span>--min-size<span class="w"> </span>MIN_SIZE<span class="w">   </span>minimum<span class="w"> </span>clonotype<span class="w"> </span>size<span class="w"> </span><span class="o">(</span>default<span class="w"> </span><span class="m">4</span><span class="o">)</span>
+<span class="w">  </span>--dataframe<span class="w"> </span>DATAFRAME
+<span class="w">                        </span>path<span class="w"> </span>to<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>filtered<span class="w"> </span>dataframe<span class="w"> </span>with<span class="w"> </span>additional<span class="w"> </span>sequences<span class="w"> </span>and<span class="w"> </span>isotype<span class="w"> </span>encodings<span class="w"> </span>should<span class="w"> </span>be
+<span class="w">                        </span>saved.
+<span class="w">  </span>-o<span class="w"> </span>OUT,<span class="w"> </span>--out<span class="w"> </span>OUT<span class="w">     </span>path<span class="w"> </span>to<span class="w"> </span>where<span class="w"> </span>pickled<span class="w"> </span>clonotype<span class="w"> </span>dictionary<span class="w"> </span>input<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>saved
+<span class="w">  </span>-j<span class="w"> </span>CORES,<span class="w"> </span>--cores<span class="w"> </span>CORES
+<span class="w">                        </span>number<span class="w"> </span>of<span class="w"> </span>cores<span class="w"> </span>to<span class="w"> </span>use<span class="w"> </span><span class="o">(</span>default<span class="w"> </span><span class="m">1</span><span class="o">)</span>
+<span class="w">  </span>--heavy<span class="w">               </span>only<span class="w"> </span>use<span class="w"> </span>the<span class="w"> </span>heavy<span class="w"> </span>chain<span class="w"> </span>and<span class="w"> </span>ignore<span class="w"> </span>the<span class="w"> </span>light<span class="w"> </span>chain
+<span class="w">  </span>-v,<span class="w"> </span>--verbose<span class="w">         </span>print<span class="w"> </span>additional<span class="w"> </span>messages
+</code></pre></div>
+<h4 id="input">Input<a class="headerlink" href="#input" title="Permanent link">&para;</a></h4>
+<p>The <code>--data</code>, <code>--roots</code> and <code>--encoding</code> are required arguments.  See <a href="../data/#input">data description</a> for more details. The <code>--encoding</code> argument should be that path to a text file that lists the correct isotype ordering as well as the isotype labels that are present in the input data. </p>
+<div class="highlight"><pre><span></span><code>IGHM
+IGHG3
+IGHG1
+IGHA1
+IGHG2
+IGHG4
+IGHE
+IGHA2
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">isotype labeling</p>
+<p>Be sure that the labels used in the encoding file exactly match the labeling syntax in the input data. There is no standard convention for isotype labels,  e.g., IgM, M, IghM and IGHM, and therefore the convention must be provided by the user. </p>
+</div>
+<p>### Output</p>
+<p>The main output from the <code>preprocess</code> sub-command is the a pickled dictionary storing <code>Clonotype</code> objects for each retained clonotype in the data. This output file will be used as the input to the <code>fit</code> sub-command. </p>
+<p>### Example</p>
+<p>Here is an example of how to run the preprocess sub-command.</p>
+<div class="highlight"><pre><span></span><code><span class="w"> </span>$<span class="w"> </span>tribal<span class="w"> </span>preprocess<span class="w"> </span>-d<span class="w"> </span>data.csv<span class="w"> </span>-r<span class="w"> </span>roots.csv<span class="w"> </span>-e<span class="w"> </span>isotypes.txt<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--min-size<span class="w"> </span><span class="m">4</span><span class="w"> </span>--dataframe<span class="w"> </span>filtered.csv<span class="w"> </span>-o<span class="w"> </span>clonotypes.pkl<span class="w"> </span>-v
+</code></pre></div>
+<h2 id="fit">fit<a class="headerlink" href="#fit" title="Permanent link">&para;</a></h2>
+<p>The <code>fit</code> sub-command will infer a set of B cell lineage trees for each clonotype and a shared isotype transition probability matrix. </p>
+<h3 id="usage_1">Usage<a class="headerlink" href="#usage_1" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code>tribal<span class="w"> </span>fit<span class="w"> </span>-h
+usage:<span class="w"> </span>tribal<span class="w"> </span>fit<span class="w"> </span><span class="o">[</span>-h<span class="o">]</span><span class="w"> </span>-c<span class="w"> </span>CLONOTYPES<span class="w"> </span>--n_isotypes<span class="w"> </span>N_ISOTYPES<span class="w"> </span><span class="o">[</span>--stay-prob<span class="w"> </span>STAY_PROB<span class="o">]</span><span class="w"> </span><span class="o">[</span>-t<span class="w"> </span>TRANSMAT<span class="o">]</span><span class="w"> </span><span class="o">[</span>--niter<span class="w"> </span>NITER<span class="o">]</span>
+<span class="w">                  </span><span class="o">[</span>--thresh<span class="w"> </span>THRESH<span class="o">]</span><span class="w"> </span><span class="o">[</span>-j<span class="w"> </span>CORES<span class="o">]</span><span class="w"> </span><span class="o">[</span>--max-cand<span class="w"> </span>MAX_CAND<span class="o">]</span><span class="w"> </span><span class="o">[</span>-s<span class="w"> </span>SEED<span class="o">]</span><span class="w"> </span><span class="o">[</span>--restarts<span class="w"> </span>RESTARTS<span class="o">]</span>
+<span class="w">                  </span><span class="o">[</span>--mode<span class="w"> </span><span class="o">{</span>score,refinement<span class="o">}]</span><span class="w"> </span><span class="o">[</span>--score<span class="w"> </span>SCORE<span class="o">]</span><span class="w"> </span><span class="o">[</span>--transmat-infer<span class="w"> </span>TRANSMAT_INFER<span class="o">]</span><span class="w"> </span><span class="o">[</span>--verbose<span class="o">]</span>
+<span class="w">                  </span><span class="o">[</span>--pickle<span class="w"> </span>PICKLE<span class="o">]</span><span class="w"> </span><span class="o">[</span>--write-results<span class="w"> </span>WRITE_RESULTS<span class="o">]</span>
+
+optional<span class="w"> </span>arguments:
+<span class="w">  </span>-h,<span class="w"> </span>--help<span class="w">            </span>show<span class="w"> </span>this<span class="w"> </span><span class="nb">help</span><span class="w"> </span>message<span class="w"> </span>and<span class="w"> </span><span class="nb">exit</span>
+<span class="w">  </span>-c<span class="w"> </span>CLONOTYPES,<span class="w"> </span>--clonotypes<span class="w"> </span>CLONOTYPES
+<span class="w">                        </span>path<span class="w"> </span>to<span class="w"> </span>pickled<span class="w"> </span>clonotypes<span class="w"> </span>dictionary<span class="w"> </span>of<span class="w"> </span>parsimony<span class="w"> </span>forests,<span class="w"> </span>alignments,<span class="w"> </span>and<span class="w"> </span>isotypes
+<span class="w">  </span>--n_isotypes<span class="w"> </span>N_ISOTYPES
+<span class="w">                        </span>the<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>isotypes<span class="w"> </span>states<span class="w"> </span>to<span class="w"> </span>use
+<span class="w">  </span>--stay-prob<span class="w"> </span>STAY_PROB
+<span class="w">                        </span>the<span class="w"> </span>lower<span class="w"> </span>and<span class="w"> </span>upper<span class="w"> </span>bound<span class="w"> </span>of<span class="w"> </span>not<span class="w"> </span>class<span class="w"> </span>switching,<span class="w"> </span>example:<span class="w"> </span><span class="m">0</span>.55,0.95
+<span class="w">  </span>-t<span class="w"> </span>TRANSMAT,<span class="w"> </span>--transmat<span class="w"> </span>TRANSMAT
+<span class="w">                        </span>optional<span class="w"> </span>filename<span class="w"> </span>of<span class="w"> </span>isotype<span class="w"> </span>transition<span class="w"> </span>probabilities
+<span class="w">  </span>--niter<span class="w"> </span>NITER<span class="w">         </span>max<span class="w"> </span>number<span class="w"> </span>of<span class="w"> </span>iterations<span class="w"> </span>during<span class="w"> </span>fitting
+<span class="w">  </span>--thresh<span class="w"> </span>THRESH<span class="w">       </span>theshold<span class="w"> </span><span class="k">for</span><span class="w"> </span>convergence<span class="w"> </span><span class="k">in</span><span class="w"> </span>during<span class="w"> </span>fitting
+<span class="w">  </span>-j<span class="w"> </span>CORES,<span class="w"> </span>--cores<span class="w"> </span>CORES
+<span class="w">                        </span>number<span class="w"> </span>of<span class="w"> </span>cores<span class="w"> </span>to<span class="w"> </span>use
+<span class="w">  </span>--max-cand<span class="w"> </span>MAX_CAND<span class="w">   </span>max<span class="w"> </span>candidate<span class="w"> </span>tree<span class="w"> </span>size<span class="w"> </span>per<span class="w"> </span>clonotype
+<span class="w">  </span>-s<span class="w"> </span>SEED,<span class="w"> </span>--seed<span class="w"> </span>SEED<span class="w">  </span>random<span class="w"> </span>number<span class="w"> </span>seed
+<span class="w">  </span>--restarts<span class="w"> </span>RESTARTS<span class="w">   </span>number<span class="w"> </span>of<span class="w"> </span>restarts
+<span class="w">  </span>--mode<span class="w"> </span><span class="o">{</span>score,refinement<span class="o">}</span>
+<span class="w">                        </span>mode<span class="w"> </span><span class="k">for</span><span class="w"> </span>fitting<span class="w"> </span>B<span class="w"> </span>cell<span class="w"> </span>lineage<span class="w"> </span>trees,<span class="w"> </span>one<span class="w"> </span>of<span class="w"> </span><span class="s1">&#39;refinment&#39;</span><span class="w"> </span>or<span class="w"> </span><span class="s1">&#39;score&#39;</span>
+<span class="w">  </span>--score<span class="w"> </span>SCORE<span class="w">         </span>filename<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>objective<span class="w"> </span>values<span class="w"> </span>file<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>saved
+<span class="w">  </span>--transmat-infer<span class="w"> </span>TRANSMAT_INFER
+<span class="w">                        </span>filename<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>inferred<span class="w"> </span>transition<span class="w"> </span>matrix<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>saved
+<span class="w">  </span>--verbose<span class="w">             </span>print<span class="w"> </span>additional<span class="w"> </span>messages.
+<span class="w">  </span>--pickle<span class="w"> </span>PICKLE<span class="w">       </span>path<span class="w"> </span>where<span class="w"> </span>the<span class="w"> </span>output<span class="w"> </span>dictionary<span class="w"> </span>of<span class="w"> </span>LineageTree<span class="w"> </span>lists<span class="w"> </span>should<span class="w"> </span>be<span class="w"> </span>pickled
+<span class="w">  </span>--write-results<span class="w"> </span>WRITE_RESULTS
+<span class="w">                        </span>path<span class="w"> </span>where<span class="w"> </span>all<span class="w"> </span>optimal<span class="w"> </span>solution<span class="w"> </span>results<span class="w"> </span>are<span class="w"> </span>saved
+</code></pre></div>
+<h3 id="input_1">Input<a class="headerlink" href="#input_1" title="Permanent link">&para;</a></h3>
+<p>The pickled dictionary of clonotypes (<code>clonotypes.pkl</code>) that is output from <code>tribal preprocess</code> will be the input to <code>tribal fit</code>.  See <a href="../../api/clonotype/">Clonotype</a> for details. </p>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<p>Assuming <code>clonotypes.pkl</code> is in the working directory, here is an example of how to run
+ <code>tribal fit</code>. </p>
+<div class="highlight"><pre><span></span><code><span class="n">tribal</span> <span class="n">fit</span> <span class="o">-</span><span class="n">c</span> <span class="n">clonotypes</span><span class="o">.</span><span class="n">pkl</span> <span class="o">-</span><span class="n">j</span> <span class="mi">3</span> <span class="o">--</span><span class="n">transmat</span><span class="o">-</span><span class="n">infer</span> <span class="n">transmat</span><span class="o">.</span><span class="n">txt</span> <span class="o">--</span><span class="n">pickle</span> <span class="n">lineage_trees</span><span class="o">.</span><span class="n">pkl</span>
+<span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">results</span> <span class="n">results</span> <span class="o">--</span><span class="n">score</span> <span class="n">objective</span><span class="o">.</span><span class="n">csv</span>
+</code></pre></div>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<p>There are four optional outputs from <code>tribal fit</code>:<br />
+  1.  <code>--transmat-infer</code>: the inferred isotype transition probability matrix.<br />
+  2.  <code>--pickle</code> : a dictionary with clonotype id as key and value is a <a href="../../api/lineagetreelist/">LineageTreeList</a> containing the optimal lineage trees for each clonotype.<br />
+  3.  <code>--score</code> : a  csv file containing the SHM parsimony scores and CSR likelihood.<br />
+  4.  <code>--write-results</code> : a directory where the lineage trees files will be saved including:  <br />
+  + a fasta file containing the inferred BCR sequences,  <br />
+  + a csv file containing the inferred isotypes,  <br />
+  + a text file containing the  edge list of the lineage tree,  <br />
+  + a png file containing a visualization of the lineage tree.    </p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": ["navigation.tabs", "navigation.tabs.sticky", "navigation.sections", "navigation.top", "navigation.path", "toc.integrate", "toc.collapsible", "search.suggest", "search.highlight", "content.code.annotation", "content.code.copy", "content.tabs.link"], "search": "../../assets/javascripts/workers/search.b8dbb3d2.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.fe8b6f2b.min.js"></script>
+      
+    
+  </body>
+</html>
