@@ -47,6 +47,7 @@ include = [
     "tribal/dnapars/*.c",
     "tribal/dnapars/*.h",
     "tribal/backend.py",
+    "tribal",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -56,6 +57,7 @@ include = [
     "tribal/dnapars/*.c",
     "tribal/dnapars/*.h",
     "tribal/backend.py",
+    "tribal",
 ]
 
 
