@@ -1,9 +1,9 @@
-name: test
+name: tribal
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - python==3.9
+  - python==3.9.19
   - numpy>=1.26.3
   - pandas>=2.1.1
   - networkx>=3.1
