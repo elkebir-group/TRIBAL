@@ -491,6 +491,15 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#functionality-of-a-lineagetreelist" class="md-nav__link">
+    <span class="md-ellipsis">
+      Functionality of a LineageTreeList
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -895,6 +904,156 @@ the formatted example data without running the preprocessing step, run the follo
 <p><code>tribal fit</code> returns a list of all optimal B cell lineage trees for each clonotype. 
 Specifically, in the above examples <code>best_trees</code> is a dictionary, with clonotype as key, of <a href="../../api/lineagetreelist/">LineageTreeLists</a>. </p>
 <p>A B cell lineage tree for tribal is a rooted tree with nodes labeled by BCR sequences (concentated heavy and optional light chains) and by isotypes. The <a href="../../api/lineagetree/">LineageTree</a> class also holds the current  SHM parsimony score (<code>shm_obj</code>) and CSR likelihood (<code>csr_obj</code>). </p>
+<p>A <code>LineageTree</code> can be visualized as a <code>png</code> or <code>pdf</code> via the <a href="../api/lineage_tree.md">draw</a> function.  Nodes are colored by the isotype via the default <code>color_encoding</code>. </p>
+<div class="highlight"><pre><span></span><code> <span class="n">color_encoding</span> <span class="o">=</span>  <span class="p">{</span>
+                <span class="o">-</span><span class="mi">1</span><span class="p">:</span> <span class="s2">&quot;#FFFFFF&quot;</span><span class="p">,</span>
+                <span class="mi">0</span> <span class="p">:</span> <span class="s2">&quot;#808080&quot;</span><span class="p">,</span>
+                <span class="mi">1</span> <span class="p">:</span> <span class="s2">&quot;#FFEDA0&quot;</span><span class="p">,</span>
+                <span class="mi">2</span> <span class="p">:</span> <span class="s2">&quot;#FD8D3C&quot;</span><span class="p">,</span>
+                <span class="mi">3</span> <span class="p">:</span> <span class="s2">&quot;#E31A1C&quot;</span><span class="p">,</span>
+                <span class="mi">4</span> <span class="p">:</span> <span class="s2">&quot;#800026&quot;</span><span class="p">,</span>
+                <span class="mi">5</span> <span class="p">:</span> <span class="s2">&quot;#6A51A3&quot;</span><span class="p">,</span>
+                <span class="mi">6</span> <span class="p">:</span> <span class="s2">&quot;#74C476&quot;</span><span class="p">,</span>
+                <span class="mi">7</span> <span class="p">:</span> <span class="s2">&quot;mediumseagreen&quot;</span><span class="p">,</span>
+                <span class="mi">8</span> <span class="p">:</span> <span class="s2">&quot;darkgoldenrod&quot;</span><span class="p">,</span>
+                <span class="mi">9</span> <span class="p">:</span> <span class="s2">&quot;thistle1&quot;</span>
+        <span class="p">}</span>
+</code></pre></div>
+<p><code>show_legend=True</code> provides a legend on the visualization depicting the color encoding. if <code>isotype_encoding</code> is provided in the form of a list, i.e., <code>['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']</code> then the legend will be utilize the isotype labeling. Otherwise, the encoding is used. </p>
+<p>The <code>show_labels</code> argument can be used to toggle on and off the labeling of the sequences. </p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="p">)</span>
+
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+<span class="c1">#output visualization as a png with sequence labels included.</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;example_tree.png&quot;</span><span class="p">,</span> 
+                <span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotypes</span><span class="p">,</span>
+                <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">color_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="p">)</span>
+
+<span class="c1">#output visualization as a pdf with sequence labels excluded.</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;example_tree.pdf&quot;</span><span class="p">,</span> 
+                <span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotypes</span><span class="p">,</span>
+                <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">color_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="p">)</span>
+</code></pre></div>
+<p>The output file can also be saved as dot file instead of a png for pdf. Use the <code>dot</code> argument to indicate that file should be written as a dot file.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span>
+
+
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+<span class="c1">#output visualization as a png with sequence labels included.</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">draw</span><span class="p">(</span><span class="n">fname</span><span class="o">=</span><span class="s2">&quot;example_tree.dot&quot;</span><span class="p">,</span> 
+                <span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotypes</span><span class="p">,</span>
+                <span class="n">show_legend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_labels</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">color_encoding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">dot</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="p">)</span>
+</code></pre></div>
+<p>Use the <a href="../../api/lineagetree/">write</a> function the lineage tree data to files including:<br />
+1. The sequences as a FASTA file<br />
+2. The isotypes as a csv file<br />
+3. The tree as a png<br />
+4. The edge list of the lineage tree</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;lineage_tree_files&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>You can also pass the corresponding <code>Clonotype</code> object to utilize the stored isotype encoding for the clonotype.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span><span class="p">,</span> <span class="n">clonotypes</span>
+<span class="n">clonotpye</span> <span class="o">=</span> <span class="n">clonotypes</span><span class="p">[</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">clonotype</span><span class="p">]</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;lineage_tree_files&quot;</span><span class="p">,</span> <span class="n">clonotype</span><span class="o">=</span><span class="n">clonotype</span><span class="p">)</span>
+
+<span class="c1">#an additional label to append to the file names can be optional provided</span>
+<span class="n">lineage_tree</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;lineage_tree_files&quot;</span><span class="p">,</span> <span class="n">clonotype</span><span class="o">=</span><span class="n">clonotype</span><span class="p">,</span>   <span class="n">tree_label</span><span class="o">=</span><span class="s2">&quot;best&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>The <a href="../../api/lineagetree/">LineageTree</a> class also provides the ability to perform preorder, postorder traversals of the nodes or to iterate through all the nodes or edges in the lineage tree.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span>
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+<span class="c1">#preorder traversal</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">lineage_tree</span><span class="o">.</span><span class="n">preorder_traversal</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Node </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="se">\n</span><span class="s2">BCR Sequence:</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">sequences</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Isotype:</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">isotypes</span><span class="p">[</span><span class="n">isotypes</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1">#postoder traversal</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">lineage_tree</span><span class="o">.</span><span class="n">postorder_traversal</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="se">\n</span><span class="s2">BCR Sequence</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">sequences</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Isotype</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">isotypes</span><span class="p">[</span><span class="n">isotypes</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1">#iterate over nodes</span>
+<span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">lineage_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="se">\n</span><span class="s2">BCR Sequence</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">sequences</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Isotype</span><span class="si">{</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">isotypes</span><span class="p">[</span><span class="n">isotypes</span><span class="p">[</span><span class="n">n</span><span class="p">]]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="c1">#iterate over edges</span>
+<span class="k">for</span> <span class="n">u</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="n">lineage_tree</span><span class="o">.</span><span class="n">edges</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">u</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">v</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<p>Lastly, you can query the parent, children, leaf status, root status of a specified node:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span>
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+
+<span class="c1">#preorder traversal</span>
+<span class="n">nodes</span> <span class="o">=</span> <span class="n">lineage_tree</span><span class="o">.</span><span class="n">nodes</span><span class="p">()</span>
+<span class="n">n</span> <span class="o">=</span> <span class="n">nodes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="c1">#get parent of node n</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">parent</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+<span class="c1">#get children of node n</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">children</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+<span class="c1">#check if node n is a leaf</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+<span class="c1">#check if node n is the root</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">is_root</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+
+<span class="c1">#get the leafset </span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">get_leafs</span><span class="p">())</span>
+
+<span class="c1">#get a dictionary containing the parent of every node</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lineage_tree</span><span class="o">.</span><span class="n">get_parents</span><span class="p">())</span>
+</code></pre></div>
+<h3 id="functionality-of-a-lineagetreelist">Functionality of a LineageTreeList<a class="headerlink" href="#functionality-of-a-lineagetreelist" title="Permanent link">&para;</a></h3>
+<p>The <a href="../../api/lineagetreelist/">LineageTreeList</a> is an extension of list, which provides additional functionality for organizing a list of <a href="../../api/lineagetree/">LineageTree</a> objects. </p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree</span><span class="p">,</span> <span class="n">LineageTreeList</span>
+
+<span class="n">lt_list</span> <span class="o">=</span> <span class="n">LineageTreeList</span><span class="p">()</span>
+<span class="n">lt_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lineage_tree</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">lt_list</span><span class="p">)</span>
+</code></pre></div>
+<p>The <a href="../../api/lineagetreelist/">LineageTreeList</a> class provides functionality to find the optimal or all optimal <a href="../../api/lineagetree/">LineageTree</a>  in the list or randomly sample one. </p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree_list</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">lineage_tree_list</span><span class="p">))</span>
+<span class="c1">#if there are multiple optimal solutions, the first in the list is returned</span>
+<span class="n">best_score</span><span class="p">,</span> <span class="n">best_tree</span> <span class="o">=</span> <span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">find_best_tree</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">best_score</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">best_tree</span><span class="p">)</span>
+
+<span class="n">best_score</span><span class="p">,</span> <span class="n">all_best</span>  <span class="o">=</span> <span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">find_all_best_trees</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">best_score</span><span class="p">)</span>
+
+<span class="n">random_score</span><span class="p">,</span> <span class="n">random_tree</span> <span class="o">=</span> <span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">sample_best_tree</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">random_tree</span><span class="p">)</span>
+</code></pre></div>
+<p>In addition, the class provides a wrapper to the <code>write</code> function in <a href="../../api/lineagetree/">LineageTree</a> to write all the lineage tree files to disk.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree_list</span>
+
+
+<span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">write_all</span><span class="p">(</span><span class="n">outpath</span><span class="o">=</span><span class="s2">&quot;all_trees&quot;</span><span class="p">)</span>
+
+<span class="c1">#or to utilize isotype labels for the isotype files instead of numerical encoding</span>
+<span class="n">isotypes</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;IGHM&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG3&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHG1&#39;</span><span class="p">,</span> <span class="s1">&#39;IGHA1&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG2&#39;</span><span class="p">,</span><span class="s1">&#39;IGHG4&#39;</span><span class="p">,</span><span class="s1">&#39;IGHE&#39;</span><span class="p">,</span><span class="s1">&#39;IGHA2&#39;</span><span class="p">]</span>
+
+<span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">write_all</span><span class="p">(</span><span class="n">outpath</span><span class="o">=</span><span class="s2">&quot;all_trees&quot;</span><span class="p">,</span> <span class="n">isotype_encoding</span><span class="o">=</span><span class="n">isotypes</span><span class="p">)</span>
+</code></pre></div>
+<p>Lastly, a CSV file with the objective values of each <a href="../../api/lineagetree/">LineageTree</a> in the list can be written.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">tribal</span> <span class="kn">import</span> <span class="n">lineage_tree_list</span>
+<span class="n">lineage_tree_list</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">&quot;objectives.csv&quot;</span><span class="p">)</span>
+</code></pre></div>
 
 
 
