@@ -11,7 +11,7 @@ dependencies:
   - ete3>=3.1.2
   - pip>=22.3.1
   - conda-forge::mafft>=7.526
-  - glpk>=5.0
+  - glpk==5.0
   - pip:
     - biopython==1.81
 
