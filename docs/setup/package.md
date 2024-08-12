@@ -159,3 +159,194 @@ shm_score, csr_likelihood, best_trees, probabilities = tr.fit(clonotypes=clonoty
 Specifically, in the above examples `best_trees` is a dictionary, with clonotype as key, of [LineageTreeLists](../api/lineagetreelist.md). 
 
 A B cell lineage tree for tribal is a rooted tree with nodes labeled by BCR sequences (concentated heavy and optional light chains) and by isotypes. The [LineageTree](../api/lineagetree.md) class also holds the current  SHM parsimony score (`shm_obj`) and CSR likelihood (`csr_obj`). 
+
+A `LineageTree` can be visualized as a `png` or `pdf` via the [draw](../api/lineage_tree.md) function.  Nodes are colored by the isotype via the default `color_encoding`. 
+
+```python
+ color_encoding =  {
+                -1: "#FFFFFF",
+                0 : "#808080",
+                1 : "#FFEDA0",
+                2 : "#FD8D3C",
+                3 : "#E31A1C",
+                4 : "#800026",
+                5 : "#6A51A3",
+                6 : "#74C476",
+                7 : "mediumseagreen",
+                8 : "darkgoldenrod",
+                9 : "thistle1"
+        }
+```
+
+`show_legend=True` provides a legend on the visualization depicting the color encoding. if `isotype_encoding` is provided in the form of a list, i.e., `['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']` then the legend will be utilize the isotype labeling. Otherwise, the encoding is used. 
+
+The `show_labels` argument can be used to toggle on and off the labeling of the sequences. 
+
+```python
+from tribal import lineage_tree
+print(lineage_tree)
+
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+#output visualization as a png with sequence labels included.
+lineage_tree.draw(fname="example_tree.png", 
+                isotype_encoding=isotypes,
+                show_legend=True,
+                show_labels=True,
+                color_encoding=None,
+                )
+
+#output visualization as a pdf with sequence labels excluded.
+lineage_tree.draw(fname="example_tree.pdf", 
+                isotype_encoding=isotypes,
+                show_legend=True,
+                show_labels=False,
+                color_encoding=None,
+                )
+
+```
+
+The output file can also be saved as dot file instead of a png for pdf. Use the `dot` argument to indicate that file should be written as a dot file.
+
+```python
+from tribal import lineage_tree
+
+
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+#output visualization as a png with sequence labels included.
+lineage_tree.draw(fname="example_tree.dot", 
+                isotype_encoding=isotypes,
+                show_legend=True,
+                show_labels=True,
+                color_encoding=None,
+                dot = True
+                )
+```
+
+Use the [write](../api/lineagetree.md) function the lineage tree data to files including:  
+1. The sequences as a FASTA file  
+2. The isotypes as a csv file  
+3. The tree as a png  
+4. The edge list of the lineage tree
+
+
+```python
+from tribal import lineage_tree
+lineage_tree.write("lineage_tree_files")
+
+```
+
+You can also pass the corresponding `Clonotype` object to utilize the stored isotype encoding for the clonotype.
+
+```python
+from tribal import lineage_tree, clonotypes
+clonotpye = clonotypes[lineage_tree.clonotype]
+lineage_tree.write("lineage_tree_files", clonotype=clonotype)
+
+#an additional label to append to the file names can be optional provided
+lineage_tree.write("lineage_tree_files", clonotype=clonotype,   tree_label="best")
+```
+
+The [LineageTree](../api/lineagetree.md) class also provides the ability to perform preorder, postorder traversals of the nodes or to iterate through all the nodes or edges in the lineage tree.
+
+```python
+from tribal import lineage_tree
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+#preorder traversal
+for n in lineage_tree.preorder_traversal():
+    print(f"Node {n}\nBCR Sequence:{lineage_tree.sequences[n]}\nIsotype:{lineage_tree.isotypes[isotypes[n]]}")
+
+#postoder traversal
+for n in lineage_tree.postorder_traversal():
+    print(f"{n}\nBCR Sequence{lineage_tree.sequences[n]}\nIsotype{lineage_tree.isotypes[isotypes[n]]}")
+
+#iterate over nodes
+for n in lineage_tree.nodes():
+    print(f"{n}\nBCR Sequence{lineage_tree.sequences[n]}\nIsotype{lineage_tree.isotypes[isotypes[n]]}")
+
+#iterate over edges
+for u,v in lineage_tree.edges():
+    print(f"{u}->{v}")
+```
+
+Lastly, you can query the parent, children, leaf status, root status of a specified node:
+
+```python
+from tribal import lineage_tree
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+
+#preorder traversal
+nodes = lineage_tree.nodes()
+n = nodes[0]
+
+#get parent of node n
+print(lineage_tree.parent(n))
+
+#get children of node n
+print(lineage_tree.children(n))
+
+#check if node n is a leaf
+print(lineage_tree.is_leaf(n))
+
+#check if node n is the root
+print(lineage_tree.is_root(n))
+
+#get the leafset 
+print(lineage_tree.get_leafs())
+
+#get a dictionary containing the parent of every node
+print(lineage_tree.get_parents())
+```
+
+### Functionality of a LineageTreeList
+
+The [LineageTreeList](../api/lineagetreelist.md) is an extension of list, which provides additional functionality for organizing a list of [LineageTree](../api/lineagetree.md) objects. 
+
+```python
+from tribal import lineage_tree, LineageTreeList
+
+lt_list = LineageTreeList()
+lt_list.append(lineage_tree)
+print(lt_list)
+```
+
+ The [LineageTreeList](../api/lineagetreelist.md) class provides functionality to find the optimal or all optimal [LineageTree](../api/lineagetree.md)  in the list or randomly sample one. 
+
+```python 
+from tribal import lineage_tree_list
+
+print(len(lineage_tree_list))
+#if there are multiple optimal solutions, the first in the list is returned
+best_score, best_tree = lineage_tree_list.find_best_tree()
+print(best_score)
+print(best_tree)
+
+best_score, all_best  = lineage_tree_list.find_all_best_trees()
+print(best_score)
+
+random_score, random_tree = lineage_tree_list.sample_best_tree(seed=10)
+print(random_tree)
+
+```
+
+In addition, the class provides a wrapper to the `write` function in [LineageTree](../api/lineagetree.md) to write all the lineage tree files to disk.
+
+
+```python 
+from tribal import lineage_tree_list
+
+
+lineage_tree_list.write_all(outpath="all_trees")
+
+#or to utilize isotype labels for the isotype files instead of numerical encoding
+isotypes = ['IGHM', 'IGHG3', 'IGHG1', 'IGHA1','IGHG2','IGHG4','IGHE','IGHA2']
+
+lineage_tree_list.write_all(outpath="all_trees", isotype_encoding=isotypes)
+
+```
+
+Lastly, a CSV file with the objective values of each [LineageTree](../api/lineagetree.md) in the list can be written.
+
+```python
+from tribal import lineage_tree_list
+lineage_tree_list.write("objectives.csv")
+```

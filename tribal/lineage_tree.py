@@ -281,7 +281,8 @@ class LineageTree:
             show_legend=False,
             show_labels=True,
             hide_underscore=True,
-            color_encoding = None):
+            color_encoding = None,
+            dot = False):
         """Visualization of the current B cell lineage tree saves as a png or pdf.
 
         Parameters
@@ -298,10 +299,12 @@ class LineageTree:
             internal nodes that undergo refinement will have an underscore and copy number appended
             to the label. Setting this to true hides the underscore during visualization and retains 
             only the original label.
-        
-        color_encoding: dict, optional
+        color_encoding : dict, optional
             optional dictionary that maps isotype encoding to a color, if None, the default
             color palette is used.
+        dot : bool
+            if the file should be saved as a dot file, otherwise it will be saved
+            as a png or pdf, depending on the file exentsion of fname
         """
         parents = self.get_parents()
         dt = DrawTree(parents, 
@@ -312,7 +315,10 @@ class LineageTree:
                     show_labels=show_labels,
                     hide_underscore=hide_underscore,
                     color_encoding=color_encoding)
-        dt.save(fname)
+        if not dot:
+            dt.save(fname)
+        else:
+            dt.save_dot(fname)
 
 
     def postorder_traversal(self) -> list:
@@ -406,7 +412,7 @@ class LineageTree:
         """Obtain the edge list of the lineage tree as a pandas.DataFrame."""
         return self.tree.get_edge_df()
     
-    def write(self, outpath:str, clonotype=None, tree_label=None):
+    def write(self, outpath:str, isotype_encoding=None, tree_label=None):
         """Write the lineage tree data to files.
 
         Parameters
@@ -420,25 +426,29 @@ class LineageTree:
             tree_label = ""
         else:
             tree_label = f"{tree_label}"
-
-        if clonotype is not None:
+        clono_name = self.clonotype
+        if isotype_encoding is not None:
             isotypes = {}
             for key, iso in self.isotypes.items():
-                if iso >=0 and iso < len(clonotype.isotype_encoding):
-                    isotypes[key] = clonotype.isotype_encoding[iso]
+                if iso >=0 and iso < len(isotype_encoding):
+                    isotypes[key] = isotype_encoding[iso]
                 else:
                     isotypes[key] = iso
+            isotype_encoding = isotype_encoding
+  
         else:
             isotypes = self.isotypes
-        
+            isotype_encoding = None
+    
+
         if not os.path.exists(outpath):
             os.makedirs(outpath)
 
-        write_fasta(f"{outpath}/{clonotype.id}_sequences{tree_label}.fasta", self.sequences)
-        save_dict(f"{outpath}/{clonotype.id}_isotypes{tree_label}.csv",isotypes)
-        self.save_edges(f"{outpath}/{clonotype.id}_edge_list{tree_label}.txt")
-        self.draw(f"{outpath}/{clonotype.id}_tree{tree_label}.png",
-                    isotype_encoding=clonotype.isotype_encoding,
+        write_fasta(f"{outpath}/{clono_name}_sequences{tree_label}.fasta", self.sequences)
+        save_dict(f"{outpath}/{clono_name}_isotypes{tree_label}.csv",isotypes)
+        self.save_edges(f"{outpath}/{clono_name}_edge_list{tree_label}.txt")
+        self.draw(f"{outpath}/{clono_name}_tree{tree_label}.png",
+                    isotype_encoding=isotype_encoding,
                     hide_underscore=False,
                     show_legend=True)
     
@@ -562,16 +572,16 @@ class LineageTreeList(list):
     
 
    
-    def write_all(self, outpath, clonotype):
+    def write_all(self, outpath, isotype_encoding=None):
         """Write the data for all LineageTrees in the list to files.
 
         Parameters
         ----------
         outpath : str
             the path to where the files should be written.
-        clonotype : Clonotype
+        clonotypes : dict
             the corresponding Clonotype object for the LineageTreeList
         """
         for i,lt in enumerate(self):
-            lt.write(outpath, clonotype, tree_label=i)
+            lt.write(outpath,isotype_encoding=isotype_encoding, tree_label=i)
     

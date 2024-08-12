@@ -170,14 +170,5 @@ def _write_results(outpath, best_trees, clonotypes):
    
     for clono, tree_list in best_trees.items():
         clonotype = clonotypes[clono]
-        tree_list.write_all(outpath, clonotype)
-   
-     
-        # if isotype_mapping is not None:
-        #     iso_labs = {key: isotype_mapping[val] for key,val in iso.items()}
-        # else:
-        #     iso_labs =iso 
-
-
-
+        tree_list.write_all(outpath, clonotype.isotype_encoding)
 

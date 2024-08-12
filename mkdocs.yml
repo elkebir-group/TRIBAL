@@ -27,8 +27,8 @@ theme:
   palette:
     primary: brown
     accent: deep purple
-  extra_css:
-    - css/logo.css
+  # extra_css:
+  #   - css/logo.css
     # theme:
       # - scheme: default
       #   toggle:

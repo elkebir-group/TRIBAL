@@ -115,7 +115,16 @@ class DrawTree:
     def save(self, fname):
         self.graph.draw(fname, prog="dot")
     
+    def save_dot(self, dot_fname):
+            """
+            Save the graph as a DOT file.
 
+            Parameters
+            ----------
+            dot_fname : str
+                The filename to save the DOT file as.
+            """
+            self.graph.write(dot_fname)
     # def save_pdf(self, fname):
 
 
