@@ -2,10 +2,11 @@ name: tribal
 channels:
   - conda-forge
   - bioconda
+  - defaults
 dependencies:
-  - python==3.9.19
-  - numpy>=1.26.3
-  - pandas>=2.1.1
+  - python>=3.9,<=3.10
+  - numpy
+  - pandas
   - networkx>=3.1
   - pygraphviz
   - ete3>=3.1.2
