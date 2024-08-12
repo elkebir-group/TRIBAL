@@ -17,7 +17,7 @@ class CustomBuildHook(BuildHookInterface):
             subprocess.run(["cc", "-c", source, "-o", obj], check=True)
 
         # Link the object files to create the executable
-        subprocess.run(["cc", *object_files, "-o", executable], check=True)
+        subprocess.run(["cc", *object_files, "-o", executable, "-lm"], check=True)
 
         # Make the executable globally accessible (optional)
         os.chmod(executable, 0o755)
