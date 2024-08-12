@@ -23,7 +23,7 @@
 ### Installing from bioconda
 
 ```bash
-conda create -n tribal -c bioconda tribal
+conda create env -n tribal -c bioconda tribal
 conda activate tribal
 ```
 
