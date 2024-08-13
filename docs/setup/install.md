@@ -23,9 +23,10 @@
 ### Installing from bioconda
 
 ```bash
-conda create env -n tribal -c bioconda tribal
+conda create -n tribal -c bioconda tribal
 conda activate tribal
 ```
+See [Veryifing installation](#verifying-installation) to make sure the package was installed correctly. 
 
 ### Installing from GitHub
 ```
@@ -39,7 +40,7 @@ Dependencies can be installed using a package mangager such as `conda`, `mamba` 
 
 
 ```bash
-conda create -f tribal.yml 
+conda env create -f tribal.yml 
 ```
 
 To build and install `tribal` into this environment, follow the instructions below.
