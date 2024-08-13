@@ -727,15 +727,16 @@
 </code></pre></div></p>
 <p><code>tribal</code> can be installed from <a href="#installing-from-github">Github</a> or from <a href="#installing-from-bioconda">bioconda</a>.  We recommend installing from <a href="#installing-from-bioconda">bioconda</a>.</p>
 <h3 id="installing-from-bioconda">Installing from bioconda<a class="headerlink" href="#installing-from-bioconda" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>env<span class="w"> </span>-n<span class="w"> </span>tribal<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span>tribal
+<p><div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>tribal<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span>tribal
 conda<span class="w"> </span>activate<span class="w"> </span>tribal
 </code></pre></div>
+See <a href="#verifying-installation">Veryifing installation</a> to make sure the package was installed correctly. </p>
 <h3 id="installing-from-github">Installing from GitHub<a class="headerlink" href="#installing-from-github" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git clone https://github.com/elkebir-group/TRIBAL.git
 cd TRIBAL
 </code></pre></div>
 <p>Dependencies can be installed using a package mangager such as <code>conda</code>, <code>mamba</code> or <code>micromamba</code>, using the included <code>tribal.yml</code> file.</p>
-<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>tribal.yml<span class="w"> </span>
+<div class="highlight"><pre><span></span><code>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>tribal.yml<span class="w"> </span>
 </code></pre></div>
 <p>To build and install <code>tribal</code> into this environment, follow the instructions below.</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>tribal
