@@ -1,7 +1,7 @@
 # TRIBAL: Tree inference of B cell clonal lineages 
 
 
-![Overview of TRIBAL](img/Overview.png)
+![Overview of TRIBAL](Overview.png)
 
 TRIBAL (TRee Inference of B cell clonAl Lineages) is a method to infer B cell lineage trees from single-cell RNA sequencing data. TRIBAL trees jointly model the evolutionary 
 processes of somatic hypermutation and class switch recombination. 
@@ -149,12 +149,9 @@ See [roots.csv](example/roots.csv) for an example file.
 
 # Usage
 
-TRIBAL can be run as a python package or using the command line tool.
+ `tribal` can be imported as a [package](#package-overview) into a python script or jupyter notebookd or it can be used as a [command line tool](#command-line-interface).
 
 ## Package overview
-
-
-The `tribal` package can be imported as a [package](#package-overview) into a python script or jupyter notebookd or it can be used as a [command line tool](#command-line-interface). 
 
 The following functions and classes are accessible via the `tribal` package:  
 
