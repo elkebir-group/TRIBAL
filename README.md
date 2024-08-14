@@ -526,8 +526,7 @@ The cli has two sub-commands:
   1. [preprocess](#preprocess) - filter the data and find a multiple sequence alignment and parsimony forsest for each clonotype.  
   2. [fit](#fit) - infer a set of optimal B cell lineage trees per clonotype an a shared isotype transition probability matrix.  
 
-!!! tip
-    It is recommended to use the preprocessing tool to prepare the input data to the proper format for `tribal`.  
+**tip**: It is recommended to use the preprocessing tool to prepare the input data to the proper format for `tribal`.  
 
 ### Preprocess
 
@@ -581,7 +580,7 @@ IGHA2
 
 See [isotypes.txt](example/isotypes.txt) for an example file.
 
-!!! note "isotype labeling"
+**note:**
     Be sure that the labels used in the encoding file exactly match the labeling syntax in the input data. There is no standard convention for isotype labels,  e.g., IgM, M, IghM and IGHM, and therefore the convention must be provided by the user. 
 
  #### Output
