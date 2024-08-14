@@ -1,4 +1,4 @@
-# B cell Lineage Tree
+# B cell Lineage Tree List 
 
 ::: tribal.LineageTreeList
     options:

@@ -7,21 +7,21 @@ name = "tribal"
 version = "0.1.0"
 description = "tribal is a package to infer B cell lineage trees from single-cell RNA sequencing data"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.9,<=3.10"
 license = {text = "BSD-3-Clause"}
 authors = [
     {name = "Leah L. Weber", email = "lweber21@gmail.com"}
 ]
 
+ 
 dependencies = [
-    "numpy==1.26.3",
-    "networkx==3.1",
-    "ete3==3.1.2",
-    "pyomo==6.7.3",
+    "numpy>=1.26",
+    "networkx>=3.1",
+    "ete3>=3.1.2",
+    "pyomo>=6.7.3",
     "pygraphviz>=1.10",
-    "pandas==2.1.1",
+    "pandas",
     "biopython==1.81",
-    "mkdocstrings[python]>=0.18",
     ]
 
 [project.urls]
