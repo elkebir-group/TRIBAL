@@ -15,10 +15,10 @@ authors = [
 
  
 dependencies = [
-    "numpy>=1.26",
+    "numpy>=1.26,<2.0",
     "networkx>=3.1",
     "ete3>=3.1.2",
-    "pyomo>=6.7.3",
+    "pyomo==6.7.3",
     "pygraphviz>=1.10",
     "pandas",
     "biopython==1.81",
