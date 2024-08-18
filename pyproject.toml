@@ -23,11 +23,17 @@ dependencies = [
     "biopython>=1.81",
 ]
 
+[tool.setuptools]
+packages = ["tribal"]
+
 [project.urls]
 Homepage = "https://github.com/elkebir-group/TRIBAL"
 
 [project.scripts]
 tribal = "tribal.cli:main"
+
+[tool.setuptools.package-data]
+tribal = ["data/*"]
 
 
 # [build-system]
@@ -74,6 +80,7 @@ tribal = "tribal.cli:main"
 # [tool.hatch.build.targets.sdist]
 # include = [
 #     "tribal/data/*.csv",
+        
 #     "tribal/data/*.pkl",
 #     "tribal/dnapars/*.c",
 #     "tribal/dnapars/*.h",
