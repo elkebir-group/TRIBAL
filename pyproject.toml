@@ -1,11 +1,11 @@
 [build-system]
-requires = ["hatchling", "setuptools"]
-build-backend = "hatchling.build"
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "tribal"
 version = "0.1.0"
-description = "tribal is a package to infer B cell lineage trees from single-cell RNA sequencing data"
+description = "Tribal is a package to infer B cell lineage trees from single-cell RNA sequencing data"
 readme = "README.md"
 requires-python = ">=3.9,<3.11"
 license = {text = "BSD-3-Clause"}
@@ -13,7 +13,6 @@ authors = [
     {name = "Leah L. Weber", email = "lweber21@gmail.com"}
 ]
 
- 
 dependencies = [
     "numpy>=1.26,<2.0",
     "networkx>=3.1",
@@ -21,43 +20,76 @@ dependencies = [
     "pyomo==6.7.3",
     "pygraphviz>=1.10",
     "pandas",
-    "biopython==1.81",
-    ]
+    "biopython>=1.81",
+]
 
 [project.urls]
-"Homepage" = "https://github.com/elkebir-group/TRIBAL"
-
-
+Homepage = "https://github.com/elkebir-group/TRIBAL"
 
 [project.scripts]
 tribal = "tribal.cli:main"
 
-[tool.hatch.build.hooks.custom]
-path = "tribal/backend.py"
+
+# [build-system]
+# requires = ["hatchling", "setuptools"]
+# build-backend = "hatchling.build"
+
+# [project]
+# name = "tribal"
+# version = "0.1.0"
+# description = "tribal is a package to infer B cell lineage trees from single-cell RNA sequencing data"
+# readme = "README.md"
+# requires-python = ">=3.9,<3.11"
+# license = {text = "BSD-3-Clause"}
+# authors = [
+#     {name = "Leah L. Weber", email = "lweber21@gmail.com"}
+# ]
+
+ 
+# dependencies = [
+#     "numpy>=1.26,<2.0",
+#     "networkx>=3.1",
+#     "ete3>=3.1.2",
+#     "pyomo==6.7.3",
+#     "pygraphviz>=1.10",
+#     "pandas",
+#     "biopython==1.81",
+#     ]
+
+# [project.urls]
+# "Homepage" = "https://github.com/elkebir-group/TRIBAL"
 
 
-[tool.hatch.build.targets.wheel.hooks.custom]
-path = "tribal/backend.py"
 
-[tool.hatch.build.targets.sdist]
-include = [
-    "tribal/data/*.csv",
-    "tribal/data/*.pkl",
-    "tribal/dnapars/*.c",
-    "tribal/dnapars/*.h",
-    "tribal/backend.py",
-    "tribal",
-]
+# [project.scripts]
+# tribal = "tribal.cli:main"
 
-[tool.hatch.build.targets.wheel]
-include = [
-    "tribal/data/*.csv",
-    "tribal/data/*.pkl",
-    "tribal/dnapars/*.c",
-    "tribal/dnapars/*.h",
-    "tribal/backend.py",
-    "tribal",
-]
+# [tool.hatch.build.hooks.custom]
+# path = "tribal/backend.py"
+
+
+# [tool.hatch.build.targets.wheel.hooks.custom]
+# path = "tribal/backend.py"
+
+# [tool.hatch.build.targets.sdist]
+# include = [
+#     "tribal/data/*.csv",
+#     "tribal/data/*.pkl",
+#     "tribal/dnapars/*.c",
+#     "tribal/dnapars/*.h",
+#     "tribal/backend.py",
+#     "tribal",
+# ]
+
+# [tool.hatch.build.targets.wheel]
+# include = [
+#     "tribal/data/*.csv",
+#     "tribal/data/*.pkl",
+#     "tribal/dnapars/*.c",
+#     "tribal/dnapars/*.h",
+#     "tribal/backend.py",
+#     "tribal",
+# ]
 
 
 
