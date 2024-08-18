@@ -33,7 +33,7 @@ Homepage = "https://github.com/elkebir-group/TRIBAL"
 tribal = "tribal.cli:main"
 
 [tool.setuptools.package-data]
-tribal = ["data/*"]
+tribal = ["data/*", "dnapars/*"]
 
 
 # [build-system]
