@@ -13,14 +13,14 @@ The output is forest of B cell lineage trees, one for each clonotype, with nodes
 Contact
 -------------------------------------------------------------------------------
 
-For help and questions please contact the [El-Kebir Lab](mailto:melkebir@illinois.eu).
+TRIBAL is a collaboration between the El-Kebir Lab at UIUC and the Laboratory for Computational Immunology at the University of Chicago. For help and questions please contact [Mohammed El-Kebir](melkebir@illinois.edu]) and [Aly A. Khan](aakhan@uchicago.edu).
 
 
 
 ## Dependencies
 
 **Depends:** [dnapars](phylip_main.html), mafft, glpk  
-**Imports:** networkx, pyomo, numpy, pandas, ete3, Bio  
+**Imports:** networkx, pyomo, numpy, pandas, ete3, Bio, pygrahpviz  
 
 
 

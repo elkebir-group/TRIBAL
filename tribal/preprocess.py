@@ -241,19 +241,14 @@ def _run_dnapars(phylip_content):
         with open(infile_path, "w") as infile:
             infile.write(phylip_content)
         
-        # Write config content to a temporary "config" file
-        # config_path = os.path.join(temp_dir, "dnapars.cfg")
-        # with open(config_path, "w") as config:
-        #     config.write(config_content)
-        # outfile = os.path.join(temp_dir, "outfile")
-        # Run dnapars from the temporary directory
+   
         # if dnapars_path is None:
         def get_dnapars_path():
             # Determine the path to the dnapars executable within the package directory
             return os.path.join(os.path.dirname(__file__), 'dnapars', 'dnapars')
  
-        dnapars_cline = [get_dnapars_path()]
-        # dnapars_cline = ["dnapars"]
+        # dnapars_cline = [get_dnapars_path()]
+        dnapars_cline = ["dnapars"]
         # else:
         #     dnapars_cline = [dnapars_path]
         # process = subprocess.Popen(dnapars_cline, cwd=temp_dir, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

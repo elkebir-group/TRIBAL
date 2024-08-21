@@ -1,20 +1,20 @@
 # Installation 
-`tribal` can be installed via `bioconda` (recommended) or `github` and can be run as a [python package](package.md) or via the [command line](cli.md). 
+`tribal` can be installed via `bioconda` (coming soon) or `github` and can be run as a [python package](package.md) or via the [command line](cli.md). 
 
 
 ### Dependencies
 `tribal` has the following dependencies:
 ```
-    python>=3.9
-    numpy>=1.26.3
-    networkx>=3.1
-    ete3>=3.1.2
-    glpk>=5.0
-    pyomo>=6.7.3
-    pygraphviz>=1.10
-    pandas>=2.1.1
-    biopython>=1.81
-    mafft>=7.526
+    python >=3.9,<3.11
+    numpy >=1.26,<2.0
+    pandas
+    networkx >=3.1
+    pygraphviz >=1.10
+    ete3 >=3.1.2
+    mafft ==7.526
+    glpk >=5.0
+    pyomo >=6.7
+    biopython >=1.81
     phylip>=3.697 (included with package)
 ```
 
@@ -22,10 +22,11 @@
 
 ### Installing from bioconda
 
-```bash
-conda create -n tribal -c bioconda tribal
-conda activate tribal
-```
+**COMING SOON!**
+<!-- ```bash
+# conda create -n tribal -c bioconda tribal
+# conda activate tribal
+``` -->
 See [Veryifing installation](#verifying-installation) to make sure the package was installed correctly. 
 
 ### Installing from GitHub
@@ -47,8 +48,7 @@ To build and install `tribal` into this environment, follow the instructions bel
 
 ```bash
 conda activate tribal
-pip install hatchling
-hatchling build
+python -m build 
 pip install dist/tribal-0.1.0-py3-none-any.whl
 
 ```

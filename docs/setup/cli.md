@@ -61,8 +61,8 @@ optional arguments:
   -v, --verbose         print additional messages
 ```
 
-#### Input
-The `--data`, `--roots` and `--encoding` are required arguments.  See [data description](data.md#input) for more details. The `--encoding` argument should be that path to a text file that lists the correct isotype ordering as well as the isotype labels that are present in the input data. 
+### Input
+The `--data`, `--roots` and `--encoding` are required arguments.  See [data description](data.md) for more details. The `--encoding` argument should be that path to a text file that lists the correct isotype ordering as well as the isotype labels that are present in the input data. 
 
 
 
@@ -80,12 +80,11 @@ IGHA2
 !!! note "isotype labeling"
     Be sure that the labels used in the encoding file exactly match the labeling syntax in the input data. There is no standard convention for isotype labels,  e.g., IgM, M, IghM and IGHM, and therefore the convention must be provided by the user. 
 
- #### Output
-
+### Output
 The main output from the `preprocess` sub-command is the a pickled dictionary storing `Clonotype` objects for each retained clonotype in the data. This output file will be used as the input to the `fit` sub-command. 
 
 
- #### Example
+### Example
 
  Here is an example of how to run the preprocess sub-command.
 

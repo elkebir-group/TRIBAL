@@ -25,8 +25,8 @@ theme:
     - content.code.copy
     - content.tabs.link
   palette:
-    primary: brown
-    accent: deep purple
+    primary: deep purple 
+    accent: brown
   # extra_css:
   #   - css/logo.css
     # theme:
@@ -54,7 +54,7 @@ markdown_extensions:
   # - smarty
   - toc:
       baselevel: 1
-      toc_depth: 1-4
+      toc_depth: 1-5
       permalink: True
   - admonition
   - pymdownx.snippets

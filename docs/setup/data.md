@@ -9,7 +9,7 @@ Sequencing data should be provided in a csv file with the following columns:
 
 | Column Name         | Type     | Description | Required |
 | :------------------ | :------: | :---- | :------:|
-| cellid              |  str or int | unqiue id or barcode of the sequnced B cell  | True |
+| cell             |  str or int | unqiue id or barcode of the sequnced B cell  | True |
 | clonotype           |   str       | unique clonotype id to which that cell belongs | True |
 | heavy_chain_isotype   |  str   | the isotype of the constant region of the heavy chain  | True |
 | heavy_chain_seq |  str   |the variable region sequence of the heavy chain | True |
@@ -19,6 +19,7 @@ Sequencing data should be provided in a csv file with the following columns:
 |light_chain_allele | str | the v allele of the light chain | False, if light_chain_seq not provided |
 
 
+See [data.csv](https://github.com/elkebir-group/TRIBAL/blob/main/example/data.csv) for an example.
 
 ## Germline clonotype roots
 
@@ -30,7 +31,7 @@ Additionally, the germline root sequences by clonotype should be provided in a c
 | heavy_chain_root  |  str   | the heavy chain variable region germline root sequence  | True |
 | light_chain_root  |  str   | the light chain variable region germline root sequence  | False |
 
-
+See [roots.csv](https://github.com/elkebir-group/TRIBAL/blob/main/example/roots.csv) for an example.
 
 !!! note
     All light chain columns may be omitted if the `use_light_chain` argument in `preprocess` is `False`.  In other words, `tribal` may be used with only the heavy chain BCR sequences.
