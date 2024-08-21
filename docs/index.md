@@ -13,7 +13,7 @@ The output is forest of B cell lineage trees, one for each clonotype, with nodes
 Contact
 -------------------------------------------------------------------------------
 
-TRIBAL is a collaboration between the El-Kebir Lab at UIUC and the Laboratory for Computational Immunology at the University of Chicago. For help and questions please contact [Mohammed El-Kebir](melkebir@illinois.edu]) and [Aly A. Khan](aakhan@uchicago.edu).
+TRIBAL is a collaboration between the El-Kebir Lab at UIUC and the Laboratory for Computational Immunology at the University of Chicago. For help and questions please contact [Mohammed El-Kebir](mailto:melkebir@illinois.edu) and [Aly A. Khan](mailto:aakhan@uchicago.edu).
 
 
 
