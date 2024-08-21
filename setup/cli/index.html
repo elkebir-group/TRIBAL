@@ -63,7 +63,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="brown" data-md-color-accent="deep-purple">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="brown">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -492,8 +492,7 @@
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
+</li>
         
           <li class="md-nav__item">
   <a href="#input" class="md-nav__link">
@@ -504,8 +503,21 @@
   
 </li>
         
-      </ul>
-    </nav>
+          <li class="md-nav__item">
+  <a href="#output" class="md-nav__link">
+    <span class="md-ellipsis">
+      Output
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example
+    </span>
+  </a>
   
 </li>
         
@@ -543,7 +555,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
+  <a href="#example_1" class="md-nav__link">
     <span class="md-ellipsis">
       Example
     </span>
@@ -552,7 +564,7 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#output" class="md-nav__link">
+  <a href="#output_1" class="md-nav__link">
     <span class="md-ellipsis">
       Output
     </span>
@@ -823,8 +835,8 @@ optional<span class="w"> </span>arguments:
 <span class="w">  </span>--heavy<span class="w">               </span>only<span class="w"> </span>use<span class="w"> </span>the<span class="w"> </span>heavy<span class="w"> </span>chain<span class="w"> </span>and<span class="w"> </span>ignore<span class="w"> </span>the<span class="w"> </span>light<span class="w"> </span>chain
 <span class="w">  </span>-v,<span class="w"> </span>--verbose<span class="w">         </span>print<span class="w"> </span>additional<span class="w"> </span>messages
 </code></pre></div>
-<h4 id="input">Input<a class="headerlink" href="#input" title="Permanent link">&para;</a></h4>
-<p>The <code>--data</code>, <code>--roots</code> and <code>--encoding</code> are required arguments.  See <a href="../data/#input">data description</a> for more details. The <code>--encoding</code> argument should be that path to a text file that lists the correct isotype ordering as well as the isotype labels that are present in the input data. </p>
+<h3 id="input">Input<a class="headerlink" href="#input" title="Permanent link">&para;</a></h3>
+<p>The <code>--data</code>, <code>--roots</code> and <code>--encoding</code> are required arguments.  See <a href="../data/">data description</a> for more details. The <code>--encoding</code> argument should be that path to a text file that lists the correct isotype ordering as well as the isotype labels that are present in the input data. </p>
 <div class="highlight"><pre><span></span><code>IGHM
 IGHG3
 IGHG1
@@ -838,9 +850,9 @@ IGHA2
 <p class="admonition-title">isotype labeling</p>
 <p>Be sure that the labels used in the encoding file exactly match the labeling syntax in the input data. There is no standard convention for isotype labels,  e.g., IgM, M, IghM and IGHM, and therefore the convention must be provided by the user. </p>
 </div>
-<p>#### Output</p>
+<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
 <p>The main output from the <code>preprocess</code> sub-command is the a pickled dictionary storing <code>Clonotype</code> objects for each retained clonotype in the data. This output file will be used as the input to the <code>fit</code> sub-command. </p>
-<p>#### Example</p>
+<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
 <p>Here is an example of how to run the preprocess sub-command.</p>
 <div class="highlight"><pre><span></span><code><span class="w"> </span>$<span class="w"> </span>tribal<span class="w"> </span>preprocess<span class="w"> </span>-d<span class="w"> </span>data.csv<span class="w"> </span>-r<span class="w"> </span>roots.csv<span class="w"> </span>-e<span class="w"> </span>isotypes.txt<span class="w"> </span>-j<span class="w"> </span><span class="m">4</span><span class="w"> </span>--min-size<span class="w"> </span><span class="m">4</span><span class="w"> </span>--dataframe<span class="w"> </span>filtered.csv<span class="w"> </span>-o<span class="w"> </span>clonotypes.pkl<span class="w"> </span>-v
 </code></pre></div>
@@ -882,13 +894,13 @@ optional<span class="w"> </span>arguments:
 </code></pre></div>
 <h3 id="input_1">Input<a class="headerlink" href="#input_1" title="Permanent link">&para;</a></h3>
 <p>The pickled dictionary of clonotypes (<code>clonotypes.pkl</code>) that is output from <code>tribal preprocess</code> will be the input to <code>tribal fit</code>.  See <a href="../../api/clonotype/">Clonotype</a> for details. </p>
-<h3 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h3>
+<h3 id="example_1">Example<a class="headerlink" href="#example_1" title="Permanent link">&para;</a></h3>
 <p>Assuming <code>clonotypes.pkl</code> is in the working directory, here is an example of how to run
  <code>tribal fit</code>. </p>
 <div class="highlight"><pre><span></span><code><span class="n">tribal</span> <span class="n">fit</span> <span class="o">-</span><span class="n">c</span> <span class="n">clonotypes</span><span class="o">.</span><span class="n">pkl</span> <span class="o">-</span><span class="n">j</span> <span class="mi">3</span> <span class="o">--</span><span class="n">transmat</span><span class="o">-</span><span class="n">infer</span> <span class="n">transmat</span><span class="o">.</span><span class="n">txt</span> <span class="o">--</span><span class="n">pickle</span> <span class="n">lineage_trees</span><span class="o">.</span><span class="n">pkl</span>
 <span class="o">--</span><span class="n">write</span><span class="o">-</span><span class="n">results</span> <span class="n">results</span> <span class="o">--</span><span class="n">score</span> <span class="n">objective</span><span class="o">.</span><span class="n">csv</span>
 </code></pre></div>
-<h3 id="output">Output<a class="headerlink" href="#output" title="Permanent link">&para;</a></h3>
+<h3 id="output_1">Output<a class="headerlink" href="#output_1" title="Permanent link">&para;</a></h3>
 <p>There are four optional outputs from <code>tribal fit</code>:<br />
   1.  <code>--transmat-infer</code>: the inferred isotype transition probability matrix.<br />
   2.  <code>--pickle</code> : a dictionary with clonotype id as key and value is a <a href="../../api/lineagetreelist/">LineageTreeList</a> containing the optimal lineage trees for each clonotype.<br />

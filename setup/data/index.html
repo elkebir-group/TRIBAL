@@ -63,7 +63,7 @@
     
     
     
-    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="brown" data-md-color-accent="deep-purple">
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="brown">
   
     
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
@@ -707,7 +707,7 @@
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;">cellid</td>
+<td style="text-align: left;">cell</td>
 <td style="text-align: center;">str or int</td>
 <td style="text-align: left;">unqiue id or barcode of the sequnced B cell</td>
 <td style="text-align: center;">True</td>
@@ -756,6 +756,7 @@
 </tr>
 </tbody>
 </table>
+<p>See <a href="https://github.com/elkebir-group/TRIBAL/blob/main/example/data.csv">data.csv</a> for an example.</p>
 <h2 id="germline-clonotype-roots">Germline clonotype roots<a class="headerlink" href="#germline-clonotype-roots" title="Permanent link">&para;</a></h2>
 <p>Additionally, the germline root sequences by clonotype should be provided in a csv file containing the heavy chain sequence and optionally, the light chain sequence. </p>
 <table>
@@ -788,6 +789,7 @@
 </tr>
 </tbody>
 </table>
+<p>See <a href="https://github.com/elkebir-group/TRIBAL/blob/main/example/roots.csv">roots.csv</a> for an example.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>All light chain columns may be omitted if the <code>use_light_chain</code> argument in <code>preprocess</code> is <code>False</code>.  In other words, <code>tribal</code> may be used with only the heavy chain BCR sequences.</p>
