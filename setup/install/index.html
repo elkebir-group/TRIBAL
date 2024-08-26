@@ -413,9 +413,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#installing-from-bioconda" class="md-nav__link">
+  <a href="#installing-from-bioconda-recommended" class="md-nav__link">
     <span class="md-ellipsis">
-      Installing from bioconda
+      Installing from bioconda (recommended)
     </span>
   </a>
   
@@ -723,16 +723,13 @@
     glpk &gt;=5.0
     pyomo &gt;=6.7
     biopython &gt;=1.81
-    phylip&gt;=3.697 (included with package)
 </code></pre></div></p>
 <p><code>tribal</code> can be installed from <a href="#installing-from-github">Github</a> or from <a href="#installing-from-bioconda">bioconda</a>.  We recommend installing from <a href="#installing-from-bioconda">bioconda</a>.</p>
-<h3 id="installing-from-bioconda">Installing from bioconda<a class="headerlink" href="#installing-from-bioconda" title="Permanent link">&para;</a></h3>
-<p><strong>COMING SOON!</strong></p>
-<!-- ```bash
-# conda create -n tribal -c bioconda tribal
-# conda activate tribal
-``` -->
-<p>See <a href="#verifying-installation">Veryifing installation</a> to make sure the package was installed correctly. </p>
+<h3 id="installing-from-bioconda-recommended">Installing from bioconda (recommended)<a class="headerlink" href="#installing-from-bioconda-recommended" title="Permanent link">&para;</a></h3>
+<p><div class="highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>tribal<span class="w"> </span>-c<span class="w"> </span>bioconda<span class="w"> </span>tribal
+conda<span class="w"> </span>activate<span class="w"> </span>tribal
+</code></pre></div>
+See <a href="#verifying-installation">Veryifing installation</a> to make sure the package was installed correctly. </p>
 <h3 id="installing-from-github">Installing from GitHub<a class="headerlink" href="#installing-from-github" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code>git clone https://github.com/elkebir-group/TRIBAL.git
 cd TRIBAL
@@ -740,10 +737,14 @@ cd TRIBAL
 <p>Dependencies can be installed using a package mangager such as <code>conda</code>, <code>mamba</code> or <code>micromamba</code>, using the included <code>tribal.yml</code> file.</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>env<span class="w"> </span>create<span class="w"> </span>-f<span class="w"> </span>tribal.yml<span class="w"> </span>
 </code></pre></div>
-<p>To build and install <code>tribal</code> into this environment, follow the instructions below.</p>
+<p>To build and install <code>tribal</code> into this environment, follow the instructions below:</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>tribal
 python<span class="w"> </span>-m<span class="w"> </span>build<span class="w"> </span>
-pip<span class="w"> </span>install<span class="w"> </span>dist/tribal-0.1.0-py3-none-any.whl
+pip<span class="w"> </span>install<span class="w"> </span>dist/tribal-0.1.0-py3-none-any.whl<span class="w"> </span>
+</code></pre></div>
+<p><code>dnapars</code> is a requirement to run the preprocessing tools. The source code is included in the package and can be installed using the <code>dnapars_install.sh</code> script. </p>
+<div class="highlight"><pre><span></span><code>chmod<span class="w"> </span>+x<span class="w"> </span>dnapars_install.sh
+./dnapars_install.sh
 </code></pre></div>
 <h3 id="verifying-installation">Verifying installation<a class="headerlink" href="#verifying-installation" title="Permanent link">&para;</a></h3>
 <p><code>tribal</code> can be imported as a package or run via a  command line interface.  </p>
