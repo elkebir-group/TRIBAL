@@ -74,20 +74,27 @@ Dependencies can be installed using a package mangager such as `conda`, `mamba` 
 conda env create -f tribal.yml 
 ```
 
-To build and install `tribal` into this environment, follow the instructions below.
+To build and install `tribal` into this environment, follow the instructions below:
 
 ```bash
 conda activate tribal
-pip install hatchling
-hatchling build
-pip install dist/tribal-0.1.0-py3-none-any.whl
+python -m build 
+pip install dist/tribal-0.1.0-py3-none-any.whl 
+
+```
+
+`dnapars` is a requirement to run the preprocessing tools. The source code is included in the package and can be installed using the `dnapars_install.sh` script. 
+
+```bash
+chmod +x dnapars_install.sh
+./dnapars_install.sh
 
 ```
 
 ### Verifying installation
 
 
-`tribal` can be imported as a package or run via a  command line interface.  
+`tribal` can be imported as a package or run via a command line interface.  
 
 To verify the package can be imported,  run the following in the terminal.
 
@@ -139,7 +146,7 @@ Additionally, the germline root sequences by clonotype should be provided in a c
 
 
 
-!!! note
+**note:**
     All light chain columns may be omitted if the `use_light_chain` argument in `preprocess` is `False`.  In other words, `tribal` may be used with only the heavy chain BCR sequences.
 
 See [roots.csv](example/roots.csv) for an example file. 
